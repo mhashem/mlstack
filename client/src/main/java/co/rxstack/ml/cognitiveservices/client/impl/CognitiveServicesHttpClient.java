@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -96,7 +97,7 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 
 	@Override
 	public Optional<PersonGroup> getPersonGroup(String personGroupId) {
-		
+		log.info("getting person group {}", personGroupId);
 		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups")
 			.pathSegment(personGroupId).build().toUri();
 
@@ -118,9 +119,9 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 
 	@Override
 	public boolean trainPersonGroup(String personGroupId) {
-
+		log.info("attempting to train person group {}", personGroupId);
 		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}/train")
-			.pathSegment(personGroupId).build().toUri();
+			.buildAndExpand(personGroupId).toUri();
 
 		try {
 			HttpResponse<JsonNode> response =
@@ -138,7 +139,29 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 	}
 
 	@Override
-	public Optional<String> createPerson(String personGroupId) {
+	public Optional<String> createPerson(String personGroupId, String personName, String userData) {
+		log.info("creating person in group {}", personGroupId);
+
+		URI uri= UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}/persons")
+			.buildAndExpand(personGroupId).toUri();
+
+		try {
+			ImmutableMap<String, String> dataMap =
+				ImmutableMap.of("name", personName, "userDate", userData);
+
+			HttpResponse<JsonNode> response =
+				Unirest.post(uri.toString())
+					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+					.header(CONTENT_TYPE, APPLICATION_JSON)
+					.body(objectMapper.writeValueAsString(dataMap))
+					.asJson();
+
+			if (response.getStatus() == HttpStatus.SC_OK) {
+				return Optional.ofNullable(response.getBody().getObject().get("personId").toString());
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
 		return Optional.empty();
 	}
 
@@ -152,18 +175,20 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 			.build().toUri();
 
 		try {
-
 			byte[] bytes = new byte[stream.available()];
-			stream.read(bytes);
+			int read = stream.read(bytes);
 
-			HttpResponse<JsonNode> response =
-				Unirest.post(uri.toString())
-					.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
-					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
-					.body(bytes)
-					.asJson();
-			if (response.getStatus() == HttpStatus.SC_OK) {
-				return objectMapper.readValue(response.getRawBody(), new TypeReference<List<FaceDetectionResult>>(){});
+			if (read > 0) {
+				HttpResponse<JsonNode> response =
+					Unirest.post(uri.toString())
+						.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
+						.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+						.body(bytes)
+						.asJson();
+				if (response.getStatus() == HttpStatus.SC_OK) {
+					return objectMapper.readValue(response.getRawBody(),
+						new TypeReference<List<FaceDetectionResult>>(){});
+				}
 			}
 		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);

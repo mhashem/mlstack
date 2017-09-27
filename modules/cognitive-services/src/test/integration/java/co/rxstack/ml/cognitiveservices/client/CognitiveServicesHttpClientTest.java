@@ -1,7 +1,5 @@
 package co.rxstack.ml.cognitiveservices.client;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -66,7 +64,15 @@ public class CognitiveServicesHttpClientTest {
 		Assert.assertFalse(faceDetectionResults.isEmpty());
 		Assert.assertNotNull(faceDetectionResults.get(0).getFaceId());
 	}
-	
+
+	@Test
+	public void testCreatePerson() {
+		boolean result = cognitiveServicesHttpClient.createPersonGroup(validPersonGroupId, "test-group");
+		Assert.assertTrue(result);
+		Optional<String> fooIdOptional =
+			cognitiveServicesHttpClient.createPerson(validPersonGroupId, "Foo", "29,10");
+		Assert.assertTrue(fooIdOptional.isPresent());
+	}
 	
 	@After
 	public void cleanup() {

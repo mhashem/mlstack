@@ -7,10 +7,12 @@ import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
 import co.rxstack.ml.cognitiveservices.services.IFaceDetectionService;
 import co.rxstack.ml.common.FaceDetectionResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * @author mhachem on 9/27/2017.
  */
+@Service
 public class FaceDetectionService implements IFaceDetectionService {
 	
 	private ICognitiveServicesHttpClient cognitiveServicesHttpClient;
@@ -22,10 +24,7 @@ public class FaceDetectionService implements IFaceDetectionService {
 
 	@Override
 	public List<FaceDetectionResult> detect(InputStream inputStream) {
-		
-		
-		
-		
-		return null;
+		return cognitiveServicesHttpClient.detect(inputStream);
 	}
+
 }

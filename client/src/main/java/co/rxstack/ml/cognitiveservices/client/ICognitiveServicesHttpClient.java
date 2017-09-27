@@ -34,7 +34,7 @@ public interface ICognitiveServicesHttpClient {
 	 * @param personGroupId {@link String} Specifying the target person group to create the person.
 	 * @return {@link Optional<String>} created personId if successfully created
 	 */
-	Optional<String> createPerson(String personGroupId);
+	Optional<String> createPerson(String personGroupId, String personName, String userData);
 	
 	List<FaceDetectionResult> detect(InputStream inputStream);
 	
