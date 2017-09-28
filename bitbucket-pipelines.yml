@@ -13,4 +13,6 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - mvn -B verify # -B batch mode makes Maven less verbose
           - mvn clean install -U
+          - mvn cobertura:cobertura
+          - bash <(curl -s https://codecov.io/bash) -t 50013c32-39c0-43e1-8bb0-ccb3a42e7b58
           - mvn test -P integration-tests
