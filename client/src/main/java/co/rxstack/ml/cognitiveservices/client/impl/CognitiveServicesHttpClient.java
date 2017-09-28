@@ -6,8 +6,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
 import co.rxstack.ml.common.FaceDetectionResult;
+import co.rxstack.ml.common.FaceRectangle;
 import co.rxstack.ml.common.PersonGroup;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +21,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.mashape.unirest.request.HttpRequestWithBody;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -142,6 +146,9 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 	public Optional<String> createPerson(String personGroupId, String personName, String userData) {
 		log.info("creating person in group {}", personGroupId);
 
+		Preconditions.checkNotNull(personGroupId);
+		Preconditions.checkNotNull(personName);
+
 		URI uri= UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}/persons")
 			.buildAndExpand(personGroupId).toUri();
 
@@ -160,6 +167,47 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 				return Optional.ofNullable(response.getBody().getObject().get("personId").toString());
 			}
 		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<String> addPersonFace(String personGroupId, String personId,
+		@Nullable FaceRectangle faceRectangle, InputStream stream) {
+
+		log.info("adding person face, person group {}, personId {}", personGroupId, personId);
+
+		Preconditions.checkNotNull(personGroupId);
+		Preconditions.checkNotNull(personId);
+
+		URI uri= UriComponentsBuilder.fromUri(serviceUri)
+			.path("/persongroups/{personGroupId}/persons/{personId}/persistedFaces")
+			.buildAndExpand(personGroupId, personId).toUri();
+
+		try {
+			byte[] bytes = new byte[stream.available()];
+			int read = stream.read(bytes);
+
+			if (read > 0) {
+				HttpRequestWithBody httpRequest =
+					Unirest.post(uri.toString())
+						.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+						.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+
+				if (faceRectangle != null) {
+					httpRequest = httpRequest.queryString("targetFace", faceRectangle.encodeAsQueryParam());
+				}
+
+				HttpResponse<JsonNode> response = httpRequest.body(bytes).asJson();
+
+				if (response.getStatus() == HttpStatus.SC_OK) {
+					return Optional.ofNullable(response.getBody().getObject()
+						.get("persistedFaceId").toString());
+				}
+			}
+
+		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);
 		}
 		return Optional.empty();

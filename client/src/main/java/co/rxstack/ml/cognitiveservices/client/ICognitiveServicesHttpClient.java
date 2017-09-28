@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import co.rxstack.ml.common.FaceDetectionResult;
+import co.rxstack.ml.common.FaceRectangle;
 import co.rxstack.ml.common.PersonGroup;
 
 /**
@@ -12,7 +13,6 @@ import co.rxstack.ml.common.PersonGroup;
  */
 public interface ICognitiveServicesHttpClient {
 
-	
 	boolean createPersonGroup(String personGroupId, String name);
 
 	boolean deletePersonGroup(String personGroupId);
@@ -20,22 +20,12 @@ public interface ICognitiveServicesHttpClient {
 	Optional<PersonGroup> getPersonGroup(String personGroupId);
 	
 	boolean trainPersonGroup(String personGroupId);
-	
-	/*
-	 * https://[location].api.cognitive.microsoft.com/face/v1.0/persongroups/{personGroupId}/persons
-	 */
 
-	/**
-	 * 
-	 * Request Body:
-	 * 		name	String	Display name of the target person. The maximum length is 128.
-	 * 		userData (optional)	String	Optional fields for user-provided data attached to a person. Size limit is 16KB.
-	 * 
-	 * @param personGroupId {@link String} Specifying the target person group to create the person.
-	 * @return {@link Optional<String>} created personId if successfully created
-	 */
 	Optional<String> createPerson(String personGroupId, String personName, String userData);
-	
+
+	Optional<String> addPersonFace(String personGroupId, String personId,
+		FaceRectangle faceRectangle, InputStream inputStream);
+
 	List<FaceDetectionResult> detect(InputStream inputStream);
 	
 }

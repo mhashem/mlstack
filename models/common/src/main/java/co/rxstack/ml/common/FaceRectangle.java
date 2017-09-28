@@ -1,5 +1,7 @@
 package co.rxstack.ml.common;
 
+import java.util.Locale;
+
 /**
  * @author mhachem on 9/27/2017.
  */
@@ -9,6 +11,13 @@ public class FaceRectangle {
 	private int height;
 	private int left;
 	private int top;
+
+	public FaceRectangle(int left, int top, int width, int height) {
+		this.width = width;
+		this.height = height;
+		this.left = left;
+		this.top = top;
+	}
 
 	public int getWidth() {
 		return width;
@@ -38,8 +47,12 @@ public class FaceRectangle {
 		return top;
 	}
 
-	public void setTop(int right) {
-		this.top = right;
+	public void setTop(int top) {
+		this.top = top;
+	}
+
+	public String encodeAsQueryParam() {
+		return String.format(Locale.getDefault(), "%d,%d,%d,%d", left, top, width, height);
 	}
 
 	@Override
