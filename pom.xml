@@ -36,6 +36,7 @@
 		<mashape.unirest.version>1.4.9</mashape.unirest.version>
 		<guava.version>23.0</guava.version>
 		<codahale.version>3.0.2</codahale.version>
+		<aws.java.sdk.version>1.11.203</aws.java.sdk.version>
 	</properties>
 	
 	<build>
