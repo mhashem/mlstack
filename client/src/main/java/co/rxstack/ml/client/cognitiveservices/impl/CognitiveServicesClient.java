@@ -1,4 +1,4 @@
-package co.rxstack.ml.cognitiveservices.client.impl;
+package co.rxstack.ml.client.cognitiveservices.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,10 +8,10 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
-import co.rxstack.ml.common.FaceDetectionResult;
-import co.rxstack.ml.common.FaceRectangle;
-import co.rxstack.ml.common.PersonGroup;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.PersonGroup;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -31,7 +31,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * @author mhachem on 9/27/2017.
  */
-public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient {
+public class CognitiveServicesClient implements ICognitiveServicesClient {
 	
 	private static final String SUBSCRIPTION_KEY_HEADER = "Ocp-Apim-Subscription-Key";
 	private static final String ACCEPT_HEADER = "accept";
@@ -39,14 +39,14 @@ public class CognitiveServicesHttpClient implements ICognitiveServicesHttpClient
 	private static final String APPLICATION_JSON = "application/json";
 	private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 
-	private static final Logger log = LoggerFactory.getLogger(CognitiveServicesHttpClient.class);
+	private static final Logger log = LoggerFactory.getLogger(CognitiveServicesClient.class);
 	
 	private URI serviceUri;
 	private String subscriptionKey;
 	private ObjectMapper objectMapper;
 	
 
-	public CognitiveServicesHttpClient(URI uri, String subscriptionKey) {
+	public CognitiveServicesClient(URI uri, String subscriptionKey) {
 		Preconditions.checkNotNull(uri);
 		Preconditions.checkNotNull(subscriptionKey);
 		

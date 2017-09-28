@@ -4,7 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import javax.ws.rs.PathParam;
 
-import co.rxstack.ml.cognitiveservices.services.IPersonGroupService;
+import co.rxstack.ml.cognitiveservices.service.IPersonGroupService;
 import com.codahale.metrics.annotation.Timed;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

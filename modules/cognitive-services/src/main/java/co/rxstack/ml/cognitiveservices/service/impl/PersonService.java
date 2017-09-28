@@ -1,9 +1,9 @@
-package co.rxstack.ml.cognitiveservices.services.impl;
+package co.rxstack.ml.cognitiveservices.service.impl;
 
 import java.util.Optional;
 
-import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
-import co.rxstack.ml.cognitiveservices.services.IPersonService;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.cognitiveservices.service.IPersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class PersonService implements IPersonService {
 
-	private ICognitiveServicesHttpClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesHttpClient;
 
 	@Autowired
-	public PersonService(ICognitiveServicesHttpClient cognitiveServicesHttpClient) {
+	public PersonService(ICognitiveServicesClient cognitiveServicesHttpClient) {
 		this.cognitiveServicesHttpClient = cognitiveServicesHttpClient;
 	}
 

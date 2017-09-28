@@ -1,12 +1,12 @@
-package co.rxstack.ml.cognitiveservices.services.impl;
+package co.rxstack.ml.cognitiveservices.service.impl;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.Optional;
 
-import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
-import co.rxstack.ml.cognitiveservices.services.IPersonGroupService;
-import co.rxstack.ml.common.PersonGroup;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.cognitiveservices.service.IPersonGroupService;
+import co.rxstack.ml.common.model.PersonGroup;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +20,10 @@ public class PersonGroupService implements IPersonGroupService {
 
 	private static final Logger logger = getLogger(PersonGroupService.class);
 	
-	private ICognitiveServicesHttpClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesHttpClient;
 	
 	@Autowired
-	public PersonGroupService(ICognitiveServicesHttpClient cognitiveServicesHttpClient) {
+	public PersonGroupService(ICognitiveServicesClient cognitiveServicesHttpClient) {
 		this.cognitiveServicesHttpClient = cognitiveServicesHttpClient;
 	}
 	

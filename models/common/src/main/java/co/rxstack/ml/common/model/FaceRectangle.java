@@ -1,4 +1,4 @@
-package co.rxstack.ml.common;
+package co.rxstack.ml.common.model;
 
 import java.util.Locale;
 

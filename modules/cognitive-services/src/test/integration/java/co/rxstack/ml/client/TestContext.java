@@ -1,8 +1,9 @@
-package co.rxstack.ml.cognitiveservices.client;
+package co.rxstack.ml.client;
 
 import java.net.URI;
 
-import co.rxstack.ml.cognitiveservices.client.impl.CognitiveServicesHttpClient;
+import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,8 +19,8 @@ public class TestContext {
 	}
 
 	@Bean
-	public ICognitiveServicesHttpClient cognitiveServicesHttpClient(URI serviceUri) {
-		return new CognitiveServicesHttpClient(serviceUri, "8407dfc043ae486a8f36bff5034da21f");
+	public ICognitiveServicesClient cognitiveServicesHttpClient(URI serviceUri) {
+		return new CognitiveServicesClient(serviceUri, "8407dfc043ae486a8f36bff5034da21f");
 	}
 	
 }

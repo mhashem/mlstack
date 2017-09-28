@@ -1,9 +1,9 @@
-package co.rxstack.ml.cognitiveservices.services;
+package co.rxstack.ml.cognitiveservices.service;
 
 import java.io.InputStream;
 import java.util.List;
 
-import co.rxstack.ml.common.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceDetectionResult;
 
 /**
  * @author mhachem on 9/27/2017.

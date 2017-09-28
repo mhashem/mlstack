@@ -56,7 +56,7 @@
 			<properties>
 				<testSource>src/test/unit/java</testSource>
 				<testSourceResource>src/test/unit/resources</testSourceResource>
-				<!--<sonar.host.url>http://sonarqube.internal.leshop.ch:9000</sonar.host.url>-->
+				<!--<sonar.host.url>http://sonarqube.internal.lesh.ch:9000</sonar.host.url>-->
 			</properties>
 			<build>
 				<plugins>
@@ -93,11 +93,11 @@
 						</executions>
 					</plugin>-->
 					
-					<plugin>
+					<!--<plugin>
 						<groupId>org.sonarsource.scanner.maven</groupId>
 						<artifactId>sonar-maven-plugin</artifactId>
 						<version>3.0.1</version>
-					</plugin>
+					</plugin>-->
 				</plugins>
 			</build>
 		</profile>

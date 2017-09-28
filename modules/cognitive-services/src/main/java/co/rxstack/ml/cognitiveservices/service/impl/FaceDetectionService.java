@@ -1,11 +1,11 @@
-package co.rxstack.ml.cognitiveservices.services.impl;
+package co.rxstack.ml.cognitiveservices.service.impl;
 
 import java.io.InputStream;
 import java.util.List;
 
-import co.rxstack.ml.cognitiveservices.client.ICognitiveServicesHttpClient;
-import co.rxstack.ml.cognitiveservices.services.IFaceDetectionService;
-import co.rxstack.ml.common.FaceDetectionResult;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
+import co.rxstack.ml.common.model.FaceDetectionResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class FaceDetectionService implements IFaceDetectionService {
 	
-	private ICognitiveServicesHttpClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesHttpClient;
 	
 	@Autowired
-	public FaceDetectionService(ICognitiveServicesHttpClient cognitiveServicesHttpClient) {
+	public FaceDetectionService(ICognitiveServicesClient cognitiveServicesHttpClient) {
 		this.cognitiveServicesHttpClient = cognitiveServicesHttpClient;
 	}
 

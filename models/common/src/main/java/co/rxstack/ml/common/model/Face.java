@@ -1,4 +1,4 @@
-package co.rxstack.ml.common;
+package co.rxstack.ml.common.model;
 
 /**
  * Created by MHACHEM on 9/27/2017.

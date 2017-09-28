@@ -1,17 +1,17 @@
-package co.rxstack.ml.cognitiveservices.client;
+package co.rxstack.ml.client.cognitiveservices;
 
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
-import co.rxstack.ml.common.FaceDetectionResult;
-import co.rxstack.ml.common.FaceRectangle;
-import co.rxstack.ml.common.PersonGroup;
+import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.PersonGroup;
 
 /**
  * @author mhachem on 9/27/2017.
  */
-public interface ICognitiveServicesHttpClient {
+public interface ICognitiveServicesClient {
 
 	boolean createPersonGroup(String personGroupId, String name);
 

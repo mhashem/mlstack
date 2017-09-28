@@ -1,12 +1,14 @@
-package co.rxstack.ml.cognitiveservices.client;
+package co.rxstack.ml.cognitiveservices;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
-import co.rxstack.ml.common.FaceDetectionResult;
-import co.rxstack.ml.common.PersonGroup;
+import co.rxstack.ml.client.TestContext;
+import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.PersonGroup;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,12 +23,12 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestContext.class)
-public class CognitiveServicesHttpClientTest {
+public class CognitiveServicesClientTest {
 	
 	private final String validPersonGroupId = "12345678";
 	
 	@Autowired
-	private ICognitiveServicesHttpClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesHttpClient;
 	
 	@Before
 	public void setup() {
@@ -59,7 +61,7 @@ public class CognitiveServicesHttpClientTest {
 	public void testDetectFace() throws URISyntaxException, FileNotFoundException {
 		List<FaceDetectionResult> faceDetectionResults = 
 			cognitiveServicesHttpClient.detect(
-				CognitiveServicesHttpClientTest.class.getClassLoader().
+				CognitiveServicesClientTest.class.getClassLoader().
 					getResourceAsStream("bill-gates.jpg"));
 		Assert.assertFalse(faceDetectionResults.isEmpty());
 		Assert.assertNotNull(faceDetectionResults.get(0).getFaceId());

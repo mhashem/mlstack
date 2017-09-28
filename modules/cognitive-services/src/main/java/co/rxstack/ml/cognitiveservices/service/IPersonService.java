@@ -1,4 +1,4 @@
-package co.rxstack.ml.cognitiveservices.services;
+package co.rxstack.ml.cognitiveservices.service;
 
 import java.util.Optional;
 

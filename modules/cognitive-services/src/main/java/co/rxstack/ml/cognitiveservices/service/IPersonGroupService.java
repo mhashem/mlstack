@@ -1,8 +1,8 @@
-package co.rxstack.ml.cognitiveservices.services;
+package co.rxstack.ml.cognitiveservices.service;
 
 import java.util.Optional;
 
-import co.rxstack.ml.common.PersonGroup;
+import co.rxstack.ml.common.model.PersonGroup;
 
 /**
  * @author mhachem on 9/27/2017.
