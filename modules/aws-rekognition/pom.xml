@@ -11,12 +11,11 @@
 
 	<groupId>co.rxstack.ml.aws-rekognition</groupId>
 	<artifactId>aws-rekognition</artifactId>
-
 	<dependencies>
 		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk</artifactId>
-			<version>${aws.java.sdk.version}</version>
+			<groupId>co.rxstack.ml.client</groupId>
+			<artifactId>client</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 

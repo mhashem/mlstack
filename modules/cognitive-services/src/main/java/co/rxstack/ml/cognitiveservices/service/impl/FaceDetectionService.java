@@ -15,16 +15,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class FaceDetectionService implements IFaceDetectionService {
 	
-	private ICognitiveServicesClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesClient;
 	
 	@Autowired
-	public FaceDetectionService(ICognitiveServicesClient cognitiveServicesHttpClient) {
-		this.cognitiveServicesHttpClient = cognitiveServicesHttpClient;
+	public FaceDetectionService(ICognitiveServicesClient cognitiveServicesClient) {
+		this.cognitiveServicesClient = cognitiveServicesClient;
 	}
 
 	@Override
 	public List<FaceDetectionResult> detect(InputStream inputStream) {
-		return cognitiveServicesHttpClient.detect(inputStream);
+		return cognitiveServicesClient.detect(inputStream);
 	}
 
 }

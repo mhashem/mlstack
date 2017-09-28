@@ -19,7 +19,7 @@ public class TestContext {
 	}
 
 	@Bean
-	public ICognitiveServicesClient cognitiveServicesHttpClient(URI serviceUri) {
+	public ICognitiveServicesClient cognitiveServicesClient(URI serviceUri) {
 		return new CognitiveServicesClient(serviceUri, "8407dfc043ae486a8f36bff5034da21f");
 	}
 	

@@ -22,17 +22,17 @@ public class PersonService implements IPersonService {
 
 	private static final Logger log = getLogger(PersonService.class);
 
-	private ICognitiveServicesClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesClient;
 
 	@Autowired
-	public PersonService(ICognitiveServicesClient cognitiveServicesHttpClient) {
-		this.cognitiveServicesHttpClient = cognitiveServicesHttpClient;
+	public PersonService(ICognitiveServicesClient cognitiveServicesClient) {
+		this.cognitiveServicesClient = cognitiveServicesClient;
 	}
 
 	@Override
 	public Optional<String> createPerson(String personGroupId, String personName, String userData) {
 		log.info("creating person {},{} in group {}", personName, userData, personGroupId);
-		return cognitiveServicesHttpClient.createPerson(personGroupId, personName, userData);
+		return cognitiveServicesClient.createPerson(personGroupId, personName, userData);
 	}
 
 	@Override
@@ -40,6 +40,6 @@ public class PersonService implements IPersonService {
 		@Nullable
 			FaceRectangle faceRectangle, InputStream stream) {
 		log.info("adding person face for person {} group {}", personId, personGroupId);
-		return cognitiveServicesHttpClient.addPersonFace(personGroupId, personId, faceRectangle, stream);
+		return cognitiveServicesClient.addPersonFace(personGroupId, personId, faceRectangle, stream);
 	}
 }

@@ -28,7 +28,7 @@ public class CognitiveServicesClientTest {
 	private final String validPersonGroupId = "12345678";
 	
 	@Autowired
-	private ICognitiveServicesClient cognitiveServicesHttpClient;
+	private ICognitiveServicesClient cognitiveServicesClient;
 	
 	@Before
 	public void setup() {
@@ -36,22 +36,22 @@ public class CognitiveServicesClientTest {
 	
 	@Test
 	public void testCreatePersonGroup() {
-		boolean result = cognitiveServicesHttpClient.createPersonGroup(validPersonGroupId, "test-group");
+		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
 	}
 	
 	@Test
 	public void testCreatePersonGroupBadPersonGroupId() {
-		boolean result = cognitiveServicesHttpClient.createPersonGroup("ABC123@", "test-group");
+		boolean result = cognitiveServicesClient.createPersonGroup("ABC123@", "test-group");
 		Assert.assertFalse(result);
 	}
 	
 	@Test
 	public void testGetPersonGroup() {
-		boolean result = cognitiveServicesHttpClient.createPersonGroup(validPersonGroupId, "test-group");
+		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
 		
-		Optional<PersonGroup> personGroupOptional = cognitiveServicesHttpClient.getPersonGroup(validPersonGroupId);
+		Optional<PersonGroup> personGroupOptional = cognitiveServicesClient.getPersonGroup(validPersonGroupId);
 		Assert.assertTrue(personGroupOptional.isPresent());
 		Assert.assertEquals("test-group", personGroupOptional.get().getName());
 		Assert.assertEquals(validPersonGroupId, personGroupOptional.get().getPersonGroupId());
@@ -60,7 +60,7 @@ public class CognitiveServicesClientTest {
 	@Test
 	public void testDetectFace() throws URISyntaxException, FileNotFoundException {
 		List<FaceDetectionResult> faceDetectionResults = 
-			cognitiveServicesHttpClient.detect(
+			cognitiveServicesClient.detect(
 				CognitiveServicesClientTest.class.getClassLoader().
 					getResourceAsStream("bill-gates.jpg"));
 		Assert.assertFalse(faceDetectionResults.isEmpty());
@@ -69,16 +69,16 @@ public class CognitiveServicesClientTest {
 
 	@Test
 	public void testCreatePerson() {
-		boolean result = cognitiveServicesHttpClient.createPersonGroup(validPersonGroupId, "test-group");
+		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
 		Optional<String> fooIdOptional =
-			cognitiveServicesHttpClient.createPerson(validPersonGroupId, "Foo", "29,10");
+			cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
 		Assert.assertTrue(fooIdOptional.isPresent());
 	}
 	
 	@After
 	public void cleanup() {
-		cognitiveServicesHttpClient.deletePersonGroup(validPersonGroupId);
+		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);
 	}
 	
 }

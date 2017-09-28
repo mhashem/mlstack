@@ -2,6 +2,10 @@ package co.rxstack.ml.core;
 
 import java.net.URI;
 
+import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
+import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
@@ -22,33 +26,46 @@ public class ApplicationContext {
 
 	@Value("${subscription-key}")
 	private String subscriptionKey;
-	
 	@Value("${cognitive-service-url}")
 	private String cognitiveServiceUrl;
-	
+	@Value("${aws-access-key}")
+	private String awsAccessKey;
+	@Value("${aws-secret-key}")
+	private String awsSecretKey;
+
 	@Bean
 	public URI cognitiveServicesUri() {
 		return URI.create(cognitiveServiceUrl);
 	}
 
 	@Bean
-	public ICognitiveServicesClient cognitiveServicesHttpClient(URI cognitiveServicesUri) {
+	public ICognitiveServicesClient cognitiveServicesClient(URI cognitiveServicesUri) {
 		return new CognitiveServicesClient(cognitiveServicesUri, subscriptionKey);
 	}
-	
+
 	@Bean
-	public IPersonGroupService personGroupService(ICognitiveServicesClient cognitiveServicesHttpClient) {
-		return new PersonGroupService(cognitiveServicesHttpClient);
+	public IRekognitionClient rekognitionClient() {
+		return new RekognitionClient(awsAccessKey, awsSecretKey);
 	}
 	
 	@Bean
-	public IPersonService personService(ICognitiveServicesClient cognitiveServicesHttpClient) {
-		return new PersonService(cognitiveServicesHttpClient);
+	public IPersonGroupService personGroupService(ICognitiveServicesClient cognitiveServicesClient) {
+		return new PersonGroupService(cognitiveServicesClient);
 	}
 	
 	@Bean
-	public IFaceDetectionService faceDetectionService(ICognitiveServicesClient cognitiveServicesHttpClient) {
-		return new FaceDetectionService(cognitiveServicesHttpClient);
+	public IPersonService personService(ICognitiveServicesClient cognitiveServicesClient) {
+		return new PersonService(cognitiveServicesClient);
+	}
+	
+	@Bean
+	public IFaceDetectionService faceDetectionService(ICognitiveServicesClient cognitiveServicesClient) {
+		return new FaceDetectionService(cognitiveServicesClient);
+	}
+
+	@Bean
+	public IRekognitionService rekognitionService(IRekognitionClient rekognitionClient) {
+		return new RekognitionService(rekognitionClient);
 	}
 	
 }
