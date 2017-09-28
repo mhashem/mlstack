@@ -12,6 +12,10 @@ public class FaceRectangle {
 	private int left;
 	private int top;
 
+	public FaceRectangle() {
+		// needed for Object Mapper
+	}
+	
 	public FaceRectangle(int left, int top, int width, int height) {
 		this.width = width;
 		this.height = height;
