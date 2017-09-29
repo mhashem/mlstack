@@ -12,5 +12,21 @@
 	<groupId>co.rxstack.ml.aggregator</groupId>
 	<artifactId>aggregator</artifactId>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml.aws-rekognition</groupId>
+			<artifactId>aws-rekognition</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml</groupId>
+			<artifactId>cognitive-services</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
 
 </project>

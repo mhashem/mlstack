@@ -2,6 +2,7 @@ package co.rxstack.ml.core;
 
 import java.net.URI;
 
+import co.rxstack.ml.aggregator.ResultAggregatorService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
 import co.rxstack.ml.client.aws.IRekognitionClient;
@@ -66,6 +67,12 @@ public class ApplicationContext {
 	@Bean
 	public IRekognitionService rekognitionService(IRekognitionClient rekognitionClient) {
 		return new RekognitionService(rekognitionClient);
+	}
+
+	@Bean
+	public ResultAggregatorService resultAggregatorService(IRekognitionService rekognitionService,
+		IFaceDetectionService faceDetectionService, IPersonService personService) {
+		return new ResultAggregatorService(rekognitionService, faceDetectionService, personService);
 	}
 	
 }

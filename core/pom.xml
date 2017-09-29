@@ -52,6 +52,11 @@
 			<artifactId>aws-rekognition</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml.aggregator</groupId>
+			<artifactId>aggregator</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
