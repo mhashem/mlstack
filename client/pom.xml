@@ -33,14 +33,14 @@
 			<version>${mashape.unirest.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>co.rxstack.ml</groupId>
-			<artifactId>common</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
 			<version>${aws.java.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml</groupId>
+			<artifactId>common</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 

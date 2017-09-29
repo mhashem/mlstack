@@ -1,7 +1,9 @@
-package co.rxstack.ml.client;
+package co.rxstack.ml.context;
 
 import java.net.URI;
 
+import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +23,11 @@ public class TestContext {
 	@Bean
 	public ICognitiveServicesClient cognitiveServicesClient(URI serviceUri) {
 		return new CognitiveServicesClient(serviceUri, "8407dfc043ae486a8f36bff5034da21f");
+	}
+
+	@Bean
+	public IRekognitionClient rekognitionClient() {
+		return new RekognitionClient("AKIAJGSF7P2RGBJPJ76A", "vgXyU62xmbAlQ6oB8qTPKvNBxW9lefVMUbVLwq3o");
 	}
 	
 }

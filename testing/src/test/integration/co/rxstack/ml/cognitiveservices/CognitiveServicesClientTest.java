@@ -5,7 +5,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
-import co.rxstack.ml.client.TestContext;
+import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.PersonGroup;

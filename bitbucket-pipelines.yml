@@ -4,7 +4,8 @@
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
 image: maven:3.3.9
-
+clone:
+  depth: full # heroku require full depth clone
 pipelines:
   default:
     - step:
@@ -13,6 +14,7 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - mvn -B verify # -B batch mode makes Maven less verbose
           - mvn clean install -U
-          - mvn cobertura:cobertura
-          - bash <(curl -s https://codecov.io/bash) -t 50013c32-39c0-43e1-8bb0-ccb3a42e7b58
+          - mvn cobertura:cobertura # code quality
+          - bash <(curl -s https://codecov.io/bash) -t $CODECOV_API_KEY
           - mvn test -P integration-tests
+          - git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git HEAD # deploy
