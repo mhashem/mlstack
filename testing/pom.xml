@@ -27,6 +27,11 @@
 			<artifactId>cognitive-services</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-</dependencies>
+		<dependency>
+			<groupId>co.rxstack.ml.aws-rekognition</groupId>
+			<artifactId>aws-rekognition</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
 
 </project>

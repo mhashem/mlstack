@@ -15,6 +15,8 @@ import co.rxstack.ml.cognitiveservices.service.IPersonService;
 import co.rxstack.ml.cognitiveservices.service.impl.FaceDetectionService;
 import co.rxstack.ml.cognitiveservices.service.impl.PersonGroupService;
 import co.rxstack.ml.cognitiveservices.service.impl.PersonService;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,8 +47,13 @@ public class ApplicationContext {
 	}
 
 	@Bean
-	public IRekognitionClient rekognitionClient() {
-		return new RekognitionClient(awsAccessKey, awsSecretKey);
+	public AWSStaticCredentialsProvider awsStaticCredentialsProvider() {
+		return new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsAccessKey, awsSecretKey));
+	}
+
+	@Bean
+	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+		return new RekognitionClient(awsStaticCredentialsProvider);
 	}
 	
 	@Bean

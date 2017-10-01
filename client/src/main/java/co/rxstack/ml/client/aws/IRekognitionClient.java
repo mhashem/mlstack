@@ -1,12 +1,15 @@
 package co.rxstack.ml.client.aws;
 
 import java.io.InputStream;
+import java.util.Optional;
+
+import co.rxstack.ml.common.model.ComparisonResult;
 
 /**
  * @author mhachem on 9/28/2017.
  */
 public interface IRekognitionClient {
 
-	void compareFaces(InputStream faceOneStream, InputStream faceTwoStream);
+	Optional<ComparisonResult> compareFaces(InputStream faceOneStream, InputStream faceTwoStream);
 
 }

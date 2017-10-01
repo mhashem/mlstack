@@ -1,8 +1,14 @@
 package co.rxstack.ml.aggregator;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
 import co.rxstack.ml.cognitiveservices.service.IPersonService;
+import co.rxstack.ml.common.model.ComparisonResult;
 import com.google.common.base.Preconditions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,5 +35,22 @@ public class ResultAggregatorService {
 		this.faceDetectionService = faceDetectionService;
 		this.personService = personService;
 	}
+
+	public void aggregateResult() {
+
+		InputStream faceOne;
+		InputStream faceTwo;
+
+//		CompletableFuture<Optional<ComparisonResult>> voidCompletableFuture = CompletableFuture.runAsync(() -> {
+//		//	rekognitionService.compareFaces()
+//		});
+
+	}
+
+	/*private InputStream image2InputStream(File image) {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ImageIO.write(image,"png", os);
+		InputStream fis = new ByteArrayInputStream(os.toByteArray());
+	}*/
 
 }
