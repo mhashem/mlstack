@@ -1,11 +1,13 @@
 package co.rxstack.ml.cognitiveservices.service.impl;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.helper.ImageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +25,8 @@ public class FaceDetectionService implements IFaceDetectionService {
 	}
 
 	@Override
-	public List<FaceDetectionResult> detect(InputStream inputStream) {
-		return cognitiveServicesClient.detect(inputStream);
+	public List<FaceDetectionResult> detect(InputStream inputStream) throws IOException {
+		return cognitiveServicesClient.detect(ImageUtils.toByteArrays(inputStream));
 	}
 
 }

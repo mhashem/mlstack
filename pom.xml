@@ -17,7 +17,7 @@
 	<modules>
 		<module>core</module>
 		<module>modules</module>
-		<module>models</module>
+		<module>commons</module>
 		<module>testing</module>
 		<module>client</module>
 	</modules>

@@ -26,6 +26,6 @@ public interface ICognitiveServicesClient {
 	Optional<String> addPersonFace(String personGroupId, String personId,
 		FaceRectangle faceRectangle, InputStream inputStream);
 
-	List<FaceDetectionResult> detect(InputStream inputStream);
+	List<FaceDetectionResult> detect(byte[] imageBytes);
 	
 }

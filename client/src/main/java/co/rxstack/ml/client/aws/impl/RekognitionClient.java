@@ -5,20 +5,29 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.common.model.ComparisonResult;
+import co.rxstack.ml.common.model.FaceAttributes;
+import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceRectangle;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
+import com.amazonaws.services.rekognition.model.Attribute;
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.CompareFacesMatch;
 import com.amazonaws.services.rekognition.model.CompareFacesRequest;
 import com.amazonaws.services.rekognition.model.CompareFacesResult;
 import com.amazonaws.services.rekognition.model.ComparedFace;
+import com.amazonaws.services.rekognition.model.DetectFacesRequest;
+import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.util.IOUtils;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +86,40 @@ public class RekognitionClient implements IRekognitionClient {
 		}
 
 		return Optional.empty();
+	}
+
+	@Override
+	public List<FaceDetectionResult> detect(InputStream inputStream) {
+		Preconditions.checkNotNull(inputStream);
+
+		try {
+			Image image = new Image().withBytes(ByteBuffer.wrap(IOUtils.toByteArray(inputStream)));
+			DetectFacesRequest detectFacesRequest = new DetectFacesRequest();
+
+			detectFacesRequest.withImage(image).withAttributes(Attribute.ALL);
+
+			DetectFacesResult detectFacesResult = amazonRekognition.detectFaces(detectFacesRequest);
+
+			return detectFacesResult.getFaceDetails().stream().map(faceDetail -> {
+				FaceAttributes faceAttributes = new FaceAttributes();
+				faceAttributes.setAge(faceDetail.getAgeRange().getHigh());
+				faceAttributes.setGender(faceDetail.getGender().getValue());
+
+				BoundingBox boundingBox = faceDetail.getBoundingBox();
+				FaceRectangle faceRectangle =
+					new FaceRectangle(boundingBox.getLeft(), boundingBox.getTop(), boundingBox.getHeight(),
+						boundingBox.getWidth());
+
+				FaceDetectionResult faceDetectionResult = new FaceDetectionResult();
+				faceDetectionResult.setFaceAttributes(faceAttributes);
+				faceDetectionResult.setFaceRectangle(faceRectangle);
+
+				return faceDetectionResult;
+			}).collect(Collectors.toList());
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return ImmutableList.of();
 	}
 
 }

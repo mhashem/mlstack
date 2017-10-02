@@ -1,14 +1,23 @@
 package co.rxstack.ml.cognitiveservices;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
-import co.rxstack.ml.context.TestContext;
+import javax.imageio.ImageIO;
+
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
+import co.rxstack.ml.context.TestContext;
+import co.rxstack.ml.utils.ImageHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,12 +68,42 @@ public class CognitiveServicesClientTest {
 	
 	@Test
 	public void testDetectFace() throws URISyntaxException, FileNotFoundException {
-		List<FaceDetectionResult> faceDetectionResults = 
-			cognitiveServicesClient.detect(
-				CognitiveServicesClientTest.class.getClassLoader().
-					getResourceAsStream("bill-gates.jpg"));
-		Assert.assertFalse(faceDetectionResults.isEmpty());
-		Assert.assertNotNull(faceDetectionResults.get(0).getFaceId());
+		try {
+			List<FaceDetectionResult> faceDetectionResults =
+				cognitiveServicesClient.detect(ImageHelper.loadResourceAsByteArray("bill-gates.jpg"));
+			Assert.assertFalse(faceDetectionResults.isEmpty());
+			Assert.assertNotNull(faceDetectionResults.get(0).getFaceId());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void testDetectMultipleFaces() {
+		try {
+			List<FaceDetectionResult> faceDetectionResults =
+				cognitiveServicesClient.detect(ImageHelper.loadResourceAsByteArray("multiple-faces-700x420.jpg"));
+			Assert.assertFalse(faceDetectionResults.isEmpty());
+			Assert.assertEquals(5, faceDetectionResults.size(), 1);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void testDetectAndSaveImage() throws IOException {
+		InputStream inputStream = ImageHelper.loadImage("multiple-faces-700x420.jpg");
+		List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(ImageHelper.toByteArray(inputStream));
+
+		BufferedImage bufferedImage = ImageIO.read(ImageHelper.loadImage("multiple-faces-700x420.jpg"));
+		Graphics g = bufferedImage.getGraphics();
+		g.setColor(Color.GREEN);
+
+		faceDetectionResults.forEach(faceDetectionResult -> {
+			FaceRectangle fRect = faceDetectionResult.getFaceRectangle();
+			g.drawRect((int) fRect.getLeft(), (int) fRect.getTop(), (int) fRect.getWidth(), (int) fRect.getHeight());
+		});
+		ImageIO.write(bufferedImage, "png", File.createTempFile("recognized-image", ".png"));
 	}
 
 	@Test
@@ -80,5 +119,5 @@ public class CognitiveServicesClientTest {
 	public void cleanup() {
 		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);
 	}
-	
+
 }

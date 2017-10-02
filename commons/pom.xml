@@ -12,7 +12,8 @@
 	<artifactId>models</artifactId>
 	<packaging>pom</packaging>
 	<modules>
-		<module>common</module>
+		<module>model</module>
+		<module>helper</module>
 	</modules>
 
 </project>

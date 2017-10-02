@@ -1,5 +1,6 @@
 package co.rxstack.ml.cognitiveservices.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -10,6 +11,6 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
  */
 public interface IFaceDetectionService {
 	
-	List<FaceDetectionResult> detect(InputStream inputStream);
+	List<FaceDetectionResult> detect(InputStream inputStream) throws IOException;
 	
 }

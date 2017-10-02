@@ -6,57 +6,57 @@ import java.util.Locale;
  * @author mhachem on 9/27/2017.
  */
 public class FaceRectangle {
-	
-	private int width;
-	private int height;
-	private int left;
-	private int top;
+
+	private float width;
+	private float height;
+	private float left;
+	private float top;
 
 	public FaceRectangle() {
 		// needed for Object Mapper
 	}
-	
-	public FaceRectangle(int left, int top, int width, int height) {
+
+	public FaceRectangle(float left, float top, float width, float height) {
 		this.width = width;
 		this.height = height;
 		this.left = left;
 		this.top = top;
 	}
 
-	public int getWidth() {
+	public float getWidth() {
 		return width;
 	}
 
-	public void setWidth(int width) {
+	public void setWidth(float width) {
 		this.width = width;
 	}
 
-	public int getHeight() {
+	public float getHeight() {
 		return height;
 	}
 
-	public void setHeight(int height) {
+	public void setHeight(float height) {
 		this.height = height;
 	}
 
-	public int getLeft() {
+	public float getLeft() {
 		return left;
 	}
 
-	public void setLeft(int left) {
+	public void setLeft(float left) {
 		this.left = left;
 	}
 
-	public int getTop() {
+	public float getTop() {
 		return top;
 	}
 
-	public void setTop(int top) {
+	public void setTop(float top) {
 		this.top = top;
 	}
 
 	public String encodeAsQueryParam() {
-		return String.format(Locale.getDefault(), "%d,%d,%d,%d", left, top, width, height);
+		return String.format(Locale.getDefault(), "%.2f,%.2f,%.2f,%.2f", left, top, width, height);
 	}
 
 	@Override

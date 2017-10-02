@@ -214,7 +214,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 	}
 
 	@Override
-	public List<FaceDetectionResult> detect(InputStream stream) {
+	public List<FaceDetectionResult> detect(byte[] imageBytes) {
 
 		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/detect")
 			.queryParam("returnFaceId", true)
@@ -223,15 +223,12 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			.build().toUri();
 
 		try {
-			byte[] bytes = new byte[stream.available()];
-			int read = stream.read(bytes);
-
-			if (read > 0) {
+			if (imageBytes.length > 0) {
 				HttpResponse<JsonNode> response =
 					Unirest.post(uri.toString())
 						.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
 						.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
-						.body(bytes)
+						.body(imageBytes)
 						.asJson();
 				if (response.getStatus() == HttpStatus.SC_OK) {
 					return objectMapper.readValue(response.getRawBody(),
