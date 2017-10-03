@@ -24,8 +24,7 @@ public class RekognitionService implements IRekognitionService {
 
 	@Override
 	public Optional<ComparisonResult> compareFaces(InputStream faceOneStream, InputStream faceTwoStream) {
-
-		return null;
+		return Optional.empty();
 	}
 
 }

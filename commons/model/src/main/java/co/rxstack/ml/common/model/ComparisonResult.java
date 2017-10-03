@@ -14,4 +14,9 @@ public class ComparisonResult {
 	public void setConfidence(double confidence) {
 		this.confidence = confidence;
 	}
+
+	@Override
+	public String toString() {
+		return "ComparisonResult{" + "confidence=" + confidence + '}';
+	}
 }

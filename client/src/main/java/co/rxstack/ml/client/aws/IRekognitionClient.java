@@ -12,7 +12,7 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
  */
 public interface IRekognitionClient {
 
-	Optional<ComparisonResult> compareFaces(InputStream faceOneStream, InputStream faceTwoStream);
+	Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes);
 
 	List<FaceDetectionResult> detect(InputStream inputStream);
 
