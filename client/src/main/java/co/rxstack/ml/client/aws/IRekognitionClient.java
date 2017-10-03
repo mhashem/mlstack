@@ -14,6 +14,6 @@ public interface IRekognitionClient {
 
 	Optional<ComparisonResult> compareFaces(InputStream faceOneStream, InputStream faceTwoStream);
 
-	List<FaceDetectionResult> detect(InputStream inputStream);
+	List<FaceDetectionResult> detect(byte[] imageBytes);
 
 }

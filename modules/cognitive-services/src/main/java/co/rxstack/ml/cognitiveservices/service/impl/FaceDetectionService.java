@@ -25,8 +25,8 @@ public class FaceDetectionService implements IFaceDetectionService {
 	}
 
 	@Override
-	public List<FaceDetectionResult> detect(InputStream inputStream) throws IOException {
-		return cognitiveServicesClient.detect(ImageUtils.toByteArrays(inputStream));
+	public List<FaceDetectionResult> detect(byte[] imageBytes) {
+		return cognitiveServicesClient.detect(imageBytes);
 	}
 
 }

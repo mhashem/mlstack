@@ -1,5 +1,6 @@
 package co.rxstack.ml.awsrekognition;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -36,9 +37,9 @@ public class RekognitionServiceTest {
 	}
 
 	@Test
-	public void testDetectMultipleFaces() {
+	public void testDetectMultipleFaces() throws IOException {
 		InputStream inputStream = ImageHelper.loadImage("multiple-faces-700x420.jpg");
-		List<FaceDetectionResult> faceDetectionResults = rekognitionClient.detect(inputStream);
+		List<FaceDetectionResult> faceDetectionResults = rekognitionClient.detect(ImageHelper.toByteArray(inputStream));
 		Assert.assertFalse(faceDetectionResults.isEmpty());
 		Assert.assertEquals(5, faceDetectionResults.size(), 1);
 	}

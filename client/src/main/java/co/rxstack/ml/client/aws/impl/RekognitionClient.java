@@ -89,11 +89,11 @@ public class RekognitionClient implements IRekognitionClient {
 	}
 
 	@Override
-	public List<FaceDetectionResult> detect(InputStream inputStream) {
-		Preconditions.checkNotNull(inputStream);
+	public List<FaceDetectionResult> detect(byte[] imageBytes) {
+		Preconditions.checkNotNull(imageBytes);
 
 		try {
-			Image image = new Image().withBytes(ByteBuffer.wrap(IOUtils.toByteArray(inputStream)));
+			Image image = new Image().withBytes(ByteBuffer.wrap(imageBytes));
 			DetectFacesRequest detectFacesRequest = new DetectFacesRequest();
 
 			detectFacesRequest.withImage(image).withAttributes(Attribute.ALL);
@@ -116,7 +116,7 @@ public class RekognitionClient implements IRekognitionClient {
 
 				return faceDetectionResult;
 			}).collect(Collectors.toList());
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
 		return ImmutableList.of();

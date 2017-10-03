@@ -11,6 +11,6 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
  */
 public interface IFaceDetectionService {
 	
-	List<FaceDetectionResult> detect(InputStream inputStream) throws IOException;
+	List<FaceDetectionResult> detect(byte[] imageBytes);
 	
 }
