@@ -9,8 +9,11 @@ import javax.annotation.Nullable;
 
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceIdentificationRequest;
+import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -236,6 +239,38 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			log.error(e.getMessage(), e);
 		}
 
+		return ImmutableList.of();
+	}
+
+	@Override
+	public List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
+		double confidenceThreshold) {
+
+		Preconditions.checkNotNull(personGroupId);
+		Preconditions.checkNotNull(faceIds);
+		Preconditions.checkArgument(faceIds.size() > 0 && faceIds.size() <= 10);
+		Preconditions.checkArgument(maxCandidates <= 5);
+
+		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/identify").build().toUri();
+		FaceIdentificationRequest faceIdentificationRequest =
+			new FaceIdentificationRequest(personGroupId, faceIds, maxCandidates, confidenceThreshold);
+
+		try {
+			HttpResponse<JsonNode> response =
+				Unirest.post(uri.toString())
+					.header(CONTENT_TYPE, APPLICATION_JSON)
+					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+					.body(objectMapper.writeValueAsString(faceIdentificationRequest))
+					.asJson();
+
+			if (response.getStatus() == HttpStatus.SC_OK) {
+				return  objectMapper.readValue(response.getRawBody(),
+					new TypeReference<List<FaceIdentificationRequest>>(){});
+			}
+
+		} catch (UnirestException | IOException e) {
+			log.error(e.getMessage(), e);
+		}
 		return ImmutableList.of();
 	}
 }

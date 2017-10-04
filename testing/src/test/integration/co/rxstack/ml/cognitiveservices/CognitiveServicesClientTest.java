@@ -116,7 +116,7 @@ public class CognitiveServicesClientTest {
 	}
 
 	@Test
-	public void testDoCompleteCycle() throws IOException {
+	public void testDoCompleteCycle() throws IOException, InterruptedException {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
 
@@ -146,6 +146,10 @@ public class CognitiveServicesClientTest {
 				result = cognitiveServicesClient.trainPersonGroup(validPersonGroupId);
 				Assert.assertTrue(result);
 			}
+
+			System.out.println("Training person group please wait...");
+			Thread.sleep(10000L);
+
 		}
 
 		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);

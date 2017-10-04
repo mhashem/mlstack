@@ -1,10 +1,10 @@
 package co.rxstack.ml.client.cognitiveservices;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
 
@@ -27,5 +27,8 @@ public interface ICognitiveServicesClient {
 		FaceRectangle faceRectangle, byte[] imageBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
-	
+
+	List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
+		double confidenceThreshold);
+
 }
