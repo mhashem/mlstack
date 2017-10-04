@@ -1,16 +1,12 @@
 package co.rxstack.ml.aggregator;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
 import co.rxstack.ml.cognitiveservices.service.IPersonService;
-import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.helper.ImageUtils;
 import com.google.common.base.Preconditions;

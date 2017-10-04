@@ -248,7 +248,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 		Preconditions.checkNotNull(personGroupId);
 		Preconditions.checkNotNull(faceIds);
-		Preconditions.checkArgument(faceIds.size() > 0 && faceIds.size() <= 10);
+		Preconditions.checkArgument(!faceIds.isEmpty() && faceIds.size() <= 10);
 		Preconditions.checkArgument(maxCandidates <= 5);
 
 		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/identify").build().toUri();

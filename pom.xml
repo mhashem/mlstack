@@ -15,11 +15,11 @@
 	</parent>
 	
 	<modules>
+		<module>client</module>
+		<module>commons</module>
 		<module>core</module>
 		<module>modules</module>
-		<module>commons</module>
 		<module>testing</module>
-		<module>client</module>
 	</modules>
 
 	<name>mlstack</name>

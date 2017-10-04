@@ -1,6 +1,8 @@
 package co.rxstack.ml.common.model;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author mhachem on 10/4/2017.
@@ -8,13 +10,13 @@ import java.util.List;
 public class FaceIdentificationResult {
 
 	private String faceId;
-	private List<Candidates> candidates;
+	private List<Candidate> candidates;
 
 	public FaceIdentificationResult() {
 		// empty constructor
 	}
 
-	public FaceIdentificationResult(String faceId, List<Candidates> candidates) {
+	public FaceIdentificationResult(String faceId, List<Candidate> candidates) {
 		this.faceId = faceId;
 		this.candidates = candidates;
 	}
@@ -27,12 +29,16 @@ public class FaceIdentificationResult {
 		this.faceId = faceId;
 	}
 
-	public List<Candidates> getCandidates() {
+	public List<Candidate> getCandidates() {
 		return candidates;
 	}
 
-	public void setCandidates(List<Candidates> candidates) {
+	public void setCandidates(List<Candidate> candidates) {
 		this.candidates = candidates;
+	}
+	
+	public Optional<Candidate> getCandidateBestMatch() {
+		return candidates.stream().max(Comparator.naturalOrder());
 	}
 
 	@Override

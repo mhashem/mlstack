@@ -149,10 +149,7 @@ public class CognitiveServicesClientTest {
 
 			System.out.println("Training person group please wait...");
 			Thread.sleep(10000L);
-
 		}
-
-		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);
 	}
 
 	@After
