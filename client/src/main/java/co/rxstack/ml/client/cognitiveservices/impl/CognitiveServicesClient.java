@@ -1,7 +1,6 @@
 package co.rxstack.ml.client.cognitiveservices.impl;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -174,7 +173,8 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 	@Override
 	public Optional<String> addPersonFace(String personGroupId, String personId,
-		@Nullable FaceRectangle faceRectangle, InputStream stream) {
+		@Nullable
+			FaceRectangle faceRectangle, byte[] imageBytes) {
 
 		log.info("adding person face, person group {}, personId {}", personGroupId, personId);
 
@@ -186,10 +186,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			.buildAndExpand(personGroupId, personId).toUri();
 
 		try {
-			byte[] bytes = new byte[stream.available()];
-			int read = stream.read(bytes);
-
-			if (read > 0) {
+			if (imageBytes.length > 0) {
 				HttpRequestWithBody httpRequest =
 					Unirest.post(uri.toString())
 						.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
@@ -199,7 +196,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 					httpRequest = httpRequest.queryString("targetFace", faceRectangle.encodeAsQueryParam());
 				}
 
-				HttpResponse<JsonNode> response = httpRequest.body(bytes).asJson();
+				HttpResponse<JsonNode> response = httpRequest.body(imageBytes).asJson();
 
 				if (response.getStatus() == HttpStatus.SC_OK) {
 					return Optional.ofNullable(response.getBody().getObject()
@@ -207,7 +204,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 				}
 			}
 
-		} catch (UnirestException | IOException e) {
+		} catch (UnirestException e) {
 			log.error(e.getMessage(), e);
 		}
 		return Optional.empty();

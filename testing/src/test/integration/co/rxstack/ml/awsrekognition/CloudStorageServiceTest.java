@@ -8,6 +8,7 @@ import java.io.InputStream;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.context.TestContext;
 import com.amazonaws.util.IOUtils;
+import com.google.common.collect.ImmutableMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,8 @@ public class CloudStorageServiceTest {
 	@Test
 	public void testUploadImage() {
 		cloudStorageService
-			.uploadImage("mlstack", "index", "bill-gates.jpg", imageFile);
+			.uploadImage("mlstack", "index", "bill-gates.jpg", imageFile,
+				ImmutableMap.of("FullName", "Bill Gates"));
 	}
 
 	@After

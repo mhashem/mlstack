@@ -39,7 +39,12 @@
 		</dependency>
 		<dependency>
 			<groupId>co.rxstack.ml</groupId>
-			<artifactId>common</artifactId>
+			<artifactId>commons</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml</groupId>
+			<artifactId>model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

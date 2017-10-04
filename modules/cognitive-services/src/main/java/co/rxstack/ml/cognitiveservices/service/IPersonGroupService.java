@@ -14,7 +14,6 @@ public interface IPersonGroupService {
 	boolean deletePersonGroup(String personGroupId);
 	
 	Optional<PersonGroup> getPersonGroup(String personGroupId);
-	
-	
-	
+
+	boolean trainPersonGroup(String personGroupId);
 }

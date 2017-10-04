@@ -54,7 +54,7 @@ public class CognitiveServicesClientTest {
 		boolean result = cognitiveServicesClient.createPersonGroup("ABC123@", "test-group");
 		Assert.assertFalse(result);
 	}
-	
+
 	@Test
 	public void testGetPersonGroup() {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
@@ -114,7 +114,43 @@ public class CognitiveServicesClientTest {
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
 		Assert.assertTrue(fooIdOptional.isPresent());
 	}
-	
+
+	@Test
+	public void testDoCompleteCycle() throws IOException {
+		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
+		Assert.assertTrue(result);
+
+		// load images
+		byte[] imageBytes1 = ImageHelper.loadResourceAsByteArray("bill-gates.jpg");
+		byte[] imageBytes2 = ImageHelper.loadResourceAsByteArray("bill-gates-2.jpg");
+
+		Optional<String> createPersonOptional =
+			cognitiveServicesClient.createPerson(validPersonGroupId, "Bill Gates", "54");
+
+		if (createPersonOptional.isPresent()) {
+			System.out.println("Created person");
+
+			List<FaceDetectionResult> faceDetectionResults1 = cognitiveServicesClient.detect(imageBytes1);
+			List<FaceDetectionResult> faceDetectionResults2 = cognitiveServicesClient.detect(imageBytes2);
+
+			// todo save persistedFaceId to metaData in Amazon Rekognition too
+			Optional<String> persistedFaceIdOptional1 = cognitiveServicesClient
+				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
+					faceDetectionResults1.get(0).getFaceRectangle(), imageBytes1);
+
+			Optional<String> persistedFaceIdOptional2 = cognitiveServicesClient
+				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
+					faceDetectionResults2.get(0).getFaceRectangle(), imageBytes2);
+
+			if (persistedFaceIdOptional1.isPresent() && persistedFaceIdOptional2.isPresent()) {
+				result = cognitiveServicesClient.trainPersonGroup(validPersonGroupId);
+				Assert.assertTrue(result);
+			}
+		}
+
+		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);
+	}
+
 	@After
 	public void cleanup() {
 		cognitiveServicesClient.deletePersonGroup(validPersonGroupId);

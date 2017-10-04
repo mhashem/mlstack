@@ -38,8 +38,8 @@ public class PersonService implements IPersonService {
 	@Override
 	public Optional<String> addPersonFace(String personGroupId, String personId,
 		@Nullable
-			FaceRectangle faceRectangle, InputStream stream) {
+			FaceRectangle faceRectangle, byte[] imageBytes) {
 		log.info("adding person face for person {} group {}", personId, personGroupId);
-		return cognitiveServicesClient.addPersonFace(personGroupId, personId, faceRectangle, stream);
+		return cognitiveServicesClient.addPersonFace(personGroupId, personId, faceRectangle, imageBytes);
 	}
 }

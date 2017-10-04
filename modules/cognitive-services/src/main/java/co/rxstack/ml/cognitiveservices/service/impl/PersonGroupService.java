@@ -44,4 +44,10 @@ public class PersonGroupService implements IPersonGroupService {
 		logger.info("reading person group {}", personGroupId);
 		return cognitiveServicesClient.getPersonGroup(personGroupId);
 	}
+
+	@Override
+	public boolean trainPersonGroup(String personGroupId) {
+		logger.info("training person group {}", personGroupId);
+		return cognitiveServicesClient.trainPersonGroup(personGroupId);
+	}
 }

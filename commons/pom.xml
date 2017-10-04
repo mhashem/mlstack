@@ -9,7 +9,7 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>models</artifactId>
+	<artifactId>commons</artifactId>
 	<packaging>pom</packaging>
 	<modules>
 		<module>model</module>

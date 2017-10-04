@@ -1,12 +1,14 @@
 package co.rxstack.ml.aws.rekognition.service;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * @author mhachem 9/30/2017.
  */
 public interface ICloudStorageService {
 
-	void uploadImage(String bucketName, String keyName, String uploadFileName, File image);
+	void uploadImage(String bucketName, String keyName, String uploadFileName, File image,
+		Map<String, String> metaDataMap);
 
 }

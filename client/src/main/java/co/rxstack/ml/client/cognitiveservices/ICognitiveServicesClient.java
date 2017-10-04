@@ -24,7 +24,7 @@ public interface ICognitiveServicesClient {
 	Optional<String> createPerson(String personGroupId, String personName, String userData);
 
 	Optional<String> addPersonFace(String personGroupId, String personId,
-		FaceRectangle faceRectangle, InputStream inputStream);
+		FaceRectangle faceRectangle, byte[] imageBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
 	

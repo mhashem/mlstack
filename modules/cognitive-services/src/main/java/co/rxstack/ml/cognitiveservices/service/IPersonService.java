@@ -15,6 +15,6 @@ public interface IPersonService {
 	Optional<String> createPerson(String personGroupId, String personName, String userData);
 
 	Optional<String> addPersonFace(String personGroupId, String personId,
-		@Nullable FaceRectangle faceRectangle, InputStream stream);
+		@Nullable FaceRectangle faceRectangle, byte[] imageBytes);
 
 }
