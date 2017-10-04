@@ -48,13 +48,13 @@ public class RekognitionClient implements IRekognitionClient {
 	}
 
 	@Override
-	public Optional<ComparisonResult> compareFaces(InputStream faceOneStream, InputStream faceTwoStream) {
+	public Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes) {
 
 		try {
 			// todo return list instead of optional in case of multiple faces!
 			ComparisonResult comparisonResult = new ComparisonResult();
-			Image faceOne = new Image().withBytes(ByteBuffer.wrap(IOUtils.toByteArray(faceOneStream)));
-			Image faceTwo = new Image().withBytes(ByteBuffer.wrap(IOUtils.toByteArray(faceTwoStream)));
+			Image faceOne = new Image().withBytes(ByteBuffer.wrap(faceOneBytes));
+			Image faceTwo = new Image().withBytes(ByteBuffer.wrap(faceTwoBytes));
 
 			CompareFacesRequest compareFacesRequest = new CompareFacesRequest();
 			compareFacesRequest.withSourceImage(faceOne)
@@ -71,7 +71,7 @@ public class RekognitionClient implements IRekognitionClient {
 				// fixme !
 				comparisonResult.setConfidence(face.getConfidence());
 				log.info("Face at {} {} matches with {}% confidence.",
-					position.getLeft().toString(), position.getTop(), face.getConfidence().toString());
+					position.getLeft(), position.getTop(), face.getConfidence());
 			}
 			List<ComparedFace> uncompared = compareFacesResult.getUnmatchedFaces();
 
@@ -81,7 +81,7 @@ public class RekognitionClient implements IRekognitionClient {
 
 			return Optional.of(comparisonResult);
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
 

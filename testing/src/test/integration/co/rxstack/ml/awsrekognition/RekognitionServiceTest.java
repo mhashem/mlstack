@@ -3,8 +3,10 @@ package co.rxstack.ml.awsrekognition;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 
 import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ImageHelper;
@@ -28,12 +30,16 @@ public class RekognitionServiceTest {
 
 	@Before
 	public void setup() {
-
+		
 	}
 
 	@Test
-	public void testCompareFaces() {
-		Assert.assertEquals(1,1);
+	public void testCompareFacesHighSimilarity() throws IOException {
+		byte[] imageOneBytes = ImageHelper.loadResourceAsByteArray("bill-gates.jpg");
+		byte[] imageTwoBytes = ImageHelper.loadResourceAsByteArray("bill-gates-3.jpg");
+		Optional<ComparisonResult> comparisonResult = rekognitionClient.compareFaces(imageOneBytes, imageTwoBytes);
+		Assert.assertTrue(comparisonResult.isPresent());
+		Assert.assertEquals(99, comparisonResult.get().getConfidence(), 5);
 	}
 
 	@Test
