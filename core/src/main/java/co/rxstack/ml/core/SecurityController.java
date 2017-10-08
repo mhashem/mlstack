@@ -3,6 +3,8 @@ package co.rxstack.ml.core;
 import java.io.IOException;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.common.model.Candidate;
 
@@ -38,7 +40,10 @@ public class SecurityController {
 		@RequestParam("collectionId")
 			String collectionId,
 		@RequestParam("targetImage")
-			MultipartFile targetImage) {
+			MultipartFile targetImage, HttpServletRequest request) {
+
+		log.info("Intercepted request for image search in collection [{}] from [{}]", collectionId,
+			request.getRemoteAddr());
 
 		Preconditions.checkNotNull(collectionId);
 		Preconditions.checkNotNull(targetImage);
