@@ -14,16 +14,19 @@ import com.amazonaws.services.rekognition.model.FaceDetail;
  */
 public class FaceDetailConverter implements Function<FaceDetail, FaceDetectionResult> {
 
+	private BoundingBoxConverter boundingBoxConverter;
+
+	public FaceDetailConverter(BoundingBoxConverter boundingBoxConverter) {
+		this.boundingBoxConverter = boundingBoxConverter;
+	}
+
 	@Override
 	public FaceDetectionResult apply(FaceDetail faceDetail) {
 		FaceAttributes faceAttributes = new FaceAttributes();
 		faceAttributes.setAge(faceDetail.getAgeRange().getHigh());
 		faceAttributes.setGender(faceDetail.getGender().getValue());
 
-		BoundingBox boundingBox = faceDetail.getBoundingBox();
-		FaceRectangle faceRectangle =
-			new FaceRectangle(boundingBox.getLeft(), boundingBox.getTop(), boundingBox.getHeight(),
-				boundingBox.getWidth());
+		FaceRectangle faceRectangle = boundingBoxConverter.apply(faceDetail.getBoundingBox());
 
 		FaceDetectionResult faceDetectionResult = new FaceDetectionResult();
 		faceDetectionResult.setFaceAttributes(faceAttributes);

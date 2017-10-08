@@ -1,5 +1,6 @@
 package co.rxstack.ml.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,6 +21,10 @@ public class ImageHelper {
 
 	public static byte[] toByteArray(InputStream inputStream) throws IOException {
 		return IOUtils.toByteArray(inputStream);
+	}
+
+	public static InputStream bytes2InputStream(byte[] imageBytes) {
+		return new ByteArrayInputStream(imageBytes);
 	}
 
 }

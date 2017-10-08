@@ -3,6 +3,7 @@ package co.rxstack.ml.client.aws;
 import java.util.List;
 import java.util.Optional;
 
+import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 
@@ -15,6 +16,6 @@ public interface IRekognitionClient {
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
 
-	List<FaceDetectionResult> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces);
+	List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces);
 
 }

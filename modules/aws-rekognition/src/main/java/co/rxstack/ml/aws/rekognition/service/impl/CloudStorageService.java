@@ -43,12 +43,14 @@ public class CloudStorageService implements ICloudStorageService {
 
 	@Override
 	public void uploadPersonFaceImage(String personName, InputStream inputStream) {
+		log.info("Uploading person face image {}", personName);
 		uploadImage(personName + ".jpg", inputStream, ImmutableMap.of("FullName", personName));
 	}
 
 	@Override
 	public void uploadImage(String uploadedFileName, InputStream inputStream,
 		Map<String, String> metaDataMap) {
+		log.info("Uploading image to S3 Bucket {}", bucketName);
 		ObjectMetadata objectMetadata = new ObjectMetadata();
 		objectMetadata.setUserMetadata(metaDataMap);
 		PutObjectRequest putRequest =
@@ -66,6 +68,12 @@ public class CloudStorageService implements ICloudStorageService {
 			log.error(e.getMessage(), e);
 			throw e;
 		}
+	}
+
+	@Override
+	public void deleteObject(String fileName) {
+		log.warn("Deleting S3Object with name {}", fileName);
+		amazonS3.deleteObject(bucketName, folder + "/" + fileName);
 	}
 
 }

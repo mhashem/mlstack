@@ -6,7 +6,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.converter.BoundingBoxConverter;
 import co.rxstack.ml.client.aws.converter.FaceDetailConverter;
+import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 
@@ -23,7 +25,6 @@ import com.amazonaws.services.rekognition.model.ComparedFace;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
-import com.amazonaws.services.rekognition.model.IndexFacesRequest;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageRequest;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageResult;
 import com.google.common.base.Preconditions;
@@ -38,7 +39,8 @@ public class RekognitionClient implements IRekognitionClient {
 
 	private static final Logger log = LoggerFactory.getLogger(RekognitionClient.class);
 
-	private final FaceDetailConverter faceDetailConverter = new FaceDetailConverter();
+	private final BoundingBoxConverter boundingBoxConverter = new BoundingBoxConverter();
+	private final FaceDetailConverter faceDetailConverter = new FaceDetailConverter(boundingBoxConverter);
 
 	private AmazonRekognition amazonRekognition;
 
@@ -70,8 +72,8 @@ public class RekognitionClient implements IRekognitionClient {
 			CompareFacesResult compareFacesResult = amazonRekognition.compareFaces(compareFacesRequest);
 
 			// Display results
-			List<CompareFacesMatch> faceDetails = compareFacesResult.getFaceMatches();
-			for (CompareFacesMatch match: faceDetails){
+			List<CompareFacesMatch> facesMatchList = compareFacesResult.getFaceMatches();
+			for (CompareFacesMatch match : facesMatchList) {
 				ComparedFace face= match.getFace();
 				BoundingBox position = face.getBoundingBox();
 				// fixme !
@@ -79,9 +81,9 @@ public class RekognitionClient implements IRekognitionClient {
 				log.info("Face at {} {} matches with {}% confidence.",
 					position.getLeft(), position.getTop(), face.getConfidence());
 			}
-			List<ComparedFace> uncompared = compareFacesResult.getUnmatchedFaces();
+			List<ComparedFace> uncomparred = compareFacesResult.getUnmatchedFaces();
 
-			log.info("There were {} that did not match", uncompared.size());
+			log.info("There were {} that did not match", uncomparred.size());
 			log.info("Source image rotation: {}", compareFacesResult.getSourceImageOrientationCorrection());
 			log.info("target image rotation: {}", compareFacesResult.getTargetImageOrientationCorrection());
 
@@ -112,7 +114,7 @@ public class RekognitionClient implements IRekognitionClient {
 	}
 
 	@Override
-	public List<FaceDetectionResult> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
+	public List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
 
 		Preconditions.checkNotNull(collectionId);
 		Preconditions.checkArgument(imageBytes.length > 0);
@@ -124,10 +126,9 @@ public class RekognitionClient implements IRekognitionClient {
 		searchRequest.setMaxFaces(maxFaces);
 
 		SearchFacesByImageResult searchResult = amazonRekognition.searchFacesByImage(searchRequest);
-		return searchResult.getFaceMatches().stream().map(faceMatch -> {
-			// todo complete extraction and conversion!
-			return new FaceDetectionResult();
-		}).collect(Collectors.toList());
+		return searchResult.getFaceMatches().stream()
+			.map(faceMatch -> new Candidate(faceMatch.getFace().getFaceId(), faceMatch.getSimilarity()))
+			.collect(Collectors.toList());
 	}
 
 	private Image byteArrayToImage(byte[] imageBytes) {

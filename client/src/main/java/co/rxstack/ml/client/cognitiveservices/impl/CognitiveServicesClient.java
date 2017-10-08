@@ -60,6 +60,8 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 	@Override
 	public boolean createPersonGroup(String personGroupId, String name) {
 
+		HttpResponse<JsonNode> response = null;
+
 		JSONObject jsonBody = new JSONObject();
 		jsonBody.put("name", name);
 		
@@ -67,14 +69,18 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			.pathSegment(personGroupId).build().toUri();
 
 		try {
-			HttpResponse<JsonNode> response =
-				Unirest.put(uri.toString())
-					.header(ACCEPT_HEADER, APPLICATION_JSON)
-					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
-					.header(CONTENT_TYPE, APPLICATION_JSON)
-					.body(jsonBody)
-					.asJson();
+			response =Unirest.put(uri.toString())
+				.header(ACCEPT_HEADER, APPLICATION_JSON)
+				.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+				.header(CONTENT_TYPE, APPLICATION_JSON)
+				.body(jsonBody)
+				.asJson();
 			if (response.getStatus() == HttpStatus.SC_OK) {
+				return true;
+			}
+
+			if (response.getStatus() == HttpStatus.SC_CONFLICT) {
+				log.warn("Person group {} conflicted with already existing {}", personGroupId, response.getBody());
 				return true;
 			}
 		} catch (UnirestException e) {

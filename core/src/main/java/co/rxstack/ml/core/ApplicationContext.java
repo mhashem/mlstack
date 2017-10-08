@@ -11,12 +11,8 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
-import co.rxstack.ml.cognitiveservices.service.IFaceDetectionService;
-import co.rxstack.ml.cognitiveservices.service.IPersonGroupService;
-import co.rxstack.ml.cognitiveservices.service.IPersonService;
-import co.rxstack.ml.cognitiveservices.service.impl.FaceDetectionService;
-import co.rxstack.ml.cognitiveservices.service.impl.PersonGroupService;
-import co.rxstack.ml.cognitiveservices.service.impl.PersonService;
+import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
+import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -64,20 +60,10 @@ public class ApplicationContext {
 	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
 		return new RekognitionClient(awsRegion, awsStaticCredentialsProvider);
 	}
-	
+
 	@Bean
-	public IPersonGroupService personGroupService(ICognitiveServicesClient cognitiveServicesClient) {
-		return new PersonGroupService(cognitiveServicesClient);
-	}
-	
-	@Bean
-	public IPersonService personService(ICognitiveServicesClient cognitiveServicesClient) {
-		return new PersonService(cognitiveServicesClient);
-	}
-	
-	@Bean
-	public IFaceDetectionService faceDetectionService(ICognitiveServicesClient cognitiveServicesClient) {
-		return new FaceDetectionService(cognitiveServicesClient);
+	public ICognitiveService cognitiveService(ICognitiveServicesClient cognitiveServicesClient) {
+		return new CognitiveService(cognitiveServicesClient);
 	}
 
 	@Bean
@@ -92,8 +78,8 @@ public class ApplicationContext {
 
 	@Bean
 	public ResultAggregatorService resultAggregatorService(IRekognitionService rekognitionService,
-		IFaceDetectionService faceDetectionService, IPersonService personService) {
-		return new ResultAggregatorService(rekognitionService, faceDetectionService, personService);
+		ICognitiveService cognitiveService) {
+		return new ResultAggregatorService(rekognitionService, cognitiveService);
 	}
 	
 }

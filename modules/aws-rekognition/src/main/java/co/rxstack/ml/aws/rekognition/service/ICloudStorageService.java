@@ -15,4 +15,6 @@ public interface ICloudStorageService {
 	void uploadImage(String uploadFileName, InputStream inputStream, Map<String, String> metaDataMap);
 
 	byte[] getObjectAsByteArray(String fileName) throws IOException;
+
+	void deleteObject(String fileName);
 }
