@@ -6,10 +6,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.converter.FaceDetailConverter;
 import co.rxstack.ml.common.model.ComparisonResult;
-import co.rxstack.ml.common.model.FaceAttributes;
 import co.rxstack.ml.common.model.FaceDetectionResult;
-import co.rxstack.ml.common.model.FaceRectangle;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.rekognition.AmazonRekognition;
@@ -23,6 +23,9 @@ import com.amazonaws.services.rekognition.model.ComparedFace;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.IndexFacesRequest;
+import com.amazonaws.services.rekognition.model.SearchFacesByImageRequest;
+import com.amazonaws.services.rekognition.model.SearchFacesByImageResult;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
@@ -35,17 +38,23 @@ public class RekognitionClient implements IRekognitionClient {
 
 	private static final Logger log = LoggerFactory.getLogger(RekognitionClient.class);
 
+	private final FaceDetailConverter faceDetailConverter = new FaceDetailConverter();
+
 	private AmazonRekognition amazonRekognition;
 
-	public RekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+	public RekognitionClient(String awsRegion, AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+		Preconditions.checkNotNull(awsStaticCredentialsProvider);
 		amazonRekognition = AmazonRekognitionClientBuilder.standard()
 			.withCredentials(awsStaticCredentialsProvider)
-			.withRegion(Regions.EU_WEST_1)
+			.withRegion(Regions.fromName(awsRegion))
 			.build();
 	}
 
 	@Override
 	public Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes) {
+
+		Preconditions.checkArgument(faceOneBytes.length > 0);
+		Preconditions.checkArgument(faceTwoBytes.length > 0);
 
 		try {
 			// todo return list instead of optional in case of multiple faces!
@@ -87,36 +96,41 @@ public class RekognitionClient implements IRekognitionClient {
 
 	@Override
 	public List<FaceDetectionResult> detect(byte[] imageBytes) {
-		Preconditions.checkNotNull(imageBytes);
+		Preconditions.checkArgument(imageBytes.length > 0);
 
 		try {
-			Image image = new Image().withBytes(ByteBuffer.wrap(imageBytes));
+			Image image = byteArrayToImage(imageBytes);
 			DetectFacesRequest detectFacesRequest = new DetectFacesRequest();
-
 			detectFacesRequest.withImage(image).withAttributes(Attribute.ALL);
 
 			DetectFacesResult detectFacesResult = amazonRekognition.detectFaces(detectFacesRequest);
-
-			return detectFacesResult.getFaceDetails().stream().map(faceDetail -> {
-				FaceAttributes faceAttributes = new FaceAttributes();
-				faceAttributes.setAge(faceDetail.getAgeRange().getHigh());
-				faceAttributes.setGender(faceDetail.getGender().getValue());
-
-				BoundingBox boundingBox = faceDetail.getBoundingBox();
-				FaceRectangle faceRectangle =
-					new FaceRectangle(boundingBox.getLeft(), boundingBox.getTop(), boundingBox.getHeight(),
-						boundingBox.getWidth());
-
-				FaceDetectionResult faceDetectionResult = new FaceDetectionResult();
-				faceDetectionResult.setFaceAttributes(faceAttributes);
-				faceDetectionResult.setFaceRectangle(faceRectangle);
-
-				return faceDetectionResult;
-			}).collect(Collectors.toList());
+			return detectFacesResult.getFaceDetails().stream().map(faceDetailConverter).collect(Collectors.toList());
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
 		return ImmutableList.of();
 	}
 
+	@Override
+	public List<FaceDetectionResult> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
+
+		Preconditions.checkNotNull(collectionId);
+		Preconditions.checkArgument(imageBytes.length > 0);
+		Preconditions.checkArgument(maxFaces > 0 && maxFaces <= 4096);
+
+		SearchFacesByImageRequest searchRequest = new SearchFacesByImageRequest();
+		searchRequest.setCollectionId(collectionId);
+		searchRequest.setImage(byteArrayToImage(imageBytes));
+		searchRequest.setMaxFaces(maxFaces);
+
+		SearchFacesByImageResult searchResult = amazonRekognition.searchFacesByImage(searchRequest);
+		return searchResult.getFaceMatches().stream().map(faceMatch -> {
+			// todo complete extraction and conversion!
+			return new FaceDetectionResult();
+		}).collect(Collectors.toList());
+	}
+
+	private Image byteArrayToImage(byte[] imageBytes) {
+		return new Image().withBytes(ByteBuffer.wrap(imageBytes));
+	}
 }

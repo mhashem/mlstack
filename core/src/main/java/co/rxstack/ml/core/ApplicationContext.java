@@ -3,7 +3,9 @@ package co.rxstack.ml.core;
 import java.net.URI;
 
 import co.rxstack.ml.aggregator.ResultAggregatorService;
+import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
@@ -15,6 +17,7 @@ import co.rxstack.ml.cognitiveservices.service.IPersonService;
 import co.rxstack.ml.cognitiveservices.service.impl.FaceDetectionService;
 import co.rxstack.ml.cognitiveservices.service.impl.PersonGroupService;
 import co.rxstack.ml.cognitiveservices.service.impl.PersonService;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,10 +34,16 @@ public class ApplicationContext {
 	private String subscriptionKey;
 	@Value("${cognitive-service-url}")
 	private String cognitiveServiceUrl;
+	@Value("${aws-region}")
+	private String awsRegion;
 	@Value("${aws-access-key}")
 	private String awsAccessKey;
 	@Value("${aws-secret-key}")
 	private String awsSecretKey;
+	@Value("${aws-s3-bucket}")
+	private String awsS3Bucket;
+	@Value("${aws-s3-bucket-folder}")
+	private String awsS3BucketFolder;
 
 	@Bean
 	public URI cognitiveServicesUri() {
@@ -53,7 +62,7 @@ public class ApplicationContext {
 
 	@Bean
 	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
-		return new RekognitionClient(awsStaticCredentialsProvider);
+		return new RekognitionClient(awsRegion, awsStaticCredentialsProvider);
 	}
 	
 	@Bean
@@ -74,6 +83,11 @@ public class ApplicationContext {
 	@Bean
 	public IRekognitionService rekognitionService(IRekognitionClient rekognitionClient) {
 		return new RekognitionService(rekognitionClient);
+	}
+
+	@Bean
+	public ICloudStorageService cloudStorageService(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+		return new CloudStorageService(awsRegion, awsS3Bucket, awsS3BucketFolder, awsStaticCredentialsProvider);
 	}
 
 	@Bean

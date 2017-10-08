@@ -1,6 +1,8 @@
 package co.rxstack.ml.aws.rekognition.service;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -8,7 +10,9 @@ import java.util.Map;
  */
 public interface ICloudStorageService {
 
-	void uploadImage(String bucketName, String keyName, String uploadFileName, File image,
-		Map<String, String> metaDataMap);
+	void uploadPersonFaceImage(String personName, InputStream inputStream);
 
+	void uploadImage(String uploadFileName, InputStream inputStream, Map<String, String> metaDataMap);
+
+	byte[] getObjectAsByteArray(String fileName) throws IOException;
 }

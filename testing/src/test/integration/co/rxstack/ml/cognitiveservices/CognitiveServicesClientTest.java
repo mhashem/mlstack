@@ -18,6 +18,7 @@ import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ImageHelper;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,8 +70,8 @@ public class CognitiveServicesClientTest {
 	@Test
 	public void testDetectFace() throws URISyntaxException, FileNotFoundException {
 		try {
-			List<FaceDetectionResult> faceDetectionResults =
-				cognitiveServicesClient.detect(ImageHelper.loadResourceAsByteArray("bill-gates.jpg"));
+			List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient
+				.detect(ImageHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates.jpg"));
 			Assert.assertFalse(faceDetectionResults.isEmpty());
 			Assert.assertNotNull(faceDetectionResults.get(0).getFaceId());
 		} catch (IOException e) {
@@ -81,8 +82,8 @@ public class CognitiveServicesClientTest {
 	@Test
 	public void testDetectMultipleFaces() {
 		try {
-			List<FaceDetectionResult> faceDetectionResults =
-				cognitiveServicesClient.detect(ImageHelper.loadResourceAsByteArray("multiple-faces-700x420.jpg"));
+			List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(
+				ImageHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "multiple-faces-700x420.jpg"));
 			Assert.assertFalse(faceDetectionResults.isEmpty());
 			Assert.assertEquals(5, faceDetectionResults.size(), 1);
 		} catch (IOException e) {
@@ -92,10 +93,12 @@ public class CognitiveServicesClientTest {
 
 	@Test
 	public void testDetectAndSaveImage() throws IOException {
-		InputStream inputStream = ImageHelper.loadImage("multiple-faces-700x420.jpg");
+		InputStream inputStream =
+			ImageHelper.loadImage(CognitiveServicesClientTest.class, "multiple-faces-700x420.jpg");
 		List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(ImageHelper.toByteArray(inputStream));
 
-		BufferedImage bufferedImage = ImageIO.read(ImageHelper.loadImage("multiple-faces-700x420.jpg"));
+		BufferedImage bufferedImage =
+			ImageIO.read(ImageHelper.loadImage(CognitiveServicesClientTest.class, "multiple-faces-700x420.jpg"));
 		Graphics g = bufferedImage.getGraphics();
 		g.setColor(Color.GREEN);
 
@@ -121,8 +124,8 @@ public class CognitiveServicesClientTest {
 		Assert.assertTrue(result);
 
 		// load images
-		byte[] imageBytes1 = ImageHelper.loadResourceAsByteArray("bill-gates.jpg");
-		byte[] imageBytes2 = ImageHelper.loadResourceAsByteArray("bill-gates-2.jpg");
+		byte[] imageBytes1 = ImageHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates.jpg");
+		byte[] imageBytes2 = ImageHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates-2.jpg");
 
 		Optional<String> createPersonOptional =
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Bill Gates", "54");

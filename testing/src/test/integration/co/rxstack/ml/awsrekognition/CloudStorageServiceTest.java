@@ -7,6 +7,7 @@ import java.io.InputStream;
 
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.context.TestContext;
+
 import com.amazonaws.util.IOUtils;
 import com.google.common.collect.ImmutableMap;
 import org.junit.After;
@@ -27,21 +28,16 @@ public class CloudStorageServiceTest {
 	@Autowired
 	private ICloudStorageService cloudStorageService;
 
-	private File imageFile;
+	private InputStream imageInputStream;
 
 	@Before
 	public void setup() {
-		try {
-			imageFile = inputStream2File(getClass().getClassLoader().getResourceAsStream("bill-gates.jpg"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		imageInputStream = getClass().getClassLoader().getResourceAsStream("bill-gates.jpg");
 	}
 
 	@Test
 	public void testUploadImage() {
-		cloudStorageService
-			.uploadImage("mlstack", "index", "bill-gates.jpg", imageFile,
+		cloudStorageService.uploadImage("bill-gates.jpg", imageInputStream,
 				ImmutableMap.of("FullName", "Bill Gates"));
 	}
 

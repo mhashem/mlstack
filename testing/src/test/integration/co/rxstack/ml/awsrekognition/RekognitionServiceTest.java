@@ -10,6 +10,7 @@ import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ImageHelper;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,8 +36,8 @@ public class RekognitionServiceTest {
 
 	@Test
 	public void testCompareFacesHighSimilarity() throws IOException {
-		byte[] imageOneBytes = ImageHelper.loadResourceAsByteArray("bill-gates.jpg");
-		byte[] imageTwoBytes = ImageHelper.loadResourceAsByteArray("bill-gates-3.jpg");
+		byte[] imageOneBytes = ImageHelper.loadResourceAsByteArray(RekognitionServiceTest.class, "bill-gates.jpg");
+		byte[] imageTwoBytes = ImageHelper.loadResourceAsByteArray(RekognitionServiceTest.class, "bill-gates-3.jpg");
 		Optional<ComparisonResult> comparisonResult = rekognitionClient.compareFaces(imageOneBytes, imageTwoBytes);
 		Assert.assertTrue(comparisonResult.isPresent());
 		Assert.assertEquals(99, comparisonResult.get().getConfidence(), 5);
@@ -44,7 +45,7 @@ public class RekognitionServiceTest {
 
 	@Test
 	public void testDetectMultipleFaces() throws IOException {
-		InputStream inputStream = ImageHelper.loadImage("multiple-faces-700x420.jpg");
+		InputStream inputStream = ImageHelper.loadImage(RekognitionServiceTest.class, "multiple-faces-700x420.jpg");
 		List<FaceDetectionResult> faceDetectionResults = rekognitionClient.detect(ImageHelper.toByteArray(inputStream));
 		Assert.assertFalse(faceDetectionResults.isEmpty());
 		Assert.assertEquals(5, faceDetectionResults.size(), 1);

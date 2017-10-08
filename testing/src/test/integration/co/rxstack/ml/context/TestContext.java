@@ -8,6 +8,7 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import org.springframework.context.annotation.Bean;
@@ -19,14 +20,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class TestContext {
 
-	@Bean
-	public URI serviceUri() {
+	private static final String AWS_REGION = "eu-west-1";
+
+	@Bean("cognitiveServicesUri")
+	public URI cognitiveServicesUri() {
 		return URI.create("https://northeurope.api.cognitive.microsoft.com/face/v1.0");
 	}
 
 	@Bean
-	public ICognitiveServicesClient cognitiveServicesClient(URI serviceUri) {
-		return new CognitiveServicesClient(serviceUri, "8407dfc043ae486a8f36bff5034da21f");
+	public ICognitiveServicesClient cognitiveServicesClient(URI cognitiveServicesUri) {
+		return new CognitiveServicesClient(cognitiveServicesUri, "8407dfc043ae486a8f36bff5034da21f");
 	}
 
 	@Bean
@@ -37,12 +40,12 @@ public class TestContext {
 
 	@Bean
 	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
-		return new RekognitionClient(awsStaticCredentialsProvider);
+		return new RekognitionClient(AWS_REGION, awsStaticCredentialsProvider);
 	}
 
 	@Bean
 	public ICloudStorageService cloudStorageService(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
-		return new CloudStorageService(awsStaticCredentialsProvider);
+		return new CloudStorageService(AWS_REGION, "mlstack", "index", awsStaticCredentialsProvider);
 	}
 
 }

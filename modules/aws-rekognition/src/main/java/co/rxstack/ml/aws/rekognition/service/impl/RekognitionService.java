@@ -8,6 +8,7 @@ import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,4 +34,5 @@ public class RekognitionService implements IRekognitionService {
 	public List<FaceDetectionResult> detect(byte[] imageBytes) {
 		return rekognitionClient.detect(imageBytes);
 	}
+
 }

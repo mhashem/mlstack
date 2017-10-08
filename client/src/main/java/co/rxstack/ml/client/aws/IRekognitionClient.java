@@ -1,6 +1,5 @@
 package co.rxstack.ml.client.aws;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,5 +14,7 @@ public interface IRekognitionClient {
 	Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
+
+	List<FaceDetectionResult> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces);
 
 }
