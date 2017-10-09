@@ -43,7 +43,7 @@ public class AwsProperties {
 		this.s3 = s3;
 	}
 
-	private static class S3 {
+	public static class S3 {
 		
 		private String bucket;
 		private String bucketFolder;

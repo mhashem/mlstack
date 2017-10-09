@@ -13,7 +13,8 @@ import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
-
+import co.rxstack.ml.core.properties.AwsProperties;
+import co.rxstack.ml.core.properties.CognitiveServicesProperties;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,39 +27,37 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApplicationContext {
 
-	@Value("${cognitive-subscription-key}")
-	private String subscriptionKey;
-	@Value("${cognitive-service-url}")
-	private String cognitiveServiceUrl;
-	@Value("${aws-region}")
-	private String awsRegion;
-	@Value("${aws-access-key}")
-	private String awsAccessKey;
-	@Value("${aws-secret-key}")
-	private String awsSecretKey;
-	@Value("${aws-s3-bucket}")
-	private String awsS3Bucket;
-	@Value("${aws-s3-bucket-folder}")
-	private String awsS3BucketFolder;
-
 	@Bean
-	public URI cognitiveServicesUri() {
-		return URI.create(cognitiveServiceUrl);
+	public AwsProperties awsProperties() {
+		return new AwsProperties();
+	}
+	
+	@Bean
+	public CognitiveServicesProperties cognitiveServicesProperties() {
+		return new CognitiveServicesProperties();
+	}
+	
+	@Bean
+	public URI cognitiveServicesUri(CognitiveServicesProperties cognitiveServicesProperties) {
+		return URI.create(cognitiveServicesProperties.getServiceUrl());
 	}
 
 	@Bean
-	public ICognitiveServicesClient cognitiveServicesClient(URI cognitiveServicesUri) {
-		return new CognitiveServicesClient(cognitiveServicesUri, subscriptionKey);
+	public ICognitiveServicesClient cognitiveServicesClient(CognitiveServicesProperties cognitiveServicesProperties,
+		URI cognitiveServicesUri) {
+		return new CognitiveServicesClient(cognitiveServicesUri, cognitiveServicesProperties.getSubscriptionKey());
 	}
 
 	@Bean
-	public AWSStaticCredentialsProvider awsStaticCredentialsProvider() {
-		return new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsAccessKey, awsSecretKey));
+	public AWSStaticCredentialsProvider awsStaticCredentialsProvider(AwsProperties awsProperties) {
+		return new AWSStaticCredentialsProvider(
+			new BasicAWSCredentials(awsProperties.getAccessKey(), awsProperties.getSecretKey()));
 	}
 
 	@Bean
-	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
-		return new RekognitionClient(awsRegion, awsStaticCredentialsProvider);
+	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider,
+		AwsProperties awsProperties) {
+		return new RekognitionClient(awsProperties.getRegion(), awsStaticCredentialsProvider);
 	}
 
 	@Bean
@@ -72,8 +71,10 @@ public class ApplicationContext {
 	}
 
 	@Bean
-	public ICloudStorageService cloudStorageService(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
-		return new CloudStorageService(awsRegion, awsS3Bucket, awsS3BucketFolder, awsStaticCredentialsProvider);
+	public ICloudStorageService cloudStorageService(AWSStaticCredentialsProvider awsStaticCredentialsProvider,
+		AwsProperties awsProperties) {
+		return new CloudStorageService(awsProperties.getRegion(), awsProperties.getS3().getBucket(),
+			awsProperties.getS3().getBucketFolder(), awsStaticCredentialsProvider);
 	}
 
 	@Bean
