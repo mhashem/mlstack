@@ -1,4 +1,4 @@
-package co.rxstack.ml.core;
+package co.rxstack.ml.core.context;
 
 import java.net.URI;
 

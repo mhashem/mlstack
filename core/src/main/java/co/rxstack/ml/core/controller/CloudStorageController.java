@@ -1,4 +1,4 @@
-package co.rxstack.ml.core;
+package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
