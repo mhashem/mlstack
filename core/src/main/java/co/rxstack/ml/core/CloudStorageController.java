@@ -34,12 +34,12 @@ public class CloudStorageController {
 	}
 
 	@GetMapping("/api/v1/storage/ping")
-	public ResponseEntity<?> ping() {
+	public ResponseEntity ping() {
 		return ResponseEntity.ok(ImmutableMap.of("status", "working", "time", LocalDateTime.now()));
 	}
 
 	@PostMapping("/api/v1/storage/image")
-	public ResponseEntity<?> uploadImage(
+	public ResponseEntity uploadImage(
 		@RequestParam("personName")
 			String personName,
 		@RequestParam("imageFile")

@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApplicationContext {
 
-	@Value("${subscription-key}")
+	@Value("${cognitive-subscription-key}")
 	private String subscriptionKey;
 	@Value("${cognitive-service-url}")
 	private String cognitiveServiceUrl;
