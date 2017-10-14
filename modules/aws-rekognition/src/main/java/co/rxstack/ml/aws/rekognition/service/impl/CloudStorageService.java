@@ -3,11 +3,16 @@ package co.rxstack.ml.aws.rekognition.service.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -31,6 +36,7 @@ public class CloudStorageService implements ICloudStorageService {
 	private String folder;
 	private String bucketName;
 	private AmazonS3 amazonS3;
+	private AmazonDynamoDB amazonDynamoDB;
 
 	@Autowired
 	public CloudStorageService(String awsRegion, String bucketName, String folder,
@@ -39,6 +45,9 @@ public class CloudStorageService implements ICloudStorageService {
 		this.folder = folder;
 		amazonS3 = AmazonS3ClientBuilder.standard().withRegion(Regions.fromName(awsRegion))
 			.withCredentials(awsStaticCredentialsProvider).build();
+		amazonDynamoDB =
+			AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).withCredentials(awsStaticCredentialsProvider)
+				.build();
 	}
 
 	@Override
@@ -77,4 +86,11 @@ public class CloudStorageService implements ICloudStorageService {
 		amazonS3.deleteObject(bucketName, folder + "/" + fileName);
 	}
 
+	@Override
+	public Map<String, String> getCloudIndexFaceIds(String tableName) {
+		ScanRequest scanRequest = new ScanRequest().withTableName(tableName);
+		ScanResult result = amazonDynamoDB.scan(scanRequest);
+		return result.getItems().stream()
+			.collect(Collectors.toMap(s -> s.get("RekognitionId").getS(), s -> s.get("FullName").getS()));
+	}
 }

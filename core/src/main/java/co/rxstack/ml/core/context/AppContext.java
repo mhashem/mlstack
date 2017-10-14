@@ -7,25 +7,53 @@ import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
+import co.rxstack.ml.client.IStackClient;
+import co.rxstack.ml.client.StackClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
+import co.rxstack.ml.core.factory.AuthRequestInterceptor;
 import co.rxstack.ml.core.properties.AwsProperties;
 import co.rxstack.ml.core.properties.CognitiveServicesProperties;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.google.common.collect.ImmutableList;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * @author mhachem on 9/27/2017.
  */
 @Configuration
-public class ApplicationContext {
+public class AppContext {
+
+	@Value("${client.endpoint}")
+	private String clientEndpoint;
+	@Value("${client.endpoint.username}")
+	private String clientEndpointUsername;
+	@Value("${client.endpoint.password}")
+	private String clientEndpointPassword;
+
+	@Qualifier("stackClientRestTemplate")
+	@Bean
+	public RestTemplate stackClientRestTemplate() {
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.setInterceptors(ImmutableList
+			.of(new AuthRequestInterceptor(clientEndpoint, clientEndpointUsername, clientEndpointPassword)));
+		return restTemplate;
+	}
+
+	@Bean
+	public IStackClient stackClient(RestTemplate stackClientRestTemplate) {
+		return new StackClient(stackClientRestTemplate, clientEndpoint);
+	}
 
 	@Bean
 	public AwsProperties awsProperties() {

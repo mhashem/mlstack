@@ -52,16 +52,14 @@ public class CloudStorageServiceTest {
 		cloudStorageService.deleteObject("Foo.jpg");
 	}
 
+	@Test
+	public void testGetCloudIndexFaceIds() {
+		cloudStorageService.getCloudIndexFaceIds("employee_collection");
+	}
+
 	@After
 	public void cleanup() {
 		cloudStorageService.deleteObject(testPersonName);
 	}
 
-	/*private File inputStream2File(InputStream in) throws IOException {
-		File tempFile = File.createTempFile("test-image", "jpg");
-		tempFile.deleteOnExit();
-		FileOutputStream out = new FileOutputStream(tempFile);
-		IOUtils.copy(in, out);
-		return tempFile;
-	}*/
 }
