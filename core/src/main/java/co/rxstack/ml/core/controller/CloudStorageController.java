@@ -40,13 +40,13 @@ public class CloudStorageController {
 
 	@PostMapping("/api/v1/storage/image")
 	public ResponseEntity uploadImage(
-		@RequestParam("personName")
-			String personName,
+		@RequestParam("cloudIndexIdentifier")
+			String cloudIndexIdentifier,
 		@RequestParam("imageFile")
 			MultipartFile imageFile) {
 		log.info("intercepted upload image request");
 		try {
-			cloudStorageService.uploadPersonFaceImage(personName, imageFile.getInputStream());
+			cloudStorageService.uploadPersonFaceImage(cloudIndexIdentifier, imageFile.getInputStream());
 			return ResponseEntity.ok(ImmutableMap.of("message", "uploaded successfully"));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
