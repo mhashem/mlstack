@@ -31,7 +31,7 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 	private String serviceUrl;
 	private ObjectMapper objectMapper = new ObjectMapper();
 
-	private LoadingCache<String, String> tokenCache;
+	private LoadingCache<String, String> tokenLoadingCache;
 
 	public AuthRequestInterceptor(String serviceUrl, String username, String password) {
 		this.username = username;
@@ -41,8 +41,9 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 	}
 
 	private void buildCache() {
-		tokenCache = CacheBuilder.newBuilder()
-			.refreshAfterWrite(120, TimeUnit.MINUTES)
+		log.debug("Building token cache");
+		tokenLoadingCache = CacheBuilder.newBuilder()
+			.refreshAfterWrite(120, TimeUnit.MINUTES) // every 2 hours
 			.maximumSize(10)
 			.build(new CacheLoader<String, String>() {
 				@Override
@@ -58,12 +59,14 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 							.body(objectMapper.writeValueAsString(params))
 							.asJson();
 						if (response.getStatus() == 200) {
-							return response.getBody().getObject().getString(key);
+							String token = response.getBody().getObject().getString(key);
+							log.debug("Caching {} with value {}", key, token);
+							return token;
 						}
 					} catch (UnirestException | JSONException e) {
 						log.error(e.getMessage(), e);
 					}
-					throw new IllegalStateException("Failed to obtain id_token from authorization endpoint");
+					throw new IllegalStateException("Failed to obtain " + key + " from authorization endpoint");
 				}
 			});
 	}
@@ -72,7 +75,8 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 	public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
 		throws IOException {
 		try {
-			request.getHeaders().add("Authorization", "Bearer " + tokenCache.get("id_token"));
+			log.debug("Retrieving id_token from cache");
+			request.getHeaders().add("Authorization", "Bearer " + tokenLoadingCache.get("id_token"));
 		} catch (ExecutionException e) {
 			log.error(e.getMessage(), e);
 		}

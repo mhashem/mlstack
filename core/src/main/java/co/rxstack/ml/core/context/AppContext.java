@@ -24,6 +24,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +34,9 @@ import org.springframework.web.client.RestTemplate;
  */
 @Configuration
 public class AppContext {
+
+	@Value("${client.service.name}")
+	private String clientServiceName;
 
 	@Value("${client.endpoint}")
 	private String clientEndpoint;
@@ -51,8 +55,8 @@ public class AppContext {
 	}
 
 	@Bean
-	public IStackClient stackClient(RestTemplate stackClientRestTemplate) {
-		return new StackClient(stackClientRestTemplate, clientEndpoint);
+	public IStackClient stackClient(RestTemplate stackClientRestTemplate, DiscoveryClient discoveryClient) {
+		return new StackClient(stackClientRestTemplate, discoveryClient, clientServiceName);
 	}
 
 	@Bean
