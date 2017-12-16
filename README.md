@@ -2,13 +2,14 @@
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
-### What is this repository for? ###
+### Quick summary ###
 
-* Quick summary
-* Version
+```mlstack``` is a backend service for machine learning basically face recognition services with multiple integrations 
+with Microsoft Cognitive Services, and Amazon Rekognition.
+
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### How do I get set up? ###
+### setup? ###
 
 * Summary of set up
 * Configuration
