@@ -1,6 +1,5 @@
 package co.rxstack.ml.aws.rekognition.lambda;
 
-import com.amazonaws.handlers.RequestHandler;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;

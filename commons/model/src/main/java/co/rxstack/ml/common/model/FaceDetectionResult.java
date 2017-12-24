@@ -8,6 +8,7 @@ public class FaceDetectionResult {
 	private String faceId;
 	private FaceRectangle faceRectangle;
 	private FaceAttributes faceAttributes;
+	private byte[] imageBytes;
 
 	public String getFaceId() {
 		return faceId;
@@ -31,6 +32,14 @@ public class FaceDetectionResult {
 
 	public void setFaceAttributes(FaceAttributes faceAttributes) {
 		this.faceAttributes = faceAttributes;
+	}
+
+	public byte[] getImageBytes() {
+		return imageBytes;
+	}
+
+	public void setImageBytes(byte[] imageBytes) {
+		this.imageBytes = imageBytes;
 	}
 
 	@Override

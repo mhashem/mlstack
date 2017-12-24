@@ -12,7 +12,7 @@ import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.context.TestContext;
-import co.rxstack.ml.utils.ImageHelper;
+import co.rxstack.ml.utils.ResourceHelper;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -43,13 +43,16 @@ public class RekognitionServiceTest {
 	public void setup() throws IOException {
 		Class clazz = RekognitionServiceTest.class;
 		imageBytesMap = new HashMap<>();
-		imageBytesMap.put("lee-1", ImageHelper.loadResourceAsByteArray(clazz, "lee-1.jpg"));
-		imageBytesMap.put("lee-2", ImageHelper.loadResourceAsByteArray(clazz, "lee-2.jpg"));
-		imageBytesMap.put("lee-3", ImageHelper.loadResourceAsByteArray(clazz, "lee-3.jpg"));
-		imageBytesMap.put("multiple-faces-1", ImageHelper.loadResourceAsByteArray(clazz, "multiple-faces-700x420.jpg"));
+		imageBytesMap.put("lee-1", ResourceHelper.loadResourceAsByteArray(clazz, "lee-1.jpg"));
+		imageBytesMap.put("lee-2", ResourceHelper.loadResourceAsByteArray(clazz, "lee-2.jpg"));
+		imageBytesMap.put("lee-3", ResourceHelper.loadResourceAsByteArray(clazz, "lee-3.jpg"));
+		imageBytesMap.put("multiple-faces-1", ResourceHelper.loadResourceAsByteArray(clazz, "multiple-faces-700x420.jpg"));
+		imageBytesMap.put("mhmd", ResourceHelper.loadResourceAsByteArray(clazz, "mhmd.jpg"));
+		imageBytesMap.put("mhmd-test", ResourceHelper.loadResourceAsByteArray(clazz, "mhmd_test.png"));
 
-		cloudStorageService.uploadPersonFaceImage("lee-1", ImageHelper.bytes2InputStream(imageBytesMap.get("lee-1")));
-		cloudStorageService.uploadPersonFaceImage("lee-2", ImageHelper.bytes2InputStream(imageBytesMap.get("lee-2")));
+		cloudStorageService.uploadPersonFaceImage("lee-1", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-1")));
+		cloudStorageService.uploadPersonFaceImage("lee-2", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-2")));
+		cloudStorageService.uploadPersonFaceImage("mhmd", ResourceHelper.bytes2InputStream(imageBytesMap.get("mhmd")));
 	}
 
 	@Test
@@ -73,10 +76,17 @@ public class RekognitionServiceTest {
 		Assert.assertFalse(candidateList.isEmpty());
 	}
 
+	@Test
+	public void testSearchFacesByImage2() {
+		List<Candidate> candidateList = rekognitionClient.searchFacesByImage(COLLECTION_ID, imageBytesMap.get("mhmd-test"), 2);
+		candidateList.forEach(candidate -> Assert.assertTrue(candidate.getConfidence() > 80.0f));
+	}
+
 	@After
 	public void cleanup() {
 		cloudStorageService.deleteObject("lee-1.jpg");
 		cloudStorageService.deleteObject("lee-2.jpg");
+		cloudStorageService.deleteObject("mhmd_test.png");
 	}
 
 }

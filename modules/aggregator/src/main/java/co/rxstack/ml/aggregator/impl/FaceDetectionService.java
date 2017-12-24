@@ -1,9 +1,11 @@
-package co.rxstack.ml.aggregator;
+package co.rxstack.ml.aggregator.impl;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import co.rxstack.ml.aggregator.IOpenCVService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.FaceDetectionResult;
@@ -19,28 +21,41 @@ import org.springframework.stereotype.Service;
  * @author mhachem on 9/29/2017.
  */
 @Service
-public class ResultAggregatorService {
+public class FaceDetectionService {
 
-	private static final Logger log = LoggerFactory.getLogger(ResultAggregatorService.class);
+	private static final Logger log = LoggerFactory.getLogger(FaceDetectionService.class);
 
+	private IOpenCVService openCVService;
 	private ICognitiveService cognitiveService;
 	private IRekognitionService rekognitionService;
 
 	@Autowired
-	public ResultAggregatorService(IRekognitionService rekognitionService, ICognitiveService cognitiveService) {
-
+	public FaceDetectionService(IOpenCVService openCVService, IRekognitionService rekognitionService,
+		ICognitiveService cognitiveService) {
+		Preconditions.checkNotNull(openCVService);
 		Preconditions.checkNotNull(rekognitionService);
 		Preconditions.checkNotNull(cognitiveService);
-
+		this.openCVService = openCVService;
 		this.rekognitionService = rekognitionService;
 		this.cognitiveService = cognitiveService;
+	}
+
+	public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {
+		try {
+			List<byte[]> detectedFaces = openCVService.detectFaces(imageBytes);
+			List<List<FaceDetectionResult>> lists =
+				detectedFaces.stream().map(bytes -> aggregateResult(imageBytes)).collect(Collectors.toList());
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return Optional.empty();
 	}
 
 	// todo more tests!
 	public Optional<String> saveAndIndexImages(String personName, byte[] imageBytes) {
 		String personGroupId = "employee_collection";
 		cognitiveService.createPersonGroup(personGroupId, "Employee Collection");
-		Optional<String> idOptional = cognitiveService.createPerson(personGroupId, personName, "");
+		Optional<String> idOptional = cognitiveService.createPerson(personGroupId, personName, "Test Person");
 		if (idOptional.isPresent()) {
 			for (FaceDetectionResult faceDetectionResult : cognitiveService.detect(imageBytes)) {
 				String personId = idOptional.get();
@@ -61,7 +76,11 @@ public class ResultAggregatorService {
 		return Optional.empty();
 	}
 
-	public List<FaceDetectionResult> aggregateResult() throws IOException {
+	private List<FaceDetectionResult> aggregateResult(byte[] imageBytes) {
+		rekognitionService
+			.searchFacesByImage("employee_collection", imageBytes, 1)
+			.stream().filter(candidate -> candidate.getConfidence() > 75.0f);
+		/*cognitiveService.identify()*/
 		return ImmutableList.of();
 	}
 }

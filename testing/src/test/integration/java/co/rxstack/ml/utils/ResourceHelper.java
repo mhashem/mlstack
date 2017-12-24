@@ -3,13 +3,16 @@ package co.rxstack.ml.utils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 
 import com.amazonaws.util.IOUtils;
 
 /**
  * @author mhachem on 10/2/2017.
  */
-public class ImageHelper {
+public class ResourceHelper {
 
 	public static byte[] loadResourceAsByteArray(Class clazz, String imageName) throws IOException {
 		return toByteArray(loadImage(clazz, imageName));
@@ -25,6 +28,11 @@ public class ImageHelper {
 
 	public static InputStream bytes2InputStream(byte[] imageBytes) {
 		return new ByteArrayInputStream(imageBytes);
+	}
+
+	public static String getFullPath(Class clazz, String fileName) throws URISyntaxException {
+		URL url = clazz.getClassLoader().getResource(fileName);
+		return Paths.get(url.toURI()).toFile().getAbsolutePath();
 	}
 
 }

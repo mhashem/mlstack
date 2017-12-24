@@ -1,7 +1,9 @@
 package co.rxstack.ml.cognitiveservices.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
@@ -13,6 +15,7 @@ import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,10 +31,13 @@ public class CognitiveService implements ICognitiveService {
 
 	private ICognitiveServicesClient cognitiveServicesClient;
 
+	private Map<String, String> faceIdsCacheMap;
+
 	@Autowired
-	public CognitiveService(ICognitiveServicesClient cognitiveServicesClient) {
+	public CognitiveService(String personGroupId, ICognitiveServicesClient cognitiveServicesClient) {
 		Preconditions.checkNotNull(cognitiveServicesClient);
 		this.cognitiveServicesClient = cognitiveServicesClient;
+		this.faceIdsCacheMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -82,5 +88,9 @@ public class CognitiveService implements ICognitiveService {
 		double confidenceThreshold) {
 		log.info("Identifying person in person group {} for each faceId in {}", personGroupId, faceIds);
 		return cognitiveServicesClient.identify(personGroupId, faceIds, maxCandidates, confidenceThreshold);
+	}
+
+	public Map<String, String> getFaceIdsCacheMap() {
+		return ImmutableMap.copyOf(faceIdsCacheMap);
 	}
 }

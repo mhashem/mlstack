@@ -31,8 +31,9 @@ public class FaceIndexSyncJob {
 		this.cloudStorageService = cloudStorageService;
 		this.stackClient = stackClient;
 		this.stopwatch = Stopwatch.createUnstarted();
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		executor.scheduleAtFixedRate(this::execute, 10000, 60000, TimeUnit.MILLISECONDS);
+		// FIXME job stopped!
+		//ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		//executor.scheduleAtFixedRate(this::execute, 10000, 60000, TimeUnit.MILLISECONDS);
 	}
 
 	private void execute() {
@@ -42,8 +43,6 @@ public class FaceIndexSyncJob {
 			log.info("Fired FaceIndexSyncJob to get indexed facesIds");
 			Map<String, String> cloudIndexFaceIds = cloudStorageService.getCloudIndexFaceIds(tableName);
 			log.info("Found {} indexed facesIds", cloudIndexFaceIds.size());
-			stackClient.pushIndexedFacesIds(cloudIndexFaceIds);
-			log.info("Pushed indexed facesIds successfully in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 			if (!cloudIndexFaceIds.isEmpty()) {
 				boolean isPushed = stackClient.pushIndexedFacesIds(cloudIndexFaceIds);
 				if (isPushed) {

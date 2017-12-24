@@ -1,7 +1,6 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,18 +31,13 @@ public class CloudStorageController {
 		this.cloudStorageService = cloudStorageService;
 	}
 
-	@GetMapping("/api/v1/storage/ping")
-	public ResponseEntity ping() {
-		return ResponseEntity.ok(ImmutableMap.of("status", "working", "time", LocalDateTime.now()));
-	}
-
 	@PostMapping("/api/v1/storage/image")
 	public ResponseEntity uploadImage(
 		@RequestParam("cloudIndexIdentifier")
 			String cloudIndexIdentifier,
 		@RequestParam("imageFile")
 			MultipartFile imageFile) {
-		log.info("intercepted upload image request");
+		log.info("Intercepted upload image request");
 		try {
 			cloudStorageService.uploadPersonFaceImage(cloudIndexIdentifier, imageFile.getInputStream());
 			return ResponseEntity.ok(ImmutableMap.of("message", "uploaded successfully"));
