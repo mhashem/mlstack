@@ -25,6 +25,7 @@ import com.amazonaws.services.rekognition.model.ComparedFace;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.IndexFacesResult;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageRequest;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageResult;
 import com.google.common.base.Preconditions;
@@ -111,6 +112,11 @@ public class RekognitionClient implements IRekognitionClient {
 			log.error(e.getMessage(), e);
 		}
 		return ImmutableList.of();
+	}
+
+	@Override
+	public IndexFacesResult indexFace(byte[] imaBytes) {
+		return null;
 	}
 
 	@Override

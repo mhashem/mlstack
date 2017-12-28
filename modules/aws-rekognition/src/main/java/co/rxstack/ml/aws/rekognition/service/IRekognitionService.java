@@ -16,6 +16,8 @@ public interface IRekognitionService {
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
 
+	Optional<String> indexFace(byte[] imageBytes);
+	
 	/**
 	 * @param collectionId {@link String}
 	 * @param imageBytes {byte[]} The following is a list of limits in Amazon Rekognition:

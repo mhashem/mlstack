@@ -55,7 +55,7 @@ public class OpenCVService implements IOpenCVService {
 			return buffer;
 		}).collect(Collectors.toList());
 	}
-
+	
 	private Mat bufferedImageToMat(BufferedImage image) throws IOException {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		ImageIO.write(image, "jpg", byteArrayOutputStream);
