@@ -14,6 +14,8 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
 
+import com.amazonaws.services.rekognition.model.FaceRecord;
+import com.amazonaws.services.rekognition.model.IndexFacesResult;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,7 +30,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestContext.class)
-public class RekognitionServiceTest {
+public class RekognitionClientTest {
 
 	private static final String COLLECTION_ID = "employee_collection";
 
@@ -41,7 +43,7 @@ public class RekognitionServiceTest {
 
 	@Before
 	public void setup() throws IOException {
-		Class clazz = RekognitionServiceTest.class;
+		Class clazz = RekognitionClientTest.class;
 		imageBytesMap = new HashMap<>();
 		imageBytesMap.put("lee-1", ResourceHelper.loadResourceAsByteArray(clazz, "lee-1.jpg"));
 		imageBytesMap.put("lee-2", ResourceHelper.loadResourceAsByteArray(clazz, "lee-2.jpg"));
@@ -80,6 +82,16 @@ public class RekognitionServiceTest {
 	public void testSearchFacesByImage2() {
 		List<Candidate> candidateList = rekognitionClient.searchFacesByImage(COLLECTION_ID, imageBytesMap.get("mhmd-test"), 2);
 		candidateList.forEach(candidate -> Assert.assertTrue(candidate.getConfidence() > 80.0f));
+	}
+
+	@Test
+	public void testIndexFace() {
+		Optional<IndexFacesResult> indexFacesResultOptional =
+			rekognitionClient.indexFace(COLLECTION_ID, imageBytesMap.get("lee-1"));
+		Assert.assertTrue(indexFacesResultOptional.isPresent());
+		IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
+		FaceRecord faceRecord = indexFacesResult.getFaceRecords().get(0);
+		Assert.assertNotNull(faceRecord.getFace().getFaceId());
 	}
 
 	@After

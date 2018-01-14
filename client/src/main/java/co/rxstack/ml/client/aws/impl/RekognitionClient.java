@@ -25,6 +25,7 @@ import com.amazonaws.services.rekognition.model.ComparedFace;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.IndexFacesRequest;
 import com.amazonaws.services.rekognition.model.IndexFacesResult;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageRequest;
 import com.amazonaws.services.rekognition.model.SearchFacesByImageResult;
@@ -115,11 +116,6 @@ public class RekognitionClient implements IRekognitionClient {
 	}
 
 	@Override
-	public IndexFacesResult indexFace(byte[] imaBytes) {
-		return null;
-	}
-
-	@Override
 	public List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
 
 		Preconditions.checkNotNull(collectionId);
@@ -135,6 +131,15 @@ public class RekognitionClient implements IRekognitionClient {
 		return searchResult.getFaceMatches().stream()
 			.map(faceMatch -> new Candidate(faceMatch.getFace().getFaceId(), faceMatch.getSimilarity()))
 			.collect(Collectors.toList());
+	}
+
+	@Override
+	public Optional<IndexFacesResult> indexFace(String collectionId, byte[] imageBytes) {
+		Preconditions.checkArgument(imageBytes.length > 0);
+		IndexFacesRequest indexFacesRequest = new IndexFacesRequest();
+		indexFacesRequest.setCollectionId(collectionId);
+		indexFacesRequest.setImage(byteArrayToImage(imageBytes));
+		return Optional.ofNullable(amazonRekognition.indexFaces(indexFacesRequest));
 	}
 
 	private Image byteArrayToImage(byte[] imageBytes) {

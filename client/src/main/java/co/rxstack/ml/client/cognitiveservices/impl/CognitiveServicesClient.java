@@ -13,7 +13,7 @@ import co.rxstack.ml.common.model.FaceIdentificationRequest;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -196,20 +196,25 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 		try {
 			if (imageBytes.length > 0) {
-				HttpRequestWithBody httpRequest =
-					Unirest.post(uri.toString())
-						.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
-						.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
 
 				if (faceRectangle != null) {
-					httpRequest = httpRequest.queryString("targetFace", faceRectangle.encodeAsQueryParam());
+					uri = UriComponentsBuilder.fromUri(uri)
+						.queryParam("targetFace", faceRectangle.encodeAsQueryParam())
+						.build().toUri();
 				}
 
-				HttpResponse<JsonNode> response = httpRequest.body(imageBytes).asJson();
+				HttpResponse<JsonNode> response = Unirest
+					.post(uri.toString())
+					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+					.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
+					.body(imageBytes)
+					.asJson();
 
 				if (response.getStatus() == HttpStatus.SC_OK) {
 					return Optional.ofNullable(response.getBody().getObject()
 						.get("persistedFaceId").toString());
+				} else {
+					log.error("Error adding person face: {}", response.getBody().toString());
 				}
 			}
 

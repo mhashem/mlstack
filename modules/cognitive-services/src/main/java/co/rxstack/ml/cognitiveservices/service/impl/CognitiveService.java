@@ -34,7 +34,7 @@ public class CognitiveService implements ICognitiveService {
 	private Map<String, String> faceIdsCacheMap;
 
 	@Autowired
-	public CognitiveService(String personGroupId, ICognitiveServicesClient cognitiveServicesClient) {
+	public CognitiveService(ICognitiveServicesClient cognitiveServicesClient) {
 		Preconditions.checkNotNull(cognitiveServicesClient);
 		this.cognitiveServicesClient = cognitiveServicesClient;
 		this.faceIdsCacheMap = new ConcurrentHashMap<>();

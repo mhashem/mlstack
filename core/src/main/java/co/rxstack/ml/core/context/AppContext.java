@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 
+import co.rxstack.ml.aggregator.IOpenCVService;
 import co.rxstack.ml.aggregator.impl.FaceDetectionService;
 import co.rxstack.ml.aggregator.impl.OpenCVService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
@@ -27,6 +28,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
+import org.bytedeco.javacpp.opencv_core;
 import org.opencv.objdetect.CascadeClassifier;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -117,8 +119,8 @@ public class AppContext {
 
 	@Bean
 	public FaceDetectionService resultAggregatorService(IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService) {
-		return new FaceDetectionService(rekognitionService, cognitiveService);
+		ICognitiveService cognitiveService, IOpenCVService openCVService) {
+		return new FaceDetectionService(openCVService, rekognitionService, cognitiveService);
 	}
 
 	@Bean
@@ -131,7 +133,7 @@ public class AppContext {
 	}
 
 	@Bean
-	public OpenCVService openCVService(CascadeClassifier faceDetector) {
+	public IOpenCVService openCVService(CascadeClassifier faceDetector) {
 		return new OpenCVService(faceDetector);
 	}
 	

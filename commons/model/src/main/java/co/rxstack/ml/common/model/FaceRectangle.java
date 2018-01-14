@@ -56,7 +56,7 @@ public class FaceRectangle {
 	}
 
 	public String encodeAsQueryParam() {
-		return String.format(Locale.getDefault(), "%.2f,%.2f,%.2f,%.2f", left, top, width, height);
+		return String.format(Locale.getDefault(), "%f,%f,%f,%f", left, top, height, width);
 	}
 
 	@Override

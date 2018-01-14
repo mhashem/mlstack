@@ -13,12 +13,15 @@ import java.util.Optional;
 import javax.imageio.ImageIO;
 
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -119,7 +122,26 @@ public class CognitiveServicesClientTest {
 	}
 
 	@Test
+	public void testAddPersonFace() throws IOException {
+		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
+		Assert.assertTrue(result);
+		Optional<String> fooIdOptional = cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
+		Assert.assertTrue(fooIdOptional.isPresent());
+
+		byte[] imageBytes = ResourceHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates.jpg");
+
+		List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(imageBytes);
+		faceDetectionResults.forEach(faceDetectionResult -> {
+			Optional<String> personFaceOptional = cognitiveServicesClient
+				.addPersonFace(validPersonGroupId, fooIdOptional.get(), faceDetectionResult.getFaceRectangle(),
+					imageBytes);
+			Assert.assertTrue(personFaceOptional.isPresent());
+		});
+	}
+
+	@Test
 	public void testDoCompleteCycle() throws IOException, InterruptedException {
+		// 1 create person group
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
 
@@ -127,13 +149,17 @@ public class CognitiveServicesClientTest {
 		byte[] imageBytes1 = ResourceHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates.jpg");
 		byte[] imageBytes2 = ResourceHelper
 			.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates-2.jpg");
+		byte[] testImageBytes =
+			ResourceHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates-4.jpg");
 
+		// 2 create person
 		Optional<String> createPersonOptional =
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Bill Gates", "54");
 
 		if (createPersonOptional.isPresent()) {
 			System.out.println("Created person");
 
+			// 3 detect faces
 			List<FaceDetectionResult> faceDetectionResults1 = cognitiveServicesClient.detect(imageBytes1);
 			List<FaceDetectionResult> faceDetectionResults2 = cognitiveServicesClient.detect(imageBytes2);
 
@@ -149,10 +175,29 @@ public class CognitiveServicesClientTest {
 			if (persistedFaceIdOptional1.isPresent() && persistedFaceIdOptional2.isPresent()) {
 				result = cognitiveServicesClient.trainPersonGroup(validPersonGroupId);
 				Assert.assertTrue(result);
-			}
 
-			System.out.println("Training person group please wait...");
-			Thread.sleep(10000L);
+				System.out.println("Training person group please wait...");
+				Thread.sleep(10000L);
+
+				List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(testImageBytes);
+				Assert.assertTrue(!faceDetectionResults.isEmpty());
+
+				Optional<String> faceIdOptional =
+					faceDetectionResults.stream().map(FaceDetectionResult::getFaceId).findAny();
+
+				faceIdOptional.ifPresent(faceId -> {
+					List<FaceIdentificationResult> faceIdentificationResults =
+						cognitiveServicesClient.identify(validPersonGroupId, ImmutableList.of(faceId), 1, 75);
+					faceIdentificationResults.forEach(faceIdentificationResult -> {
+						Optional<Candidate> candidateBestMatch = faceIdentificationResult.getCandidateBestMatch();
+						if (candidateBestMatch.isPresent()) {
+							System.out.println("########################################");
+							System.out.println(candidateBestMatch.get().getConfidence());
+							System.out.println("########################################");
+						}
+					});
+				});
+			}
 		}
 	}
 

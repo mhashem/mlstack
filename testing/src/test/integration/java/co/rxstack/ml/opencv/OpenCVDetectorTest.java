@@ -50,7 +50,7 @@ public class OpenCVDetectorTest {
 		MatOfRect faceDetections = new MatOfRect();
 		faceDetector.detectMultiScale(image, faceDetections);
 		System.out
-			.printf("detected %d in %dms", faceDetections.toArray().length, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+			.printf("-------> detected %d faces in %dms\n", faceDetections.toArray().length, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
 		int i = 0;
 		for (Rect rect : faceDetections.toList()) {
