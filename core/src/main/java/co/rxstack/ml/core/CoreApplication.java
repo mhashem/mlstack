@@ -20,6 +20,5 @@ public class CoreApplication implements CommandLineRunner {
 	@Override
 	public void run(String... strings) throws Exception {
 		// add any dependencies needed at start!
-		// todo add more metrics later
 	}
 }
