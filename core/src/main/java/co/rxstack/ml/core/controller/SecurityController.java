@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.common.model.Candidate;
 
@@ -33,6 +35,29 @@ public class SecurityController {
 	@Autowired
 	public SecurityController(IRekognitionService rekognitionService) {
 		this.rekognitionService = rekognitionService;
+	}
+
+	@PostMapping("/api/v1/security/index")
+	public ResponseEntity<?> indexFace(
+		@RequestParam("collectionId")
+			String collectionId,
+		@RequestParam("faceImage")
+			MultipartFile faceImage, HttpServletResponse response) {
+		log.info("Intercepted: index face request");
+
+		Preconditions.checkNotNull(collectionId);
+		Preconditions.checkNotNull(faceImage);
+		try {
+			List<FaceIndexingResult> faceIndexingResults =
+				rekognitionService.indexFaces(collectionId, faceImage.getBytes());
+			return ResponseEntity.ok(ImmutableMap.of("indexing_results", faceIndexingResults));
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+			// todo check what is best practice in such case!
+			//return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("");
+		}
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(ImmutableMap.of("message", "no face(s) found to index!"));
 	}
 
 	@PostMapping("/api/v1/security/recognition")
