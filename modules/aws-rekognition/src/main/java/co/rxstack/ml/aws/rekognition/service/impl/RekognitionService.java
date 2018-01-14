@@ -61,11 +61,6 @@ public class RekognitionService implements IRekognitionService {
 	}
 
 	@Override
-	public Optional<String> indexFace(byte[] imageBytes) {
-		return Optional.empty();
-	}
-
-	@Override
 	public List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
 		log.info("Searching faces {} by image [maxFaces: {}]", collectionId, maxFaces);
 		return rekognitionClient.searchFacesByImage(collectionId, imageBytes, maxFaces);

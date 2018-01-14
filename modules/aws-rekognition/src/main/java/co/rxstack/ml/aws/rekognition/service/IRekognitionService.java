@@ -3,6 +3,7 @@ package co.rxstack.ml.aws.rekognition.service;
 import java.util.List;
 import java.util.Optional;
 
+import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;

@@ -18,8 +18,6 @@ public interface IRekognitionClient {
 	Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
-	
-	IndexFacesResult indexFace(byte[] imaBytes);
 
 	List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces);
 

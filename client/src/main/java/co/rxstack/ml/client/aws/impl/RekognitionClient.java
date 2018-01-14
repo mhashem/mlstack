@@ -142,6 +142,8 @@ public class RekognitionClient implements IRekognitionClient {
 		return Optional.ofNullable(amazonRekognition.indexFaces(indexFacesRequest));
 	}
 
+
+
 	private Image byteArrayToImage(byte[] imageBytes) {
 		return new Image().withBytes(ByteBuffer.wrap(imageBytes));
 	}
