@@ -12,8 +12,8 @@ pipelines:
         caches:
           - maven
         script: # Modify the commands below to build your repository.
-          - mvn -B verify # -B batch mode makes Maven less verbose
-          - mvn clean install -U
+          #- mvn -B verify # -B batch mode makes Maven less verbose
+          #- mvn clean install -U
           # - mvn cobertura:cobertura # code quality
           # - bash <(curl -s https://codecov.io/bash) -t $CODECOV_API_KEY
           #- mvn test -P integration-tests
