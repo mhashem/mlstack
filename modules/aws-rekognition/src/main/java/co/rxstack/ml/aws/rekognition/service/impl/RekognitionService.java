@@ -57,7 +57,6 @@ public class RekognitionService implements IRekognitionService {
 	@Override
 	public List<FaceDetectionResult> detect(byte[] imageBytes) {
 		log.info("Detecting faces in image");
-
 		return rekognitionClient.detect(imageBytes);
 	}
 
