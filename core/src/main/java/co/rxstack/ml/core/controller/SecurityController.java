@@ -37,7 +37,7 @@ public class SecurityController {
 		this.rekognitionService = rekognitionService;
 	}
 
-	@PostMapping("/api/v1/security/index")
+	@PostMapping("/api/v1/security/faces/indexing")
 	public ResponseEntity<?> indexFace(
 		@RequestParam("collectionId")
 			String collectionId,
