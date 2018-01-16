@@ -14,6 +14,8 @@ import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
+import org.bytedeco.javacpp.opencv_imgcodecs;
+import org.opencv.core.MatOfByte;
 
 // import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
 // import static org.bytedeco.javacpp.opencv_face.createLBPHFaceRecognizer;

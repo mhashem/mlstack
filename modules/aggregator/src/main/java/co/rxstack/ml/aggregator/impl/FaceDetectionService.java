@@ -55,7 +55,7 @@ public class FaceDetectionService {
 	public Optional<String> saveAndIndexImages(String personName, byte[] imageBytes) {
 		String personGroupId = "employee_collection";
 		cognitiveService.createPersonGroup(personGroupId, "Employee Collection");
-		Optional<String> idOptional = cognitiveService.createPerson(personGroupId, personName, "Test Person");
+		Optional<String> idOptional = cognitiveService.createPerson(personGroupId, personName, "Test PredictionResult");
 		if (idOptional.isPresent()) {
 			for (FaceDetectionResult faceDetectionResult : cognitiveService.detect(imageBytes)) {
 				String personId = idOptional.get();

@@ -2,6 +2,7 @@ package co.rxstack.ml.aws.rekognition.service.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.util.IOUtils;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
