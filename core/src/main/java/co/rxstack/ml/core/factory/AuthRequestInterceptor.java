@@ -44,7 +44,7 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 		log.debug("Building token cache");
 		tokenLoadingCache = CacheBuilder.newBuilder()
 			.refreshAfterWrite(120, TimeUnit.MINUTES) // every 2 hours
-			.maximumSize(10)
+			.maximumSize(2)
 			.build(new CacheLoader<String, String>() {
 				@Override
 				public String load(String key) throws Exception {

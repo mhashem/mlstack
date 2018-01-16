@@ -33,10 +33,11 @@ public class StackClient implements IStackClient {
 	public boolean pushIndexedFacesIds(Map<String, String> indexedFacesIds) {
 		Optional<ServiceInstance> mlServiceOpt = discoveryClient.getInstances(serviceName).stream().findFirst();
 		if (mlServiceOpt.isPresent()) {
-			URI postUri =
-				UriComponentsBuilder.fromUri(mlServiceOpt.get().getUri()).path("/api/v1/person/faceIds").build()
+			URI postUri = UriComponentsBuilder.fromUri(mlServiceOpt.get().getUri())
+					.path("/api/v1/person/faceIds")
+					.build()
 					.toUri();
-			log.info("Pushing indexed faces-ids to stack client at {}", postUri.toString());
+			log.info("Pushing indexed faces-ids to stack client at {}", postUri);
 			restTemplate.postForEntity(postUri, indexedFacesIds, null);
 			log.info("Ids pushed successfully");
 			return true;

@@ -23,12 +23,10 @@ import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
 import co.rxstack.ml.core.properties.AwsProperties;
 import co.rxstack.ml.core.properties.CognitiveServicesProperties;
-
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
-import org.bytedeco.javacpp.opencv_core;
 import org.opencv.objdetect.CascadeClassifier;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;

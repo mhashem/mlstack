@@ -38,7 +38,7 @@ public class CloudStorageServiceTest {
 	public void testUploadImage() {
 		try {
 			int available = imageInputStream.available();
-			cloudStorageService.uploadPersonFaceImage(testPersonName, imageInputStream);
+			cloudStorageService.uploadImage(testPersonName, imageInputStream);
 			byte[] objectBytes = cloudStorageService.getObjectAsByteArray(testPersonName + ".jpg");
 			Assert.assertTrue(objectBytes.length > 0);
 			Assert.assertEquals(available, objectBytes.length, 10);

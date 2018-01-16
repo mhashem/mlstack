@@ -52,9 +52,9 @@ public class RekognitionClientTest {
 		imageBytesMap.put("mhmd", ResourceHelper.loadResourceAsByteArray(clazz, "mhmd.jpg"));
 		imageBytesMap.put("mhmd-test", ResourceHelper.loadResourceAsByteArray(clazz, "mhmd_test.png"));
 
-		cloudStorageService.uploadPersonFaceImage("lee-1", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-1")));
-		cloudStorageService.uploadPersonFaceImage("lee-2", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-2")));
-		cloudStorageService.uploadPersonFaceImage("mhmd", ResourceHelper.bytes2InputStream(imageBytesMap.get("mhmd")));
+		cloudStorageService.uploadImage("lee-1", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-1")));
+		cloudStorageService.uploadImage("lee-2", ResourceHelper.bytes2InputStream(imageBytesMap.get("lee-2")));
+		cloudStorageService.uploadImage("mhmd", ResourceHelper.bytes2InputStream(imageBytesMap.get("mhmd")));
 	}
 
 	@Test

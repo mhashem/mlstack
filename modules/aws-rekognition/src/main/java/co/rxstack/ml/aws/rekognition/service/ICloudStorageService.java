@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public interface ICloudStorageService {
 
-	void uploadPersonFaceImage(String personName, InputStream inputStream);
+	void uploadImage(String personName, InputStream inputStream);
 
 	void uploadImage(String uploadFileName, InputStream inputStream, Map<String, String> metaDataMap);
 

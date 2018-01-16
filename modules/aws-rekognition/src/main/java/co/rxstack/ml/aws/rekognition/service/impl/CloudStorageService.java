@@ -50,8 +50,13 @@ public class CloudStorageService implements ICloudStorageService {
 				.build();
 	}
 
+	/**
+	 * @param cloudIndexIdentifier
+	 * @param inputStream
+	 */
+	@Deprecated
 	@Override
-	public void uploadPersonFaceImage(String cloudIndexIdentifier, InputStream inputStream) {
+	public void uploadImage(String cloudIndexIdentifier, InputStream inputStream) {
 		log.info("Uploading person face image {}", cloudIndexIdentifier);
 		// todo change FullName in lambda
 		uploadImage(cloudIndexIdentifier + ".jpg", inputStream, ImmutableMap.of("FullName", cloudIndexIdentifier));

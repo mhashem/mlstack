@@ -39,7 +39,7 @@ public class CloudStorageController {
 			MultipartFile imageFile) {
 		log.info("Intercepted upload image request");
 		try {
-			cloudStorageService.uploadPersonFaceImage(cloudIndexIdentifier, imageFile.getInputStream());
+			cloudStorageService.uploadImage(cloudIndexIdentifier, imageFile.getInputStream());
 			return ResponseEntity.ok(ImmutableMap.of("message", "uploaded successfully"));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
