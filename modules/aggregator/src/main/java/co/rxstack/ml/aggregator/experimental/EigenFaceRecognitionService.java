@@ -1,16 +1,11 @@
 package co.rxstack.ml.aggregator.experimental;
 
-import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
 import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Map;
 
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
-
-import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
 
 public class EigenFaceRecognitionService implements IFaceRecognitionService {
