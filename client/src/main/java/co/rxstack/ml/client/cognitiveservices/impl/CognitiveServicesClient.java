@@ -13,7 +13,6 @@ import co.rxstack.ml.common.model.FaceIdentificationRequest;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -23,7 +22,6 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.mashape.unirest.request.HttpRequestWithBody;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -69,7 +67,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			.pathSegment(personGroupId).build().toUri();
 
 		try {
-			response =Unirest.put(uri.toString())
+			response = Unirest.put(uri.toString())
 				.header(ACCEPT_HEADER, APPLICATION_JSON)
 				.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
 				.header(CONTENT_TYPE, APPLICATION_JSON)
@@ -214,7 +212,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 					return Optional.ofNullable(response.getBody().getObject()
 						.get("persistedFaceId").toString());
 				} else {
-					log.error("Error adding person face: {}", response.getBody().toString());
+					log.error("Error adding person face: {}", response.getBody());
 				}
 			}
 
