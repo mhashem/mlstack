@@ -5,7 +5,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-import co.rxstack.ml.aggregator.IOpenCVService;
+import co.rxstack.ml.aggregator.IFaceDetectionService;
 import co.rxstack.ml.aggregator.impl.FaceDetectionService;
 import co.rxstack.ml.aggregator.impl.OpenCVService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
@@ -21,8 +21,8 @@ import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
-import co.rxstack.ml.core.properties.AwsProperties;
-import co.rxstack.ml.core.properties.CognitiveServicesProperties;
+import co.rxstack.ml.core.config.AwsProperties;
+import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.collect.ImmutableList;
@@ -117,7 +117,7 @@ public class AppContext {
 
 	@Bean
 	public FaceDetectionService resultAggregatorService(IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService, IOpenCVService openCVService) {
+		ICognitiveService cognitiveService, IFaceDetectionService openCVService) {
 		return new FaceDetectionService(openCVService, rekognitionService, cognitiveService);
 	}
 
@@ -131,7 +131,7 @@ public class AppContext {
 	}
 
 	@Bean
-	public IOpenCVService openCVService(CascadeClassifier faceDetector) {
+	public IFaceDetectionService openCVService(CascadeClassifier faceDetector) {
 		return new OpenCVService(faceDetector);
 	}
 	

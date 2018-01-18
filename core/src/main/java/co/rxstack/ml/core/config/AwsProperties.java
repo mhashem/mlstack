@@ -1,4 +1,4 @@
-package co.rxstack.ml.core.properties;
+package co.rxstack.ml.core.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

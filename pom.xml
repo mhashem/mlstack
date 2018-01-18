@@ -33,6 +33,7 @@
 		
 		<!-- dependency's versions -->
 		
+		<opencv.version>3.2.0-1</opencv.version>
 		<mashape.unirest.version>1.4.9</mashape.unirest.version>
 		<guava.version>23.0</guava.version>
 		<codahale.version>3.0.2</codahale.version>

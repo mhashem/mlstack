@@ -2,12 +2,10 @@ package co.rxstack.ml.aws.rekognition.service.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
-
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -19,7 +17,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.util.IOUtils;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
@@ -65,8 +62,7 @@ public class CloudStorageService implements ICloudStorageService {
 	}
 
 	@Override
-	public void uploadImage(String uploadedFileName, InputStream inputStream,
-		Map<String, String> metaDataMap) {
+	public void uploadImage(String uploadedFileName, InputStream inputStream, Map<String, String> metaDataMap) {
 		log.info("Uploading image to S3 Bucket {}", bucketName);
 		ObjectMetadata objectMetadata = new ObjectMetadata();
 		objectMetadata.setUserMetadata(metaDataMap);

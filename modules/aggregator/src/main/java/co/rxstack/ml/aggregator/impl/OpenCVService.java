@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.aggregator.IOpenCVService;
+import co.rxstack.ml.aggregator.IFaceDetectionService;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class OpenCVService implements IOpenCVService {
+public class OpenCVService implements IFaceDetectionService {
 
 	private static final Logger log = LoggerFactory.getLogger(OpenCVService.class);
 
