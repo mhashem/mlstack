@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import co.rxstack.ml.aggregator.IFaceDetectionService;
+import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.FaceDetectionResult;
@@ -23,14 +23,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class FaceDetectionService {
 
-	private static final Logger log = LoggerFactory.getLogger(OpenCVService.class);
+	private static final Logger log = LoggerFactory.getLogger(FaceExtractorService.class);
 
-	private IFaceDetectionService openCVService;
+	private IFaceExtractorService openCVService;
 	private ICognitiveService cognitiveService;
 	private IRekognitionService rekognitionService;
 
 	@Autowired
-	public FaceDetectionService(IFaceDetectionService openCVService, IRekognitionService rekognitionService,
+	public FaceDetectionService(IFaceExtractorService openCVService, IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService) {
 		Preconditions.checkNotNull(openCVService);
 		Preconditions.checkNotNull(rekognitionService);

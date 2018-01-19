@@ -20,14 +20,14 @@ import org.springframework.web.multipart.MultipartFile;
  * @author mhachem on 10/8/2017.
  */
 @RestController
-public class CloudStorageController {
+public class StorageController {
 
 	private static final Logger log = LoggerFactory.getLogger(CloudStorageService.class);
 
 	private final ICloudStorageService cloudStorageService;
 
 	@Autowired
-	public CloudStorageController(ICloudStorageService cloudStorageService) {
+	public StorageController(ICloudStorageService cloudStorageService) {
 		this.cloudStorageService = cloudStorageService;
 	}
 

@@ -10,6 +10,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +21,9 @@ import co.rxstack.ml.aggregator.experimental.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.experimental.model.PersonBundle;
 import co.rxstack.ml.aggregator.experimental.model.PersonBundleStatistics;
 import co.rxstack.ml.aggregator.experimental.model.PredictionResult;
+
 import com.google.common.base.Stopwatch;
+import org.bytedeco.javacpp.opencv_core.FileStorage;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
@@ -38,9 +43,12 @@ public class EigenFaceRecognitionService implements IFaceRecognitionService {
 
 	@Override
 	public void loadModel(String modelName) {
-		// todo pass byte pointer instead of modelName ! how can we load it?
 		faceRecognizer.load(modelName);
-		// todo use loader strategy class for multiple storage options
+	}
+
+	@Override
+	public void trainModel() {
+		trainModel(Paths.get(faceDBConfig.getFaceDbPath()));
 	}
 
 	@Override
@@ -59,7 +67,7 @@ public class EigenFaceRecognitionService implements IFaceRecognitionService {
 		logger.info("training new face recognizer model");
 
 		PersonBundleStatistics statistics = PersonBundleStatistics.fromBundle(personBundleList);
-		logger.info("Dataset statistics: {}", statistics);
+		logger.info("DataSet statistics: {}", statistics);
 
 		try (MatVector imagesMatVector = new MatVector(statistics.getImagesCount());
 			Mat labels = new Mat(statistics.getImagesCount(), 1, CV_32SC1)) {
@@ -80,14 +88,15 @@ public class EigenFaceRecognitionService implements IFaceRecognitionService {
 				logger.info("training face recognizer finished successfully in {} ms",
 					stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-				// todo save model to cloud or disk
-				// todo add storage service for this 
-				// todo save with name model_<date>.yml 
-				faceRecognizer.save("");
+				// todo add storage service for this
+				String modelName = "model_" + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + ".yml";
+				FileStorage cvStorage = new FileStorage();
+				cvStorage.open(faceDBConfig.getModelStoragePath() + "\\" + modelName, FileStorage.WRITE);
+				logger.info("saving trained model {} to {}", modelName, faceDBConfig.getModelStoragePath());
+				faceRecognizer.save(cvStorage);
+				cvStorage.release();
 			}
-
 		}
-
 	}
 
 	@Override
@@ -95,6 +104,10 @@ public class EigenFaceRecognitionService implements IFaceRecognitionService {
 		/*try (IntPointer label = new IntPointer(1); DoublePointer confidence = new DoublePointer(1)) {
 			faceRecognizer.predict(img2Mat(faceImage), label, confidence);
 		}*/
+
+		// 1. load model
+		// 2. predict
+		// 3. return result
 
 		return null;
 	}

@@ -34,7 +34,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class OpenCVDetectorTest {
 
 	@Autowired
-	private CascadeClassifier faceDetector;
+	private CascadeClassifier cascadeClassifier;
 
 	private InputStream imageStream;
 
@@ -48,7 +48,7 @@ public class OpenCVDetectorTest {
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		Mat image = BufferedImage2Mat(grayscale(ImageIO.read(imageStream)));
 		MatOfRect faceDetections = new MatOfRect();
-		faceDetector.detectMultiScale(image, faceDetections);
+		cascadeClassifier.detectMultiScale(image, faceDetections);
 		System.out
 			.printf("-------> detected %d faces in %dms\n", faceDetections.toArray().length, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 

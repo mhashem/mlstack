@@ -55,8 +55,7 @@ public class TestContext {
 	}
 
 	@Bean
-	@Qualifier("faceDetector")
-	public CascadeClassifier faceDetector() throws URISyntaxException {
+	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
 		OpenCV.loadShared();
 		// lbpcascade_frontalface.xml
 		return new CascadeClassifier(

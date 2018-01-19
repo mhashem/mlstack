@@ -11,6 +11,8 @@ public interface IFaceRecognitionService {
 
 	void loadModel(String modelName);
 
+	void trainModel();
+
 	void trainModel(Path dataSetPath);
 	
 	void trainModel(List<PersonBundle> personBundleList);

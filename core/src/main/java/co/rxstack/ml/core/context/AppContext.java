@@ -5,9 +5,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-import co.rxstack.ml.aggregator.IFaceDetectionService;
+import co.rxstack.ml.aggregator.IFaceExtractorService;
+import co.rxstack.ml.aggregator.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.experimental.EigenFaceRecognitionService;
+import co.rxstack.ml.aggregator.experimental.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.impl.FaceDetectionService;
-import co.rxstack.ml.aggregator.impl.OpenCVService;
+import co.rxstack.ml.aggregator.impl.FaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
@@ -20,9 +23,10 @@ import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
-import co.rxstack.ml.core.factory.AuthRequestInterceptor;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
+import co.rxstack.ml.core.factory.AuthRequestInterceptor;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.collect.ImmutableList;
@@ -50,6 +54,14 @@ public class AppContext {
 	private String clientEndpointUsername;
 	@Value("${client.endpoint.password}")
 	private String clientEndpointPassword;
+
+	@Value("${face.db.path}")
+	private String faceDBPath;
+	@Value("${face.directory.name.delimiter}")
+	private String faceDirectoryNameDelimiter;
+	@Value("${model.storage.path}")
+	private String modelStoragePath;
+
 
 	@Qualifier("stackClientRestTemplate")
 	@Bean
@@ -117,13 +129,12 @@ public class AppContext {
 
 	@Bean
 	public FaceDetectionService resultAggregatorService(IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService, IFaceDetectionService openCVService) {
+		ICognitiveService cognitiveService, IFaceExtractorService openCVService) {
 		return new FaceDetectionService(openCVService, rekognitionService, cognitiveService);
 	}
 
 	@Bean
-	@Qualifier("faceDetector")
-	public CascadeClassifier faceDetector() throws URISyntaxException {
+	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
 		OpenCV.loadShared();
 		// lbpcascade_frontalface.xml
 		URL url = AppContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml");
@@ -131,8 +142,22 @@ public class AppContext {
 	}
 
 	@Bean
-	public IFaceDetectionService openCVService(CascadeClassifier faceDetector) {
-		return new OpenCVService(faceDetector);
+	public IFaceExtractorService faceExtractorService(CascadeClassifier cascadeClassifier, FaceDBConfig faceDBConfig) {
+		return new FaceExtractorService(cascadeClassifier, faceDBConfig);
+	}
+
+	@Bean
+	public FaceDBConfig faceDBConfig() {
+		FaceDBConfig faceDBConfig = new FaceDBConfig();
+		faceDBConfig.setFaceDbPath(faceDBPath);
+		faceDBConfig.setFaceDirectoryNameDelimiter(faceDirectoryNameDelimiter);
+		faceDBConfig.setModelStoragePath(modelStoragePath);
+		return faceDBConfig;
+	}
+
+	@Bean
+	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig) {
+		return new EigenFaceRecognitionService(faceDBConfig);
 	}
 	
 }
