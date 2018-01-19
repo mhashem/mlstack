@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.experimental;
+package co.rxstack.ml.aggregator.impl;
 
 import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
 import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
@@ -16,11 +16,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import co.rxstack.ml.aggregator.DatasetUtils;
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.experimental.config.FaceDBConfig;
-import co.rxstack.ml.aggregator.experimental.model.PersonBundle;
-import co.rxstack.ml.aggregator.experimental.model.PersonBundleStatistics;
-import co.rxstack.ml.aggregator.experimental.model.PredictionResult;
+import co.rxstack.ml.aggregator.config.FaceDBConfig;
+import co.rxstack.ml.aggregator.model.PersonBundle;
+import co.rxstack.ml.aggregator.model.PersonBundleStatistics;
+import co.rxstack.ml.aggregator.model.PredictionResult;
 
 import com.google.common.base.Stopwatch;
 import org.bytedeco.javacpp.opencv_core.FileStorage;
@@ -29,14 +30,14 @@ import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
 import org.slf4j.Logger;
 
-public class EigenFaceRecognitionService implements IFaceRecognitionService {
+public class FaceRecognitionService implements IFaceRecognitionService {
 
-	private static final Logger logger = getLogger(EigenFaceRecognitionService.class);
+	private static final Logger logger = getLogger(FaceRecognitionService.class);
 
 	private FaceDBConfig faceDBConfig;
 	private FaceRecognizer faceRecognizer;
 
-	public EigenFaceRecognitionService(FaceDBConfig faceDBConfig) {
+	public FaceRecognitionService(FaceDBConfig faceDBConfig) {
 		this.faceDBConfig = faceDBConfig;
 		this.faceRecognizer = createEigenFaceRecognizer();
 	}

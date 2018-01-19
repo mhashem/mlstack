@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.experimental;
+package co.rxstack.ml.aggregator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -12,8 +12,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import co.rxstack.ml.aggregator.experimental.model.Person;
-import co.rxstack.ml.aggregator.experimental.model.PersonBundle;
+import co.rxstack.ml.aggregator.model.Person;
+import co.rxstack.ml.aggregator.model.PersonBundle;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FilenameUtils;

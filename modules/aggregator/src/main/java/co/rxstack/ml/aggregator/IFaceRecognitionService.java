@@ -4,8 +4,8 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.List;
 
-import co.rxstack.ml.aggregator.experimental.model.PersonBundle;
-import co.rxstack.ml.aggregator.experimental.model.PredictionResult;
+import co.rxstack.ml.aggregator.model.PersonBundle;
+import co.rxstack.ml.aggregator.model.PredictionResult;
 
 public interface IFaceRecognitionService {
 

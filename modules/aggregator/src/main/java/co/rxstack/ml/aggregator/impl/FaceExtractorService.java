@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 
 import co.rxstack.ml.aggregator.IFaceExtractorService;
-import co.rxstack.ml.aggregator.experimental.config.FaceDBConfig;
+import co.rxstack.ml.aggregator.config.FaceDBConfig;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;

@@ -6,7 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import co.rxstack.ml.aggregator.experimental.model.PersonBundle;
+import co.rxstack.ml.aggregator.DatasetUtils;
+import co.rxstack.ml.aggregator.model.PersonBundle;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,7 +18,7 @@ public class DatasetUtilsTest {
 
 	private Path facedbPath;
 
-	@Before
+	/*@Before
 	public void setup() throws IOException {
 		facedbPath = Files.createDirectory(Paths.get("C:\\etc\\facedb"));
 		Files.createDirectory(Paths.get("C:\\etc\\facedb\\1-foo"));
@@ -41,6 +42,6 @@ public class DatasetUtilsTest {
 	@After
 	public void cleanup() throws IOException {
 		FileSystemUtils.deleteRecursively(facedbPath.toFile());
-	}
+	}*/
 
 }

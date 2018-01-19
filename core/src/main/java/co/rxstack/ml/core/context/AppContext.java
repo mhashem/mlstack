@@ -7,9 +7,9 @@ import java.nio.file.Paths;
 
 import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.experimental.EigenFaceRecognitionService;
-import co.rxstack.ml.aggregator.experimental.config.FaceDBConfig;
-import co.rxstack.ml.aggregator.impl.FaceDetectionService;
+import co.rxstack.ml.aggregator.impl.FaceRecognitionService;
+import co.rxstack.ml.aggregator.config.FaceDBConfig;
+import co.rxstack.ml.aggregator.impl.AggregatorService;
 import co.rxstack.ml.aggregator.impl.FaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -61,6 +61,11 @@ public class AppContext {
 	private String faceDirectoryNameDelimiter;
 	@Value("${model.storage.path}")
 	private String modelStoragePath;
+
+	@Value("${face.standard.width}")
+	private int standardWidth;
+	@Value("${face.standard.height}")
+	private int standardHeight;
 
 
 	@Qualifier("stackClientRestTemplate")
@@ -128,9 +133,9 @@ public class AppContext {
 	}
 
 	@Bean
-	public FaceDetectionService resultAggregatorService(IRekognitionService rekognitionService,
+	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService) {
-		return new FaceDetectionService(openCVService, rekognitionService, cognitiveService);
+		return new AggregatorService(openCVService, rekognitionService, cognitiveService);
 	}
 
 	@Bean
@@ -152,12 +157,14 @@ public class AppContext {
 		faceDBConfig.setFaceDbPath(faceDBPath);
 		faceDBConfig.setFaceDirectoryNameDelimiter(faceDirectoryNameDelimiter);
 		faceDBConfig.setModelStoragePath(modelStoragePath);
+		faceDBConfig.setStandardWidth(standardWidth);
+		faceDBConfig.setStandardHeight(standardHeight);
 		return faceDBConfig;
 	}
 
 	@Bean
 	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig) {
-		return new EigenFaceRecognitionService(faceDBConfig);
+		return new FaceRecognitionService(faceDBConfig);
 	}
 	
 }

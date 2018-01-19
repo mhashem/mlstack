@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.experimental.model;
+package co.rxstack.ml.aggregator.model;
 
 import java.util.List;
 

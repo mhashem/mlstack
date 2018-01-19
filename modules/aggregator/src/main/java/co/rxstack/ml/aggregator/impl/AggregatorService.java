@@ -21,28 +21,28 @@ import org.springframework.stereotype.Service;
  * @author mhachem on 9/29/2017.
  */
 @Service
-public class FaceDetectionService {
+public class AggregatorService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceExtractorService.class);
 
-	private IFaceExtractorService openCVService;
+	private IFaceExtractorService faceExtractorService;
 	private ICognitiveService cognitiveService;
 	private IRekognitionService rekognitionService;
 
 	@Autowired
-	public FaceDetectionService(IFaceExtractorService openCVService, IRekognitionService rekognitionService,
+	public AggregatorService(IFaceExtractorService faceExtractorService, IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService) {
-		Preconditions.checkNotNull(openCVService);
+		Preconditions.checkNotNull(faceExtractorService);
 		Preconditions.checkNotNull(rekognitionService);
 		Preconditions.checkNotNull(cognitiveService);
-		this.openCVService = openCVService;
+		this.faceExtractorService = faceExtractorService;
 		this.rekognitionService = rekognitionService;
 		this.cognitiveService = cognitiveService;
 	}
 
 	public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {
 		try {
-			List<byte[]> detectedFaces = openCVService.detectFaces(imageBytes);
+			List<byte[]> detectedFaces = faceExtractorService.detectFaces(imageBytes);
 			List<List<FaceDetectionResult>> lists =
 				detectedFaces.stream().map(bytes -> aggregateResult(imageBytes)).collect(Collectors.toList());
 		} catch (IOException e) {

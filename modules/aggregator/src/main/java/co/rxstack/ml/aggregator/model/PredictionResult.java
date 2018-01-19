@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.experimental.model;
+package co.rxstack.ml.aggregator.model;
 
 import com.google.common.base.MoreObjects;
 
