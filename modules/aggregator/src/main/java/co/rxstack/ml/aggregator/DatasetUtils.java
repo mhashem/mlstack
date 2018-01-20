@@ -47,6 +47,7 @@ public class DatasetUtils {
 					person.setFaceId(faceId);
 					person.setName(dirName[1]);
 					List<Path> imagePaths = ImmutableList.of();
+					// listing image files inside directory
 					try (Stream<Path> imagePathStream = Files.list(path)) {
 						imagePaths =
 							imagePathStream.filter(isFile).filter(extensionPredicate).collect(Collectors.toList());

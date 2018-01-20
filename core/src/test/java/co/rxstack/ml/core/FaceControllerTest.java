@@ -5,7 +5,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
-import co.rxstack.ml.core.controller.SecurityController;
+import co.rxstack.ml.core.controller.FaceController;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
@@ -20,8 +20,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(SecurityController.class)
-public class SecurityControllerTest {
+@WebMvcTest(FaceController.class)
+public class FaceControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -33,7 +33,7 @@ public class SecurityControllerTest {
 	public void testIndexFace() throws Exception {
 		when(rekognitionService.indexFaces(anyString(), any())).thenReturn(ImmutableList.of());
 		MockMultipartFile mockMultipartFile = new MockMultipartFile("faceImage", new byte[] {});
-		this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/api/v1/security/index")
+		this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/api/v1/faces/indexing")
 			.file(mockMultipartFile).param("collectionId", "test"))
 			.andExpect(MockMvcResultMatchers.status().isOk());
 	}

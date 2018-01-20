@@ -4,6 +4,7 @@ import static org.bytedeco.javacpp.opencv_core.CV_8UC3;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import javax.imageio.ImageIO;
 import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfRect;
@@ -79,7 +81,14 @@ public class FaceExtractorService implements IFaceExtractorService {
 		}
 	};
 
-	private Mat bufferedImageToMat(BufferedImage image) throws IOException {
+	private Mat bufferedImageToMat(BufferedImage bi) {
+		Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3); // CV_8UC1 gray scale!
+		byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+		mat.put(0, 0, data);
+		return mat;
+	}
+
+	private Mat bufferedImageToMat2(BufferedImage image) throws IOException {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		ImageIO.write(image, "jpg", byteArrayOutputStream);
 		byteArrayOutputStream.flush();

@@ -9,9 +9,11 @@ spring:
     consul:
       discovery:
         prefer-ip-address: true
+        health-check-path: /mlstack/health
       host: 127.0.0.1
       port: 8500
       config:
         enabled: true
         watch:
           enabled: true
+

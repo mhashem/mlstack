@@ -17,6 +17,8 @@ public interface IRekognitionService {
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
 
+	Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes);
+
 	List<FaceIndexingResult> indexFaces(String collectionId, byte[] imageBytes);
 
 	/**

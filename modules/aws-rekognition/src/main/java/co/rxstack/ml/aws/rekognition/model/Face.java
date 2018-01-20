@@ -5,10 +5,10 @@ import java.io.Serializable;
 public class Face implements Serializable {
 
 	private String faceId;
-	private BoundingBox boundingBox;
 	private String imageId;
 	private String externalImageId;
-	private Float confidence;
+	private double confidence;
+	private BoundingBox boundingBox;
 
 	public String getFaceId() {
 		return faceId;
@@ -42,11 +42,11 @@ public class Face implements Serializable {
 		this.externalImageId = externalImageId;
 	}
 
-	public Float getConfidence() {
+	public double getConfidence() {
 		return confidence;
 	}
 
-	public void setConfidence(Float confidence) {
+	public void setConfidence(double confidence) {
 		this.confidence = confidence;
 	}
 

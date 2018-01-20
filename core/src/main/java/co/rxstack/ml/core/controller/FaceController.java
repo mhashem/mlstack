@@ -26,18 +26,18 @@ import org.springframework.web.multipart.MultipartFile;
  * @author mhachem on 10/8/2017.
  */
 @RestController
-public class SecurityController {
+public class FaceController {
 
-	private static final Logger log = LoggerFactory.getLogger(SecurityController.class);
+	private static final Logger log = LoggerFactory.getLogger(FaceController.class);
 
 	private final IRekognitionService rekognitionService;
 
 	@Autowired
-	public SecurityController(IRekognitionService rekognitionService) {
+	public FaceController(IRekognitionService rekognitionService) {
 		this.rekognitionService = rekognitionService;
 	}
 
-	@PostMapping("/api/v1/security/faces/indexing")
+	@PostMapping("/api/v1/faces/indexing")
 	public ResponseEntity<?> indexFace(
 		@RequestParam("collectionId")
 			String collectionId,
@@ -60,7 +60,7 @@ public class SecurityController {
 			.body(ImmutableMap.of("message", "no face(s) found to index!"));
 	}
 
-	@PostMapping("/api/v1/security/recognition")
+	@PostMapping("/api/v1/faces/recognition")
 	public ResponseEntity<?> searchSimilar(
 		@RequestParam("collectionId")
 			String collectionId,

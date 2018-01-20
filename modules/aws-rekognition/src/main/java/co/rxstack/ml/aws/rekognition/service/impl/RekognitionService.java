@@ -40,6 +40,21 @@ public class RekognitionService implements IRekognitionService {
 	}
 
 	@Override
+	public Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes) {
+		log.info("Indexing Faces for image with {} bytes => Collection {}", imageBytes.length, collectionId);
+		FaceIndexingResultMapper faceIndexingResultMapper = new FaceIndexingResultMapper();
+		Optional<IndexFacesResult> indexFacesResultOptional = rekognitionClient.indexFace(collectionId, imageBytes);
+		if (indexFacesResultOptional.isPresent()) {
+			IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
+			log.info("Successfully indexed {} faces", indexFacesResult.getFaceRecords().size());
+			return indexFacesResult.getFaceRecords().stream().map(faceIndexingResultMapper)
+				.findAny();
+		}
+		log.info("No Faces indexed returning an empty list!");
+		return Optional.empty();
+	}
+
+	@Override
 	public List<FaceIndexingResult> indexFaces(String collectionId, byte[] imageBytes) {
 		log.info("Indexing Faces for image with {} bytes => Collection {}", imageBytes.length, collectionId);
 		FaceIndexingResultMapper faceIndexingResultMapper = new FaceIndexingResultMapper();
