@@ -1,10 +1,12 @@
 package co.rxstack.ml.aws.rekognition.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import co.rxstack.ml.api.FaceIndexer;
 import co.rxstack.ml.aws.rekognition.mapper.FaceIndexingResultMapper;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -12,6 +14,7 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+
 import com.amazonaws.services.rekognition.model.IndexFacesResult;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -24,7 +27,7 @@ import org.springframework.stereotype.Service;
  * @author mhachem on 9/28/2017.
  */
 @Service
-public class RekognitionService implements IRekognitionService {
+public class RekognitionService implements IRekognitionService, FaceIndexer<FaceIndexingResult> {
 
 	private static final Logger log = LoggerFactory.getLogger(RekognitionService.class);
 
@@ -40,7 +43,6 @@ public class RekognitionService implements IRekognitionService {
 		return rekognitionClient.compareFaces(faceOneImageBytes, faceTwoImageBytes);
 	}
 
-	@Override
 	public Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes) {
 		log.info("Indexing Face for image with {} bytes => Collection {}", imageBytes.length, collectionId);
 		FaceIndexingResultMapper faceIndexingResultMapper = new FaceIndexingResultMapper();
@@ -52,6 +54,16 @@ public class RekognitionService implements IRekognitionService {
 				.findAny();
 		}
 		log.info("No Face indexed returning an empty list!");
+		return Optional.empty();
+	}
+
+	@Override
+	public List<FaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
+		return null;
+	}
+
+	@Override
+	public Optional<FaceIndexingResult> indexFace(byte[] imageBytes, Map<String, String> bundleMap) {
 		return Optional.empty();
 	}
 

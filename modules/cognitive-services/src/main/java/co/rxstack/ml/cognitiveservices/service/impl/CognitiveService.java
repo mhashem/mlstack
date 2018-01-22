@@ -3,19 +3,21 @@ package co.rxstack.ml.cognitiveservices.service.impl;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
+import co.rxstack.ml.cognitiveservices.config.CognitiveServicesConfig;
+import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.Person;
 import co.rxstack.ml.common.model.PersonGroup;
+import co.rxstack.ml.common.model.TrainingStatus;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,50 +31,62 @@ public class CognitiveService implements ICognitiveService {
 
 	private static final Logger log = LoggerFactory.getLogger(CognitiveService.class);
 
-	private ICognitiveServicesClient cognitiveServicesClient;
-
-	private Map<String, String> faceIdsCacheMap;
+	private ICognitiveServicesClient client;
+	private CognitiveServicesConfig config;
 
 	@Autowired
-	public CognitiveService(ICognitiveServicesClient cognitiveServicesClient) {
+	public CognitiveService(ICognitiveServicesClient cognitiveServicesClient,
+		CognitiveServicesConfig cognitiveServicesConfig) {
 		Preconditions.checkNotNull(cognitiveServicesClient);
-		this.cognitiveServicesClient = cognitiveServicesClient;
-		this.faceIdsCacheMap = new ConcurrentHashMap<>();
+		Preconditions.checkNotNull(cognitiveServicesConfig);
+		this.client = cognitiveServicesClient;
+		this.config = cognitiveServicesConfig;
 	}
 
 	@Override
 	public List<FaceDetectionResult> detect(byte[] imageBytes) {
-		return cognitiveServicesClient.detect(imageBytes);
+		return client.detect(imageBytes);
 	}
 
 	@Override
 	public boolean createPersonGroup(String personGroupId, String name) {
 		log.info("Creating person group personGroupId {} , name {}", personGroupId, name);
-		return cognitiveServicesClient.createPersonGroup(personGroupId, name);
+		return client.createPersonGroup(personGroupId, name);
 	}
 
 	@Override
 	public boolean deletePersonGroup(String personGroupId) {
 		log.info("Deleting person group {}", personGroupId);
-		return cognitiveServicesClient.deletePersonGroup(personGroupId);
+		return client.deletePersonGroup(personGroupId);
 	}
 
 	@Override
 	public Optional<PersonGroup> getPersonGroup(String personGroupId) {
 		log.info("Reading person group {}", personGroupId);
-		return cognitiveServicesClient.getPersonGroup(personGroupId);
+		return client.getPersonGroup(personGroupId);
 	}
 
 	@Override
 	public boolean trainPersonGroup(String personGroupId) {
 		log.info("Training person group {}", personGroupId);
-		return cognitiveServicesClient.trainPersonGroup(personGroupId);
+		return client.trainPersonGroup(personGroupId);
 	}
 
 	@Override
-	public Optional<String> createPerson(String personGroupId, String personName, String userData) {
+	public Optional<TrainingStatus> getTrainingStatus(String personGroupId) {
+		log.info("Get training status for person group {}", personGroupId);
+		return client.getPersonGroupTrainingStatus(personGroupId);
+	}
+
+	@Override
+	public Optional<Person> createPerson(String personGroupId, String personName, String userData) {
 		log.info("Creating person {},{} in group {}", personName, userData, personGroupId);
-		return cognitiveServicesClient.createPerson(personGroupId, personName, userData);
+		return client.createPerson(personGroupId, personName, userData);
+	}
+
+	@Override
+	public Optional<Person> getPerson(String personGroupId, String personId) {
+		return client.getPerson(personGroupId, personId);
 	}
 
 	@Override
@@ -80,17 +94,57 @@ public class CognitiveService implements ICognitiveService {
 		@Nullable
 			FaceRectangle faceRectangle, byte[] imageBytes) {
 		log.info("Adding person face for person {} group {}", personId, personGroupId);
-		return cognitiveServicesClient.addPersonFace(personGroupId, personId, faceRectangle, imageBytes);
+		return client.addPersonFace(personGroupId, personId, faceRectangle, imageBytes);
 	}
 
 	@Override
 	public List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
 		double confidenceThreshold) {
 		log.info("Identifying person in group {} for each faceId in {}", personGroupId, faceIds);
-		return cognitiveServicesClient.identify(personGroupId, faceIds, maxCandidates, confidenceThreshold);
+		return client.identify(personGroupId, faceIds, maxCandidates, confidenceThreshold);
 	}
 
-	public Map<String, String> getFaceIdsCacheMap() {
-		return ImmutableMap.copyOf(faceIdsCacheMap);
+	@Override
+	public Optional<CognitiveIndexingResult> indexFace(byte[] imageBytes, Map<String, String> bundleMap) {
+
+		String personGroupId = config.getPersonGroupId();
+		Optional<PersonGroup> groupOptional = client.getPersonGroup(personGroupId);
+		if (!groupOptional.isPresent()) {
+			boolean r = client.createPersonGroup(personGroupId, config.getPersonGroupName());
+			if (!r) {
+				log.warn("Failed to create person group [{}, {}]", personGroupId, config.getPersonGroupName());
+				return Optional.empty();
+			}
+		}
+
+		Person person = null;
+		String personId = bundleMap.get("PERSON_ID");
+
+		Optional<Person> personOptional = client.getPerson(personGroupId, personId);
+		if (!personOptional.isPresent()) {
+			String personName = bundleMap.get("PERSON_NAME");
+			String userData = bundleMap.get("USER_DATA");
+			personOptional = client.createPerson(personGroupId, personName, userData);
+			if (!personOptional.isPresent()) {
+				log.warn("Failed to create person {} at group {}", personName, personGroupId);
+				return Optional.empty();
+			}
+		}
+
+		person = personOptional.get();
+		List<FaceDetectionResult> faceDetectionResults = client.detect(imageBytes);
+		if (faceDetectionResults.size() > 0) {
+			FaceDetectionResult faceDetectionResult = faceDetectionResults.get(0);
+			Optional<String> persistedPersonFaceId = client
+				.addPersonFace(personGroupId, person.getPersonId(), faceDetectionResult.getFaceRectangle(), imageBytes);
+			// todo save to DAO
+		}
+
+		return Optional.empty();
+	}
+
+	@Override
+	public List<CognitiveIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
+		return null;
 	}
 }

@@ -3,6 +3,7 @@ package co.rxstack.ml.aws.rekognition.service;
 import java.util.List;
 import java.util.Optional;
 
+import co.rxstack.ml.api.FaceIndexer;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
@@ -11,13 +12,11 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
 /**
  * @author mhachem on 9/28/2017.
  */
-public interface IRekognitionService {
+public interface IRekognitionService extends FaceIndexer<FaceIndexingResult> {
 
 	Optional<ComparisonResult> compareFaces(byte[] faceOneImageBytes, byte[] faceTwoImageBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
-
-	Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes);
 
 	List<FaceIndexingResult> indexFaces(String collectionId, byte[] imageBytes);
 

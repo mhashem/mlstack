@@ -2,13 +2,18 @@ package co.rxstack.ml.aggregator.impl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.aggregator.IFaceExtractorService;
+import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
+import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.Person;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -40,6 +45,15 @@ public class AggregatorService {
 		this.cognitiveService = cognitiveService;
 	}
 
+	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
+
+		Optional<FaceIndexingResult> faceIndexingResult = rekognitionService.indexFace(imageBytes, bundleMap);
+
+		Optional<CognitiveIndexingResult> cognitiveIndexingResult = cognitiveService.indexFace(imageBytes, bundleMap);
+
+		return ImmutableList.of();
+	}
+
 	public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {
 		try {
 			List<byte[]> detectedFaces = faceExtractorService.detectFaces(imageBytes);
@@ -55,10 +69,11 @@ public class AggregatorService {
 	public Optional<String> saveAndIndexImages(String personName, byte[] imageBytes) {
 		String personGroupId = "employee_collection";
 		cognitiveService.createPersonGroup(personGroupId, "Employee Collection");
-		Optional<String> idOptional = cognitiveService.createPerson(personGroupId, personName, "Test PredictionResult");
-		if (idOptional.isPresent()) {
+		Optional<Person> personOptional =
+			cognitiveService.createPerson(personGroupId, personName, "Test Prediction Result");
+		if (personOptional.isPresent()) {
 			for (FaceDetectionResult faceDetectionResult : cognitiveService.detect(imageBytes)) {
-				String personId = idOptional.get();
+				String personId = personOptional.get().getPersonId();
 				Optional<String> persistedFaceIdOptional = cognitiveService
 					.addPersonFace(personGroupId, personId, faceDetectionResult.getFaceRectangle(), imageBytes);
 				if (persistedFaceIdOptional.isPresent()) {

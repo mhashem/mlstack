@@ -22,6 +22,11 @@
 			<artifactId>akka-actor_2.11</artifactId>
 			<version>${akka.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml</groupId>
+			<artifactId>api</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 </project>

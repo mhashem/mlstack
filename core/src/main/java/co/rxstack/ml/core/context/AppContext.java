@@ -7,10 +7,11 @@ import java.nio.file.Paths;
 
 import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.impl.FaceRecognitionService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.impl.AggregatorService;
 import co.rxstack.ml.aggregator.impl.FaceExtractorService;
+import co.rxstack.ml.aggregator.impl.FaceRecognitionService;
+import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
@@ -21,6 +22,7 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
+import co.rxstack.ml.cognitiveservices.config.CognitiveServicesConfig;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
@@ -116,8 +118,9 @@ public class AppContext {
 	}
 
 	@Bean
-	public ICognitiveService cognitiveService(ICognitiveServicesClient cognitiveServicesClient) {
-		return new CognitiveService(cognitiveServicesClient);
+	public ICognitiveService cognitiveService(ICognitiveServicesClient cognitiveServicesClient,
+		CognitiveServicesConfig cognitiveServicesConfig) {
+		return new CognitiveService(cognitiveServicesClient, cognitiveServicesConfig);
 	}
 
 	@Bean
@@ -165,6 +168,18 @@ public class AppContext {
 	@Bean
 	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig) {
 		return new FaceRecognitionService(faceDBConfig);
+	}
+
+	@Bean
+	public AwsConfig awsConfig(AwsProperties awsProperties) {
+		AwsConfig awsConfig = new AwsConfig();
+		awsConfig.setCollectionId(awsProperties.getRekognition().getCollectionId());
+		return awsConfig;
+	}
+
+	@Bean
+	public CognitiveServicesConfig cognitiveServicesConfig(CognitiveServicesProperties cognitiveServicesProperties) {
+		return new CognitiveServicesConfig();
 	}
 	
 }

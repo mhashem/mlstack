@@ -2,9 +2,6 @@ package co.rxstack.ml.client.cognitiveservices.impl;
 
 import java.io.IOException;
 import java.net.URI;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,8 +12,10 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationRequest;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.Person;
 import co.rxstack.ml.common.model.PersonGroup;
 import co.rxstack.ml.common.model.TrainingStatus;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -173,7 +172,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 	}
 
 	@Override
-	public Optional<String> createPerson(String personGroupId, String personName, String userData) {
+	public Optional<Person> createPerson(String personGroupId, String personName, String userData) {
 		log.info("creating person in group {}", personGroupId);
 
 		Preconditions.checkNotNull(personGroupId);
@@ -194,9 +193,28 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 					.asJson();
 
 			if (response.getStatus() == HttpStatus.SC_OK) {
-				return Optional.ofNullable(response.getBody().getObject().get("personId").toString());
+				return Optional.ofNullable(objectMapper.readValue(response.getRawBody(), Person.class));
 			}
 		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<Person> getPerson(String personGroupId, String personId) {
+		log.info("getting person with id {} at group", personId, personGroupId);
+		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}/persons/{personId}")
+			.buildAndExpand(personGroupId, personId).toUri();
+		try {
+			HttpResponse<JsonNode> response =
+				Unirest.get(uri.toString()).header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+					.asJson();
+			if (response.getStatus() == HttpStatus.SC_OK) {
+				Person person = objectMapper.readValue(response.getRawBody(), Person.class);
+				return Optional.ofNullable(person);
+			}
+		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);
 		}
 		return Optional.empty();
@@ -212,7 +230,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 		Preconditions.checkNotNull(personGroupId);
 		Preconditions.checkNotNull(personId);
 
-		URI uri= UriComponentsBuilder.fromUri(serviceUri)
+		URI uri = UriComponentsBuilder.fromUri(serviceUri)
 			.path("/persongroups/{personGroupId}/persons/{personId}/persistedFaces")
 			.buildAndExpand(personGroupId, personId).toUri();
 
@@ -220,21 +238,16 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			if (imageBytes.length > 0) {
 
 				if (faceRectangle != null) {
-					uri = UriComponentsBuilder.fromUri(uri)
-						.queryParam("targetFace", faceRectangle.encodeAsQueryParam())
-						.build().toUri();
+					uri =
+						UriComponentsBuilder.fromUri(uri).queryParam("targetFace", faceRectangle.encodeAsQueryParam()).build().toUri();
 				}
 
-				HttpResponse<JsonNode> response = Unirest
-					.post(uri.toString())
-					.header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
-					.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
-					.body(imageBytes)
-					.asJson();
+				HttpResponse<JsonNode> response =
+					Unirest.post(uri.toString()).header(SUBSCRIPTION_KEY_HEADER, subscriptionKey)
+						.header(CONTENT_TYPE, APPLICATION_OCTET_STREAM).body(imageBytes).asJson();
 
 				if (response.getStatus() == HttpStatus.SC_OK) {
-					return Optional.ofNullable(response.getBody().getObject()
-						.get("persistedFaceId").toString());
+					return Optional.ofNullable(response.getBody().getObject().get("persistedFaceId").toString());
 				} else {
 					log.error("Error adding person face: {}", response.getBody());
 				}

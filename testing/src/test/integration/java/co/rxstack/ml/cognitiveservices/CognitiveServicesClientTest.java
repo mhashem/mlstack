@@ -17,10 +17,12 @@ import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.Person;
 import co.rxstack.ml.common.model.PersonGroup;
 import co.rxstack.ml.common.model.TrainingStatus;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
+
 import com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
@@ -116,7 +118,7 @@ public class CognitiveServicesClientTest {
 	public void testCreatePerson() {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
-		Optional<String> fooIdOptional =
+		Optional<Person> fooIdOptional =
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
 		Assert.assertTrue(fooIdOptional.isPresent());
 	}
@@ -125,15 +127,16 @@ public class CognitiveServicesClientTest {
 	public void testAddPersonFace() throws IOException {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
-		Optional<String> fooIdOptional = cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
-		Assert.assertTrue(fooIdOptional.isPresent());
+		Optional<Person> fooOptional = cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
+		Assert.assertTrue(fooOptional.isPresent());
 
 		byte[] imageBytes = ResourceHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates.jpg");
 
 		List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(imageBytes);
 		faceDetectionResults.forEach(faceDetectionResult -> {
 			Optional<String> personFaceOptional = cognitiveServicesClient
-				.addPersonFace(validPersonGroupId, fooIdOptional.get(), faceDetectionResult.getFaceRectangle(),
+				.addPersonFace(validPersonGroupId, fooOptional.get().getPersonId(),
+					faceDetectionResult.getFaceRectangle(),
 					imageBytes);
 			Assert.assertTrue(personFaceOptional.isPresent());
 		});
@@ -153,7 +156,7 @@ public class CognitiveServicesClientTest {
 			ResourceHelper.loadResourceAsByteArray(CognitiveServicesClientTest.class, "bill-gates-4.jpg");
 
 		// 2 create person
-		Optional<String> createPersonOptional =
+		Optional<Person> createPersonOptional =
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Bill Gates", "54");
 
 		if (createPersonOptional.isPresent()) {
@@ -167,14 +170,14 @@ public class CognitiveServicesClientTest {
 			
 			// todo save persistedFaceId to metaData in Amazon Rekognition too
 			Optional<String> persistedFaceIdOptional1 = cognitiveServicesClient
-				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
+				.addPersonFace(validPersonGroupId, createPersonOptional.get().getPersonId(),
 					faceDetectionResults1.get(0).getFaceRectangle(), imageBytes1);
 
 			Assert.assertTrue(persistedFaceIdOptional1.isPresent());
 			//Assert.assertEquals(faceDetectionResults1.get(0).getFaceId(), persistedFaceIdOptional1.get());
 			
 			Optional<String> persistedFaceIdOptional2 = cognitiveServicesClient
-				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
+				.addPersonFace(validPersonGroupId, createPersonOptional.get().getPersonId(),
 					faceDetectionResults2.get(0).getFaceRectangle(), imageBytes2);
 
 			Assert.assertTrue(persistedFaceIdOptional2.isPresent());

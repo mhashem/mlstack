@@ -6,8 +6,10 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import co.rxstack.ml.aggregator.impl.AggregatorService;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.Candidate;
 
 import com.google.common.base.Preconditions;
@@ -31,10 +33,12 @@ public class FaceController {
 	private static final Logger log = LoggerFactory.getLogger(FaceController.class);
 
 	private final IRekognitionService rekognitionService;
+	private final ICognitiveService cognitiveService;
 
 	@Autowired
-	public FaceController(IRekognitionService rekognitionService) {
+	public FaceController(IRekognitionService rekognitionService, ICognitiveService cognitiveService) {
 		this.rekognitionService = rekognitionService;
+		this.cognitiveService = cognitiveService;
 	}
 
 	@PostMapping("/api/v1/faces/indexing")
@@ -50,7 +54,6 @@ public class FaceController {
 		try {
 			List<FaceIndexingResult> faceIndexingResults =
 				rekognitionService.indexFaces(collectionId, faceImage.getBytes());
-			
 			// todo 
 			// Use aggregation service here so it calls both AWS and Cognitive Services and 
 			// returns back generated face ids
