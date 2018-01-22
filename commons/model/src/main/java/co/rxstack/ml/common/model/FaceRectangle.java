@@ -7,56 +7,56 @@ import java.util.Locale;
  */
 public class FaceRectangle {
 
-	private float width;
-	private float height;
-	private float left;
-	private float top;
+	private int width;
+	private int height;
+	private int left;
+	private int top;
 
 	public FaceRectangle() {
 		// needed for Object Mapper
 	}
 
-	public FaceRectangle(float left, float top, float width, float height) {
+	public FaceRectangle(int left, int top, int width, int height) {
 		this.width = width;
 		this.height = height;
 		this.left = left;
 		this.top = top;
 	}
 
-	public float getWidth() {
+	public int getWidth() {
 		return width;
 	}
 
-	public void setWidth(float width) {
+	public void setWidth(int width) {
 		this.width = width;
 	}
 
-	public float getHeight() {
+	public int getHeight() {
 		return height;
 	}
 
-	public void setHeight(float height) {
+	public void setHeight(int height) {
 		this.height = height;
 	}
 
-	public float getLeft() {
+	public int getLeft() {
 		return left;
 	}
 
-	public void setLeft(float left) {
+	public void setLeft(int left) {
 		this.left = left;
 	}
 
-	public float getTop() {
+	public int getTop() {
 		return top;
 	}
 
-	public void setTop(float top) {
+	public void setTop(int top) {
 		this.top = top;
 	}
 
 	public String encodeAsQueryParam() {
-		return String.format(Locale.getDefault(), "%f,%f,%f,%f", left, top, height, width);
+		return String.format(Locale.ENGLISH, "%1d,%2d,%3d,%4d", left, top, height, width);
 	}
 
 	@Override

@@ -7,6 +7,7 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
+import co.rxstack.ml.common.model.TrainingStatus;
 
 /**
  * @author mhachem on 9/27/2017.
@@ -18,7 +19,9 @@ public interface ICognitiveServicesClient {
 	boolean deletePersonGroup(String personGroupId);
 	
 	Optional<PersonGroup> getPersonGroup(String personGroupId);
-	
+
+	Optional<TrainingStatus> getPersonGroupTrainingStatus(String personGroupId);
+
 	boolean trainPersonGroup(String personGroupId);
 
 	Optional<String> createPerson(String personGroupId, String personName, String userData);

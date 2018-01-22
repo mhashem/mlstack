@@ -38,7 +38,7 @@ public class FaceController {
 	}
 
 	@PostMapping("/api/v1/faces/indexing")
-	public ResponseEntity<?> indexFace(
+	public ResponseEntity indexFace(
 		@RequestParam("collectionId")
 			String collectionId,
 		@RequestParam("faceImage")
@@ -50,6 +50,11 @@ public class FaceController {
 		try {
 			List<FaceIndexingResult> faceIndexingResults =
 				rekognitionService.indexFaces(collectionId, faceImage.getBytes());
+			
+			// todo 
+			// Use aggregation service here so it calls both AWS and Cognitive Services and 
+			// returns back generated face ids
+			
 			return ResponseEntity.ok(ImmutableMap.of("indexing_results", faceIndexingResults));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
@@ -61,7 +66,7 @@ public class FaceController {
 	}
 
 	@PostMapping("/api/v1/faces/recognition")
-	public ResponseEntity<?> searchSimilar(
+	public ResponseEntity searchSimilar(
 		@RequestParam("collectionId")
 			String collectionId,
 		@RequestParam("targetImage")

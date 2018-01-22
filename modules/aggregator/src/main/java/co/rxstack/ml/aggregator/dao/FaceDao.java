@@ -1,0 +1,14 @@
+package co.rxstack.ml.aggregator.dao;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FaceDao {
+	
+	@Autowired
+	public FaceDao() {
+		
+	}
+	
+}

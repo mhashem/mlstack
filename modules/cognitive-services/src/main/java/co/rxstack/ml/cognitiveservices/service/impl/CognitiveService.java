@@ -86,7 +86,7 @@ public class CognitiveService implements ICognitiveService {
 	@Override
 	public List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
 		double confidenceThreshold) {
-		log.info("Identifying person in person group {} for each faceId in {}", personGroupId, faceIds);
+		log.info("Identifying person in group {} for each faceId in {}", personGroupId, faceIds);
 		return cognitiveServicesClient.identify(personGroupId, faceIds, maxCandidates, confidenceThreshold);
 	}
 

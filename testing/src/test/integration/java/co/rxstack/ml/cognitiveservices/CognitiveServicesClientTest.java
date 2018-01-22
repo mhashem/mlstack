@@ -18,9 +18,9 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
+import co.rxstack.ml.common.model.TrainingStatus;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
-
 import com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
@@ -163,40 +163,74 @@ public class CognitiveServicesClientTest {
 			List<FaceDetectionResult> faceDetectionResults1 = cognitiveServicesClient.detect(imageBytes1);
 			List<FaceDetectionResult> faceDetectionResults2 = cognitiveServicesClient.detect(imageBytes2);
 
+			// 4 save person face!
+			
 			// todo save persistedFaceId to metaData in Amazon Rekognition too
 			Optional<String> persistedFaceIdOptional1 = cognitiveServicesClient
 				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
 					faceDetectionResults1.get(0).getFaceRectangle(), imageBytes1);
 
+			Assert.assertTrue(persistedFaceIdOptional1.isPresent());
+			//Assert.assertEquals(faceDetectionResults1.get(0).getFaceId(), persistedFaceIdOptional1.get());
+			
 			Optional<String> persistedFaceIdOptional2 = cognitiveServicesClient
 				.addPersonFace(validPersonGroupId, createPersonOptional.get(),
 					faceDetectionResults2.get(0).getFaceRectangle(), imageBytes2);
 
-			if (persistedFaceIdOptional1.isPresent() && persistedFaceIdOptional2.isPresent()) {
-				result = cognitiveServicesClient.trainPersonGroup(validPersonGroupId);
-				Assert.assertTrue(result);
+			Assert.assertTrue(persistedFaceIdOptional2.isPresent());
+			//Assert.assertEquals(faceDetectionResults2.get(0).getFaceId(), persistedFaceIdOptional2.get());
 
-				System.out.println("Training person group please wait...");
-				Thread.sleep(10000L);
+			// 5 train person group
+			
+			result = cognitiveServicesClient.trainPersonGroup(validPersonGroupId);
+			Assert.assertTrue(result);
 
-				List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(testImageBytes);
-				Assert.assertTrue(!faceDetectionResults.isEmpty());
+			// 6 get training status 
+			
+			Optional<TrainingStatus> trainingStatusOptional =
+                cognitiveServicesClient.getPersonGroupTrainingStatus(validPersonGroupId);
+			System.out.println("Training person group please wait...");
+			TrainingStatus trainingStatus = null;
 
-				Optional<String> faceIdOptional =
-					faceDetectionResults.stream().map(FaceDetectionResult::getFaceId).findAny();
+			if (trainingStatusOptional.isPresent()) {
+                trainingStatus = trainingStatusOptional.get();
+                while (trainingStatus.getStatus() == TrainingStatus.Status.RUNNING) {
+                    System.out.println("Person group " + validPersonGroupId + " is still training...");
+                    trainingStatusOptional =
+                        cognitiveServicesClient.getPersonGroupTrainingStatus(validPersonGroupId);
+                    if (trainingStatusOptional.isPresent()) {
+                        trainingStatus = trainingStatusOptional.get();
+                    } else {
+                        System.out.println("Failed to get training status!");
+                        break;
+                    }
+                    Thread.sleep(1000L);
+                }
 
-				faceIdOptional.ifPresent(faceId -> {
-					List<FaceIdentificationResult> faceIdentificationResults =
-						cognitiveServicesClient.identify(validPersonGroupId, ImmutableList.of(faceId), 1, 75);
-					faceIdentificationResults.forEach(faceIdentificationResult -> {
-						Optional<Candidate> candidateBestMatch = faceIdentificationResult.getCandidateBestMatch();
-						if (candidateBestMatch.isPresent()) {
-							System.out.println("########################################");
-							System.out.println(candidateBestMatch.get().getConfidence());
-							System.out.println("########################################");
-						}
-					});
-				});
+                if (trainingStatus.getStatus() == TrainingStatus.Status.FAILED) {
+                    System.err.println("Training status: failed " + trainingStatus);
+                }
+            }
+
+			List<FaceDetectionResult> faceDetectionResults = cognitiveServicesClient.detect(testImageBytes);
+			Assert.assertTrue(!faceDetectionResults.isEmpty());
+
+			Optional<String> faceIdOptional =
+                faceDetectionResults.stream().map(FaceDetectionResult::getFaceId).findAny();
+
+			if (faceIdOptional.isPresent()) {
+				String faceId = faceIdOptional.get();
+				List<FaceIdentificationResult> faceIdentificationResults =
+					cognitiveServicesClient.identify(validPersonGroupId, ImmutableList.of(faceId), 1, 0.5);
+
+				for (FaceIdentificationResult faceIdentificationResult: faceIdentificationResults) {
+					Optional<Candidate> candidateBestMatch = faceIdentificationResult.getCandidateBestMatch();
+					if (candidateBestMatch.isPresent()) {
+						System.out.println("########################################");
+						System.out.println(candidateBestMatch.get().getConfidence());
+						System.out.println("########################################");
+					}
+				}
 			}
 		}
 	}

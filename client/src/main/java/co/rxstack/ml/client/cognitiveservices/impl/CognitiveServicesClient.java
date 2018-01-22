@@ -2,6 +2,9 @@ package co.rxstack.ml.client.cognitiveservices.impl;
 
 import java.io.IOException;
 import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +16,7 @@ import co.rxstack.ml.common.model.FaceIdentificationRequest;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.PersonGroup;
+import co.rxstack.ml.common.model.TrainingStatus;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -120,6 +124,26 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 			if (response.getStatus() == HttpStatus.SC_OK) {
 				PersonGroup personGroup = objectMapper.readValue(response.getRawBody(), PersonGroup.class);
 				return Optional.ofNullable(personGroup);
+			}
+		} catch (UnirestException | IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<TrainingStatus> getPersonGroupTrainingStatus(String personGroupId) {
+		log.info("getting person group training status {}", personGroupId);
+		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}/training")
+			.buildAndExpand(personGroupId).toUri();
+
+		try {
+			HttpResponse<JsonNode> response =
+				Unirest.get(uri.toString()).header(SUBSCRIPTION_KEY_HEADER, subscriptionKey).asJson();
+			
+			if (response.getStatus() == HttpStatus.SC_OK) {
+				TrainingStatus trainingStatus = objectMapper.readValue(response.getRawBody(), TrainingStatus.class);
+				return Optional.ofNullable(trainingStatus);
 			}
 		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);
@@ -259,7 +283,8 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 		Preconditions.checkNotNull(faceIds);
 		Preconditions.checkArgument(!faceIds.isEmpty() && faceIds.size() <= 10);
 		Preconditions.checkArgument(maxCandidates <= 5);
-
+		Preconditions.checkArgument(confidenceThreshold > 0 && confidenceThreshold <= 1);
+			
 		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/identify").build().toUri();
 		FaceIdentificationRequest faceIdentificationRequest =
 			new FaceIdentificationRequest(personGroupId, faceIds, maxCandidates, confidenceThreshold);
@@ -274,7 +299,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 			if (response.getStatus() == HttpStatus.SC_OK) {
 				return  objectMapper.readValue(response.getRawBody(),
-					new TypeReference<List<FaceIdentificationRequest>>(){});
+					new TypeReference<List<FaceIdentificationResult>>(){});
 			}
 
 		} catch (UnirestException | IOException e) {
