@@ -124,8 +124,8 @@ public class AppContext {
 	}
 
 	@Bean
-	public IRekognitionService rekognitionService(IRekognitionClient rekognitionClient) {
-		return new RekognitionService(rekognitionClient);
+	public IRekognitionService rekognitionService(IRekognitionClient rekognitionClient, AwsConfig awsConfig) {
+		return new RekognitionService(rekognitionClient, awsConfig);
 	}
 
 	@Bean

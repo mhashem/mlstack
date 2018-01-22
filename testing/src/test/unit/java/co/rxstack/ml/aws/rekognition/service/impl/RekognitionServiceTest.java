@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 
@@ -27,13 +28,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class RekognitionServiceTest {
 
 	@Mock
+	private AwsConfig awsConfig;
+	@Mock
 	private IRekognitionClient rekognitionClient;
 
 	private RekognitionService rekognitionService;
 
 	@Before
 	public void setup() {
-		rekognitionService = new RekognitionService(rekognitionClient);
+		rekognitionService = new RekognitionService(rekognitionClient, awsConfig);
 	}
 
 	@Test

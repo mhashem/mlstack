@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.api.FaceIndexer;
+import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.mapper.FaceIndexingResultMapper;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -31,11 +32,13 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 
 	private static final Logger log = LoggerFactory.getLogger(RekognitionService.class);
 
+	private AwsConfig awsConfig;
 	private IRekognitionClient rekognitionClient;
 
 	@Autowired
-	public RekognitionService(IRekognitionClient rekognitionClient) {
+	public RekognitionService(IRekognitionClient rekognitionClient, AwsConfig awsConfig) {
 		this.rekognitionClient = rekognitionClient;
+		this.awsConfig = awsConfig;
 	}
 
 	@Override
