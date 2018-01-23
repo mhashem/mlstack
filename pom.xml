@@ -39,6 +39,9 @@
 		<codahale.version>3.0.2</codahale.version>
 		<aws.java.sdk.version>1.11.203</aws.java.sdk.version>
 		<akka.version>2.4.8</akka.version>
+		<bytedeco.version>1.3.3</bytedeco.version>
+		<httpclient.version>4.5.3</httpclient.version>
+		<commons-codec.version>1.10</commons-codec.version>
 	</properties>
 	
 	<build>
