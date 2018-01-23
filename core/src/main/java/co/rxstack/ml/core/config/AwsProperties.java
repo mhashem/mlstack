@@ -2,13 +2,13 @@ package co.rxstack.ml.core.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "aws", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "aws")
 public class AwsProperties {
 	
 	private String region;
 	private String accessKey;
 	private String secretKey;
-
+	
 	private S3 s3;
 	private Rekognition rekognition;
 	
@@ -51,7 +51,7 @@ public class AwsProperties {
 	public void setRekognition(Rekognition rekognition) {
 		this.rekognition = rekognition;
 	}
-
+	
 	public static class S3 {
 		
 		private String bucket;
@@ -74,10 +74,19 @@ public class AwsProperties {
 		}
 		
 	}
-
+	
 	public static class Rekognition {
 
+		private int maxFaces;
 		private String collectionId;
+
+		public int getMaxFaces() {
+			return maxFaces;
+		}
+
+		public void setMaxFaces(int maxFaces) {
+			this.maxFaces = maxFaces;
+		}
 
 		public String getCollectionId() {
 			return collectionId;
@@ -87,5 +96,6 @@ public class AwsProperties {
 			this.collectionId = collectionId;
 		}
 	}
+
 
 }

@@ -54,7 +54,7 @@ public class AggregatorService {
 		return ImmutableList.of();
 	}
 
-	public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {
+	/*public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {
 		try {
 			List<byte[]> detectedFaces = faceExtractorService.detectFaces(imageBytes);
 			List<List<FaceDetectionResult>> lists =
@@ -63,7 +63,7 @@ public class AggregatorService {
 			log.error(e.getMessage(), e);
 		}
 		return Optional.empty();
-	}
+	}*/
 
 	// todo more tests!
 	public Optional<String> saveAndIndexImages(String personName, byte[] imageBytes) {
@@ -91,11 +91,11 @@ public class AggregatorService {
 		return Optional.empty();
 	}
 
-	private List<FaceDetectionResult> aggregateResult(byte[] imageBytes) {
+	/*private List<FaceDetectionResult> aggregateResult(byte[] imageBytes) {
 		rekognitionService
 			.searchFacesByImage("employee_collection", imageBytes, 1)
 			.stream().filter(candidate -> candidate.getConfidence() > 75.0f);
-		/*cognitiveService.identify()*/
+		*//*cognitiveService.identify()*//*
 		return ImmutableList.of();
-	}
+	}*/
 }

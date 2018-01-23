@@ -46,39 +46,45 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 		return rekognitionClient.compareFaces(faceOneImageBytes, faceTwoImageBytes);
 	}
 
-	public Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes) {
-		log.info("Indexing Face for image with {} bytes => Collection {}", imageBytes.length, collectionId);
-		FaceIndexingResultMapper faceIndexingResultMapper = new FaceIndexingResultMapper();
-		Optional<IndexFacesResult> indexFacesResultOptional = rekognitionClient.indexFace(collectionId, imageBytes);
-		if (indexFacesResultOptional.isPresent()) {
-			IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
-			log.info("Successfully indexed {} faces", indexFacesResult.getFaceRecords().size());
-			return indexFacesResult.getFaceRecords().stream().map(faceIndexingResultMapper)
-				.findAny();
-		}
-		log.info("No Face indexed returning an empty list!");
-		return Optional.empty();
-	}
-
 	@Override
 	public List<FaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
-		return null;
+		log.info("Indexing Face for bundle {}, image with {} bytes => Collection {}", bundleMap, imageBytes.length,
+			awsConfig.getCollectionId());
+		return indexFaces(awsConfig.getCollectionId(), imageBytes);
 	}
 
 	@Override
 	public Optional<FaceIndexingResult> indexFace(byte[] imageBytes, Map<String, String> bundleMap) {
-		return Optional.empty();
+		log.info("Indexing Face for bundle {}, image with {} bytes => Collection {}", bundleMap, imageBytes.length,
+			awsConfig.getCollectionId());
+		return indexFace(awsConfig.getCollectionId(), imageBytes);
+	}
+	
+	@Override
+	public List<FaceDetectionResult> detect(byte[] imageBytes) {
+		log.info("Detecting faces in image with {} bytes", imageBytes.length);
+		return rekognitionClient.detect(imageBytes);
 	}
 
 	@Override
-	public List<FaceIndexingResult> indexFaces(String collectionId, byte[] imageBytes) {
-		log.info("Indexing Faces for image with {} bytes => Collection {}", imageBytes.length, collectionId);
+	public List<Candidate> searchFacesByImage(byte[] imageBytes) {
+		log.info("Searching faces [collection: {}] by image with {} bytes [maxFaces: {}]", awsConfig.getCollectionId(),
+			imageBytes.length, awsConfig.getMaxFaces());
+		return rekognitionClient.searchFacesByImage(awsConfig.getCollectionId(), imageBytes, awsConfig.getMaxFaces());
+	}
+
+	private Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes) {
+		return indexFaces(collectionId, imageBytes).stream().findFirst();
+	}
+
+	private List<FaceIndexingResult> indexFaces(String collectionId, byte[] imageBytes) {
+		log.info("AWS indexing face(s) for image with {} bytes => Collection {}", imageBytes.length, collectionId);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		FaceIndexingResultMapper faceIndexingResultMapper = new FaceIndexingResultMapper();
 		Optional<IndexFacesResult> indexFacesResultOptional = rekognitionClient.indexFace(collectionId, imageBytes);
 		if (indexFacesResultOptional.isPresent()) {
 			IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
-			log.info("Successfully indexed {} faces in {} ms", indexFacesResult.getFaceRecords().size(),
+			log.info("Successfully indexed {} face(s) in {} ms", indexFacesResult.getFaceRecords().size(),
 				stopwatch.elapsed(TimeUnit.MILLISECONDS));
 			return indexFacesResult.getFaceRecords().stream().map(faceIndexingResultMapper)
 				.collect(Collectors.toList());
@@ -87,16 +93,5 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 		return ImmutableList.of();
 	}
 
-	@Override
-	public List<FaceDetectionResult> detect(byte[] imageBytes) {
-		log.info("Detecting faces in image with {} bytes", imageBytes.length);
-		return rekognitionClient.detect(imageBytes);
-	}
-
-	@Override
-	public List<Candidate> searchFacesByImage(String collectionId, byte[] imageBytes, int maxFaces) {
-		log.info("Searching faces {} by image with {} bytes [maxFaces: {}]", imageBytes.length, collectionId, maxFaces);
-		return rekognitionClient.searchFacesByImage(collectionId, imageBytes, maxFaces);
-	}
 
 }

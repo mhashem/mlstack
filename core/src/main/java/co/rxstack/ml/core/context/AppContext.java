@@ -173,7 +173,9 @@ public class AppContext {
 	@Bean
 	public AwsConfig awsConfig(AwsProperties awsProperties) {
 		AwsConfig awsConfig = new AwsConfig();
-		awsConfig.setCollectionId(awsProperties.getRekognition().getCollectionId());
+		AwsProperties.Rekognition rekognition = awsProperties.getRekognition();
+		awsConfig.setCollectionId(rekognition.getCollectionId());
+		awsConfig.setMaxFaces(rekognition.getMaxFaces());
 		return awsConfig;
 	}
 

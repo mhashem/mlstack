@@ -1,7 +1,6 @@
 package co.rxstack.ml.core;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -31,10 +30,10 @@ public class FaceControllerTest {
 
 	@Test
 	public void testIndexFace() throws Exception {
-		when(rekognitionService.indexFaces(anyString(), any())).thenReturn(ImmutableList.of());
+		when(rekognitionService.indexFaces(any(), any())).thenReturn(ImmutableList.of());
 		MockMultipartFile mockMultipartFile = new MockMultipartFile("faceImage", new byte[] {});
-		this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/api/v1/faces/indexing")
-			.file(mockMultipartFile).param("collectionId", "test"))
+		this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/api/v1/faces/indexing").file(mockMultipartFile)
+			.param("personId", "test"))
 			.andExpect(MockMvcResultMatchers.status().isOk());
 	}
 

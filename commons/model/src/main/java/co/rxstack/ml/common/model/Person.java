@@ -7,10 +7,10 @@ import java.util.List;
  */
 public class Person {
 
-	String personId;
-	String name;
-	String userData;
-	List<String> persistedFaceIds;
+	private String personId;
+	private String name;
+	private String userData;
+	private List<String> persistedFaceIds;
 
 	public String getPersonId() {
 		return personId;
