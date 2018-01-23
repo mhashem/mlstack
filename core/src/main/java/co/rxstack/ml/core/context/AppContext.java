@@ -52,9 +52,9 @@ public class AppContext {
 
 	@Value("${client.endpoint}")
 	private String clientEndpoint;
-	@Value("${client.endpoint.username}")
+	@Value("${client.user.username}")
 	private String clientEndpointUsername;
-	@Value("${client.endpoint.password}")
+	@Value("${client.user.password}")
 	private String clientEndpointPassword;
 
 	@Value("${face.db.path}")
@@ -181,7 +181,10 @@ public class AppContext {
 
 	@Bean
 	public CognitiveServicesConfig cognitiveServicesConfig(CognitiveServicesProperties cognitiveServicesProperties) {
-		return new CognitiveServicesConfig();
+		CognitiveServicesConfig config = new CognitiveServicesConfig();
+		config.setPersonGroupId(cognitiveServicesProperties.getPersonGroupId());
+		config.setPersonGroupName(cognitiveServicesProperties.getPersonGroupName());
+		return config;
 	}
 	
 	

@@ -42,6 +42,9 @@
 		<bytedeco.version>1.3.3</bytedeco.version>
 		<httpclient.version>4.5.3</httpclient.version>
 		<commons-codec.version>1.10</commons-codec.version>
+		<postgresql.version>9.4.1212</postgresql.version>
+		<hikaricp.version>2.6.0</hikaricp.version>
+		<hibernate.version>5.2.10.Final</hibernate.version>
 	</properties>
 	
 	<build>

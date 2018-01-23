@@ -5,11 +5,11 @@ import java.util.concurrent.TimeUnit;
 
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.client.IStackClient;
+
 import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +17,6 @@ public class FaceIndexSyncJob {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceIndexSyncJob.class);
 
-	@Value("${face-collection-id}")
 	private String tableName;
 	private Stopwatch stopwatch;
 	private final IStackClient stackClient;

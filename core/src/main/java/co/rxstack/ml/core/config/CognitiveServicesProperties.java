@@ -9,6 +9,8 @@ public class CognitiveServicesProperties {
 	
 	private String serviceUrl;
 	private String subscriptionKey;
+	private String personGroupId;
+	private String personGroupName;
 
 	public String getServiceUrl() {
 		return serviceUrl;
@@ -25,5 +27,20 @@ public class CognitiveServicesProperties {
 	public void setSubscriptionKey(String subscriptionKey) {
 		this.subscriptionKey = subscriptionKey;
 	}
-	
+
+	public String getPersonGroupId() {
+		return personGroupId;
+	}
+
+	public void setPersonGroupId(String personGroupId) {
+		this.personGroupId = personGroupId;
+	}
+
+	public String getPersonGroupName() {
+		return personGroupName;
+	}
+
+	public void setPersonGroupName(String personGroupName) {
+		this.personGroupName = personGroupName;
+	}
 }

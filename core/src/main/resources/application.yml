@@ -1,0 +1,86 @@
+spring:
+    datasource:
+        type: com.zaxxer.hikari.HikariDataSource
+        url: jdbc:postgresql://localhost:5432/mlstack
+        username: ${database_username}
+        password: ${database_password}
+    jpa:
+        database-platform: io.github.jhipster.domain.util.FixedPostgreSQL82Dialect
+        database: POSTGRESQL
+        show-sql: true
+        properties:
+            hibernate.id.new_generator_mappings: true
+            hibernate.cache.use_second_level_cache: false
+            hibernate.cache.use_query_cache: false
+            hibernate.generate_statistics: true
+    cloud:
+      consul:
+        discovery:
+          enabled: true
+
+endpoints:
+  beans:
+    id: springbeans
+    sensitive: false
+    enabled: true
+
+
+management:
+  security:
+    enabled: false
+
+#
+# Microsoft Cognitive Services
+#
+cognitive:
+  service-url: ${cognitive_service_url}
+  subscription-key: ${cognitive_subscription_key}
+  person-group-id: "cognitive_3500"
+  person-group-name: "employee_collection"
+
+#
+# AWS Rekognition Services
+#
+aws:
+  region: ${aws_region}
+  access-key: ${aws_access_key}
+  secret-key: ${aws_secret_key}
+  s3:
+    bucket: "mlstack"
+    bucket-folder: "index"
+  rekognition:
+    collection-id: "employee_collection"
+    max-faces: 1
+
+#
+# threshold point where confidence below is rejected
+#
+threshold-acceptance: 85
+
+#
+# Job config, every 15 seconds
+#
+syncjob:
+  frequency: 15000
+
+client:
+  service:
+    name: client-service
+  endpoint: http://localhost:8080
+  user:
+    username: admin
+    password: admin
+
+face:
+  standard:
+    width: 120
+    height: 120
+  directory:
+    name:
+      delimiter: "-"
+  db:
+    path: "C:\\etc\\mlstack\\facedb"
+
+model:
+  storage:
+    path: "C:\\etc\\mlstack\\models"

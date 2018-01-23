@@ -17,6 +17,7 @@ import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.Face;
 import com.amazonaws.services.rekognition.model.FaceRecord;
 import com.amazonaws.services.rekognition.model.IndexFacesResult;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class RekognitionServiceTest {
 	@Test
 	public void testIndexFacesEmptyResult() {
 		when(rekognitionClient.indexFace(anyString(), any())).thenReturn(Optional.empty());
-		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces("test_id", new byte[] {});
+		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces(new byte[] {}, ImmutableMap.of());
 		Assert.assertTrue(faceIndexingResults.isEmpty());
 	}
 
@@ -66,7 +67,7 @@ public class RekognitionServiceTest {
 		IndexFacesResult facesResult = new IndexFacesResult();
 		facesResult.setFaceRecords(Collections.singletonList(faceRecord));
 		when(rekognitionClient.indexFace(anyString(), any())).thenReturn(Optional.of(facesResult));
-		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces("test_id", new byte[] {});
+		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces(new byte[] {}, ImmutableMap.of());
 		Assert.assertEquals(1, faceIndexingResults.size());
 	}
 
