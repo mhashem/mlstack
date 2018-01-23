@@ -42,10 +42,12 @@ public class TrainingJob extends UntypedActor {
 		job.setStatus("running...");
 		Job savedJob = jobDao.save(job);
 		log.info("Job Id {}", savedJob.getId());
-
 		Thread.sleep(10000L);
-
-		handle(message);
+		try {
+			handle(message);
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
 		log.info("finished onReceive(...)");
 		jobDao.delete(savedJob);
 	}
