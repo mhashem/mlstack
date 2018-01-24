@@ -172,7 +172,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 	}
 
 	@Override
-	public Optional<Person> createPerson(String personGroupId, String personName, String userData) {
+	public Optional<Person> createPerson(String personGroupId, String personName, @Nullable String userData) {
 		log.info("creating person in group {}", personGroupId);
 
 		Preconditions.checkNotNull(personGroupId);
@@ -183,7 +183,7 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 		try {
 			ImmutableMap<String, String> dataMap =
-				ImmutableMap.of("name", personName, "userDate", userData);
+				ImmutableMap.of("name", personName, "userData", userData == null ? "" : userData);
 
 			HttpResponse<JsonNode> response =
 				Unirest.post(uri.toString())

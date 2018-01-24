@@ -7,6 +7,7 @@ import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
@@ -89,10 +90,16 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 				logger.info("training face recognizer finished successfully in {} ms",
 					stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
+
+				File modelStorageDir = Paths.get(faceDBConfig.getModelStoragePath()).toFile();
+				if (!modelStorageDir.exists()) {
+					modelStorageDir.mkdir();
+				}
+				
 				// todo add storage service for this
 				String modelName = "model_" + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + ".yml";
 				FileStorage cvStorage = new FileStorage();
-				cvStorage.open(faceDBConfig.getModelStoragePath() + "\\" + modelName, FileStorage.WRITE);
+				cvStorage.open(faceDBConfig.getModelStoragePath() + File.separator + modelName, FileStorage.WRITE);
 				logger.info("saving trained model {} to {}", modelName, faceDBConfig.getModelStoragePath());
 				faceRecognizer.save(cvStorage);
 				cvStorage.release();

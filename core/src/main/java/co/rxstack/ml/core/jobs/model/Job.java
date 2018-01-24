@@ -10,6 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 @Entity
 @Table(name = "job")
@@ -27,6 +29,14 @@ public class Job implements Serializable {
 	private String data;
 	@Column(name = "start_date")
 	private Instant startDate = null;
+	@Column(name = "end_date")
+	private Instant endDate = null;
+	@Column(name = "progress")
+	@Max(value = 100)
+	@Min(value = 0)
+	private int progress;
+	@Column(name = "ticket_id")
+	private String ticketId;
 
 	public Long getId() {
 		return id;
@@ -66,5 +76,29 @@ public class Job implements Serializable {
 
 	public void setStartDate(Instant startDate) {
 		this.startDate = startDate;
+	}
+
+	public int getProgress() {
+		return progress;
+	}
+
+	public void setProgress(int progress) {
+		this.progress = progress;
+	}
+
+	public Instant getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(Instant endDate) {
+		this.endDate = endDate;
+	}
+
+	public String getTicketId() {
+		return ticketId;
+	}
+
+	public void setTicketId(String ticketId) {
+		this.ticketId = ticketId;
 	}
 }

@@ -17,6 +17,9 @@ spring:
     consul:
       discovery:
         enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 endpoints:
   beans:

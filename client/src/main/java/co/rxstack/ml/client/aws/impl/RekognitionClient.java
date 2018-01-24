@@ -135,6 +135,7 @@ public class RekognitionClient implements IRekognitionClient {
 
 	@Override
 	public Optional<IndexFacesResult> indexFace(String collectionId, byte[] imageBytes) {
+		Preconditions.checkNotNull(collectionId);
 		Preconditions.checkArgument(imageBytes.length > 0);
 		IndexFacesRequest indexFacesRequest = new IndexFacesRequest();
 		indexFacesRequest.setCollectionId(collectionId);

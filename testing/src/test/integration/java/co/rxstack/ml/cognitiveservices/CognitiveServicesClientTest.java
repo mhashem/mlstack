@@ -122,6 +122,17 @@ public class CognitiveServicesClientTest {
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
 		Assert.assertTrue(fooIdOptional.isPresent());
 	}
+	
+	@Test
+	public void testGetPerson() {
+		cognitiveServicesClient.createPersonGroup(validPersonGroupId, "foo-test-group");
+		Optional<Person> personOptional = cognitiveServicesClient.createPerson(validPersonGroupId, "FOO", null);
+		Assert.assertTrue(personOptional.isPresent());
+		
+		Optional<Person> fooOptional = cognitiveServicesClient.getPerson(validPersonGroupId, personOptional.get().getPersonId());
+		Assert.assertTrue(fooOptional.isPresent());
+		Assert.assertEquals("FOO", fooOptional.get().getName());
+	}
 
 	@Test
 	public void testAddPersonFace() throws IOException {

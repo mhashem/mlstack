@@ -2,16 +2,16 @@ package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import javax.servlet.http.HttpServletRequest;
 
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
+import co.rxstack.ml.common.model.Ticket;
+import co.rxstack.ml.core.jobs.IndexingQueue;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,37 +31,49 @@ public class FaceController {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceController.class);
 
+	private IndexingQueue indexingQueue;
+	
 	private final ICognitiveService cognitiveService;
 	private final IRekognitionService rekognitionService;
 
 	@Autowired
-	public FaceController(IRekognitionService rekognitionService, ICognitiveService cognitiveService) {
+	public FaceController(IRekognitionService rekognitionService, ICognitiveService cognitiveService,
+		IndexingQueue indexingQueue) {
 		this.rekognitionService = rekognitionService;
 		this.cognitiveService = cognitiveService;
+		this.indexingQueue = indexingQueue;
 	}
 
 	@PostMapping("/api/v1/faces/{personId}/index")
 	public ResponseEntity indexFace(
 		@PathVariable("personId")
 			String personId,
+		@RequestParam("personName")
+			String personName,
 		@RequestParam("faceImage")
 			MultipartFile faceImage) {
 		log.info("Intercepted: index face request");
 
 		Preconditions.checkNotNull(personId);
 		Preconditions.checkNotNull(faceImage);
-		
-		CompletableFuture.runAsync(() -> {
-			try {
-				byte[] bytes = faceImage.getBytes();
-				log.info("image hash: {}", Hashing.sha256().hashBytes(bytes).toString());
-				rekognitionService.indexFace(bytes, ImmutableMap.of("PERSON_ID", personId));
-			} catch (IOException e) {
-				log.error(e.getMessage(), e);
-			}
-		});
-		
-		return ResponseEntity.accepted().body(ImmutableMap.of("ticket", UUID.randomUUID().toString()));
+		// todo use something like phash to compute the hash of the image (media hash)
+		// log.info("image hash: {}", Hashing.sha256().hashBytes(bytes).toString());
+
+		try {
+			byte[] bytes = faceImage.getBytes();
+			Ticket ticket = new Ticket(UUID.randomUUID().toString());
+			ticket.setType(Ticket.Type.INDEXING);
+			ticket.setPersonId(personId);
+			ticket.setImageBytes(bytes);
+			ticket.setPersonName(personName);
+			
+			indexingQueue.push(ticket);
+			/*rekognitionService.indexFace(bytes, ImmutableMap.of("PERSON_ID", personId));*/
+			return ResponseEntity.accepted().body(ImmutableMap.of("ticket", ticket.getId()));
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		}
 	}
 
 	@PostMapping("/api/v1/faces/recognition")

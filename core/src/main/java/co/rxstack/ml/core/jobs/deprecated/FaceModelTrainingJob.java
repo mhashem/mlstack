@@ -1,4 +1,4 @@
-package co.rxstack.ml.core.jobs;
+package co.rxstack.ml.core.jobs.deprecated;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,8 +21,8 @@ public class FaceModelTrainingJob {
 	@Autowired
 	public FaceModelTrainingJob(IFaceRecognitionService faceRecognitionService) {
 		this.faceRecognitionService = faceRecognitionService;
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		executor.scheduleAtFixedRate(this::execute, 15, 120, TimeUnit.SECONDS);
+		/*ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		executor.scheduleAtFixedRate(this::execute, 15, 120, TimeUnit.SECONDS);*/
 	}
 
 	private void execute() {

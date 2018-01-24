@@ -1,4 +1,4 @@
-package co.rxstack.ml.core.jobs;
+package co.rxstack.ml.core.jobs.deprecated;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

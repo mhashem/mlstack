@@ -48,10 +48,16 @@ public class AggregatorService {
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
 
 		Optional<FaceIndexingResult> faceIndexingResult = rekognitionService.indexFace(imageBytes, bundleMap);
-
 		Optional<CognitiveIndexingResult> cognitiveIndexingResult = cognitiveService.indexFace(imageBytes, bundleMap);
 
-		return ImmutableList.of();
+		AggregateFaceIndexingResult result = new AggregateFaceIndexingResult();
+
+		faceIndexingResult
+			.ifPresent(faceIndexingResult1 -> result.awsFaceId = faceIndexingResult1.getFace().getFaceId());
+		cognitiveIndexingResult
+			.ifPresent(cognitiveIndexingResult1 -> result.cognitivePersonId = cognitiveIndexingResult1.getPersonId());
+		
+		return ImmutableList.of(result);
 	}
 
 	/*public Optional<FaceDetectionResult> detectFaceIdentity(byte[] imageBytes) {

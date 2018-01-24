@@ -10,6 +10,7 @@ import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.cognitiveservices.config.CognitiveServicesConfig;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
+import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
@@ -118,12 +119,16 @@ public class CognitiveService implements ICognitiveService {
 		}
 
 		Person person = null;
-		String personId = bundleMap.get("PERSON_ID");
+		String personId = bundleMap.get(Constants.PERSON_ID);
+		String personName = bundleMap.get(Constants.PERSON_NAME);
+		String userData = bundleMap.get(Constants.USER_DATA);
 
-		Optional<Person> personOptional = client.getPerson(personGroupId, personId);
+		Optional<Person> personOptional = Optional.empty();
+		if (personId != null) {
+			// get person!
+			personOptional = client.getPerson(personGroupId, personId);
+		}
 		if (!personOptional.isPresent()) {
-			String personName = bundleMap.get("PERSON_NAME");
-			String userData = bundleMap.get("USER_DATA");
 			personOptional = client.createPerson(personGroupId, personName, userData);
 			if (!personOptional.isPresent()) {
 				log.warn("Failed to create person {} at group {}", personName, personGroupId);
@@ -133,11 +138,14 @@ public class CognitiveService implements ICognitiveService {
 
 		person = personOptional.get();
 		List<FaceDetectionResult> faceDetectionResults = client.detect(imageBytes);
-		if (faceDetectionResults.size() > 0) {
+		if (!faceDetectionResults.isEmpty()) {
 			FaceDetectionResult faceDetectionResult = faceDetectionResults.get(0);
-			Optional<String> persistedPersonFaceId = client
+			client
 				.addPersonFace(personGroupId, person.getPersonId(), faceDetectionResult.getFaceRectangle(), imageBytes);
-			// todo save to DAO
+
+			CognitiveIndexingResult result = new CognitiveIndexingResult();
+			result.setPersonId(person.getPersonId());
+			return Optional.of(result);
 		}
 
 		return Optional.empty();

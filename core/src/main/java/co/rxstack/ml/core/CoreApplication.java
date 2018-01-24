@@ -1,28 +1,33 @@
 package co.rxstack.ml.core;
 
-import co.rxstack.ml.common.model.Ticket;
-import co.rxstack.ml.core.extension.SpringExtension;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import java.util.UUID;
+
+import co.rxstack.ml.common.model.Ticket;
+import co.rxstack.ml.core.jobs.service.impl.JobService;
+
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 @EnableDiscoveryClient
 @SpringBootApplication
+@EnableScheduling
 public class CoreApplication implements CommandLineRunner {
 
-	private final ActorSystem actorSystem;
-	private final SpringExtension springExtension;
+	private JobService jobService;
 
 	@Autowired
-	public CoreApplication(ActorSystem actorSystem, SpringExtension springExtension) {
-		this.actorSystem = actorSystem;
-		this.springExtension = springExtension;
+	public CoreApplication(JobService jobService) {
+		this.jobService = jobService;
 	}
 
 	public static void main(String[] args) {
@@ -34,10 +39,23 @@ public class CoreApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... strings) throws Exception {
-		// add any dependencies needed at start!
-		Ticket ticket = new Ticket();
-		ticket.setType(Ticket.Type.TRAINING);
-		ActorRef actorRef = actorSystem.actorOf(springExtension.props("trainingJob"), "trainer");
-		actorRef.tell(ticket, null);
+	}
+	
+	@Component
+	public class ScheduledTask {
+
+		private final Logger logger = getLogger(ScheduledTask.class);
+		
+		@Scheduled(fixedRate = 15000, initialDelay = 10000)
+		public void doTask() {
+			execute();
+		}
+
+		private void execute() {
+			logger.info("fired task");
+			Ticket ticket = new Ticket(UUID.randomUUID().toString());
+			ticket.setType(Ticket.Type.INDEXING);
+			jobService.startJob(ticket);
+		}
 	}
 }
