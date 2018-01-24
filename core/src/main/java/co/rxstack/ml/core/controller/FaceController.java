@@ -1,12 +1,13 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
-import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
+import co.rxstack.ml.aggregator.impl.AggregatorService;
+import co.rxstack.ml.common.model.AggregateFaceIdentification;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
 
@@ -32,15 +33,11 @@ public class FaceController {
 	private static final Logger log = LoggerFactory.getLogger(FaceController.class);
 
 	private IndexingQueue indexingQueue;
-	
-	private final ICognitiveService cognitiveService;
-	private final IRekognitionService rekognitionService;
+	private AggregatorService aggregatorService;
 
 	@Autowired
-	public FaceController(IRekognitionService rekognitionService, ICognitiveService cognitiveService,
-		IndexingQueue indexingQueue) {
-		this.rekognitionService = rekognitionService;
-		this.cognitiveService = cognitiveService;
+	public FaceController(AggregatorService aggregatorService, IndexingQueue indexingQueue) {
+		this.aggregatorService = aggregatorService;
 		this.indexingQueue = indexingQueue;
 	}
 
@@ -83,8 +80,16 @@ public class FaceController {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(targetImage);
 		try {
-			return ResponseEntity
-				.ok(ImmutableMap.of("candidates", rekognitionService.searchFacesByImage(targetImage.getBytes())));
+
+			Optional<AggregateFaceIdentification> identificationOptional =
+				aggregatorService.identify(targetImage.getBytes());
+
+			if (identificationOptional.isPresent()) {
+				return ResponseEntity.ok(ImmutableMap.of("candidates", identificationOptional.get()));
+			} else {
+				return ResponseEntity.notFound().build();
+			}
+
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}

@@ -67,6 +67,11 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 	}
 
 	@Override
+	public Optional<Candidate> searchFaceByImage(byte[] imageBytes) {
+		return searchFacesByImage(imageBytes).stream().findAny();
+	}
+
+	@Override
 	public List<Candidate> searchFacesByImage(byte[] imageBytes) {
 		log.info("Searching faces [collection: {}] by image with {} bytes [maxFaces: {}]", awsConfig.getCollectionId(),
 			imageBytes.length, awsConfig.getMaxFaces());

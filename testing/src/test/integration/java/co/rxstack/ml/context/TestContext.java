@@ -3,6 +3,8 @@ package co.rxstack.ml.context;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import co.rxstack.ml.aggregator.config.FaceDBConfig;
+import co.rxstack.ml.aggregator.impl.FaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.client.aws.IRekognitionClient;
@@ -16,7 +18,6 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import nu.pattern.OpenCV;
 import org.opencv.objdetect.CascadeClassifier;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -60,6 +61,19 @@ public class TestContext {
 		// lbpcascade_frontalface.xml
 		return new CascadeClassifier(
 			ResourceHelper.getFullPath(OpenCVDetectorTest.class, "opencv/haarcascade_frontalface_alt.xml"));
+	}
+
+	@Bean
+	public FaceDBConfig faceDBConfig() {
+		FaceDBConfig config = new FaceDBConfig();
+		config.setStandardHeight(120);
+		config.setStandardWidth(120);
+		return config;
+	}
+
+	@Bean
+	public FaceExtractorService faceExtractorService(CascadeClassifier cascadeClassifier, FaceDBConfig faceDBConfig) {
+		return new FaceExtractorService(cascadeClassifier, faceDBConfig);
 	}
 
 }

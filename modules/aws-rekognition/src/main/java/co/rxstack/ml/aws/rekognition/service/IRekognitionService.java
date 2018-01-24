@@ -17,7 +17,9 @@ public interface IRekognitionService extends FaceIndexer<FaceIndexingResult> {
 	Optional<ComparisonResult> compareFaces(byte[] faceOneImageBytes, byte[] faceTwoImageBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);
-	
+
+	Optional<Candidate> searchFaceByImage(byte[] imageBytes);
+
 	/**
 	 * @param imageBytes {byte[]} The following is a list of limits in Amazon Rekognition:
 	 *        - Maximum image size stored as an Amazon S3 object is limited to 15 MB.

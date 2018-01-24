@@ -83,9 +83,9 @@ public class RekognitionClient implements IRekognitionClient {
 				log.info("Face at {} {} matches with {}% confidence.",
 					position.getLeft(), position.getTop(), face.getConfidence());
 			}
-			List<ComparedFace> uncomparred = compareFacesResult.getUnmatchedFaces();
+			List<ComparedFace> uncompared = compareFacesResult.getUnmatchedFaces();
 
-			log.info("There were {} that did not match", uncomparred.size());
+			log.info("There were {} that did not match", uncompared.size());
 			log.info("Source image rotation: {}", compareFacesResult.getSourceImageOrientationCorrection());
 			log.info("target image rotation: {}", compareFacesResult.getTargetImageOrientationCorrection());
 
@@ -142,8 +142,6 @@ public class RekognitionClient implements IRekognitionClient {
 		indexFacesRequest.setImage(byteArrayToImage(imageBytes));
 		return Optional.ofNullable(amazonRekognition.indexFaces(indexFacesRequest));
 	}
-
-
 
 	private Image byteArrayToImage(byte[] imageBytes) {
 		return new Image().withBytes(ByteBuffer.wrap(imageBytes));

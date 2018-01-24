@@ -184,6 +184,8 @@ public class AppContext {
 		CognitiveServicesConfig config = new CognitiveServicesConfig();
 		config.setPersonGroupId(cognitiveServicesProperties.getPersonGroupId());
 		config.setPersonGroupName(cognitiveServicesProperties.getPersonGroupName());
+		config.setMaxCandidates(cognitiveServicesProperties.getMaxCandidates());
+		config.setThreshold(cognitiveServicesProperties.getThreshold());
 		return config;
 	}
 	

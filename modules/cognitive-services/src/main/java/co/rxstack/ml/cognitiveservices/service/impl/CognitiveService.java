@@ -19,6 +19,7 @@ import co.rxstack.ml.common.model.PersonGroup;
 import co.rxstack.ml.common.model.TrainingStatus;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,13 +69,22 @@ public class CognitiveService implements ICognitiveService {
 	}
 
 	@Override
-	public boolean trainPersonGroup(String personGroupId) {
+	public boolean trainPersonGroup() {
+		log.info("Training person group {}", config.getPersonGroupId());
+		return trainPersonGroup(config.getPersonGroupId());
+	}
+
+	private boolean trainPersonGroup(String personGroupId) {
 		log.info("Training person group {}", personGroupId);
 		return client.trainPersonGroup(personGroupId);
 	}
 
 	@Override
-	public Optional<TrainingStatus> getTrainingStatus(String personGroupId) {
+	public Optional<TrainingStatus> getTrainingStatus() {
+		return getTrainingStatus(config.getPersonGroupId());
+	}
+
+	private Optional<TrainingStatus> getTrainingStatus(String personGroupId) {
 		log.info("Get training status for person group {}", personGroupId);
 		return client.getPersonGroupTrainingStatus(personGroupId);
 	}
@@ -98,11 +108,29 @@ public class CognitiveService implements ICognitiveService {
 		return client.addPersonFace(personGroupId, personId, faceRectangle, imageBytes);
 	}
 
-	@Override
-	public List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
+	@Deprecated
+	private List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
 		double confidenceThreshold) {
 		log.info("Identifying person in group {} for each faceId in {}", personGroupId, faceIds);
 		return client.identify(personGroupId, faceIds, maxCandidates, confidenceThreshold);
+	}
+
+	@Override
+	public Optional<FaceIdentificationResult> identifyFace(byte[] imageBytes) {
+		return identifyFaces(imageBytes).stream().findAny();
+	}
+
+	@Override
+	public List<FaceIdentificationResult> identifyFaces(byte[] imageBytes) {
+		List<FaceDetectionResult> faceDetectionResults = client.detect(imageBytes);
+		Optional<String> faceIdOptional = faceDetectionResults.stream().map(FaceDetectionResult::getFaceId).findAny();
+		if (faceIdOptional.isPresent()) {
+			log.info("detected face with id {}", faceIdOptional.get());
+			return client
+				.identify(config.getPersonGroupId(), ImmutableList.of(faceIdOptional.get()), config.getMaxCandidates(),
+					config.getThreshold());
+		}
+		return ImmutableList.of();
 	}
 
 	@Override

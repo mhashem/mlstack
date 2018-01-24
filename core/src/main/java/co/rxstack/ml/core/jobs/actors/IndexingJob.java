@@ -2,7 +2,10 @@ package co.rxstack.ml.core.jobs.actors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import co.rxstack.ml.aggregator.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
@@ -13,6 +16,7 @@ import co.rxstack.ml.core.jobs.dao.FaceDao;
 import co.rxstack.ml.core.jobs.model.Face;
 
 import akka.actor.UntypedActor;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,27 +43,32 @@ public class IndexingJob extends UntypedActor {
 
 	@Override
 	public void onReceive(Object message) throws Throwable {
+		logger.info("IndexingJob fired with message {}", message);
+		Stopwatch stopwatch = Stopwatch.createStarted();
 		List<Ticket> tickets = indexingQueue.getTickets();
 		indexingQueue.clear();
 		if (tickets.isEmpty()) {
 			logger.info("no tickets found in indexing queue");
+			return;
 		}
-
 		logger.info("found {} tickets in indexing queue", tickets.size());
-
 		for (Ticket ticket : tickets) {
-			List<AggregateFaceIndexingResult> aggregateFaceIndexingResults = aggregatorService
-				.indexFaces(ticket.getImageBytes(),
-					ImmutableMap.of(Constants.PERSON_ID, ticket.getPersonId(),
-						Constants.PERSON_NAME, ticket.getPersonName()));
-			for (AggregateFaceIndexingResult faceIndexingResult : aggregateFaceIndexingResults) {
+			Optional<AggregateFaceIndexingResult> faceIndexingResultOptional = aggregatorService
+				.indexFaces(ticket.getImageBytes(), ImmutableMap
+					.of(Constants.PERSON_ID, ticket.getPersonId(), Constants.PERSON_NAME, ticket.getPersonName()))
+				.stream().findAny();
+			if (faceIndexingResultOptional.isPresent()) {
+				logger.info("Indexing result {}", faceIndexingResultOptional.get());
+				AggregateFaceIndexingResult faceIndexingResult = faceIndexingResultOptional.get();
 				Face face = new Face();
 				face.setPersonId(ticket.getPersonId());
 				face.setAwsFaceId(faceIndexingResult.awsFaceId);
 				face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
+				face.setCreationDate(Instant.now());
 				faceDao.save(face);
 			}
 		}
+		logger.info("IndexingJob completed in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 	}
 
 }

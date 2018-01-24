@@ -52,7 +52,7 @@ public class CoreApplication implements CommandLineRunner {
 		}
 
 		private void execute() {
-			logger.info("fired task");
+			logger.info("ScheduledTask.execute() fired");
 			Ticket ticket = new Ticket(UUID.randomUUID().toString());
 			ticket.setType(Ticket.Type.INDEXING);
 			jobService.startJob(ticket);

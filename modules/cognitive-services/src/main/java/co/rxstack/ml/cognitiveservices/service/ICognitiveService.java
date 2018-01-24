@@ -27,9 +27,9 @@ public interface ICognitiveService extends FaceIndexer<CognitiveIndexingResult> 
 
 	Optional<PersonGroup> getPersonGroup(String personGroupId);
 
-	boolean trainPersonGroup(String personGroupId);
+	boolean trainPersonGroup();
 
-	Optional<TrainingStatus> getTrainingStatus(String personGroupId);
+	Optional<TrainingStatus> getTrainingStatus();
 
 	Optional<Person> createPerson(String personGroupId, String personName, String userData);
 
@@ -39,6 +39,10 @@ public interface ICognitiveService extends FaceIndexer<CognitiveIndexingResult> 
 		@Nullable
 			FaceRectangle faceRectangle, byte[] imageBytes);
 
-	List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
-		double confidenceThreshold);
+	Optional<FaceIdentificationResult> identifyFace(byte[] imageBytes);
+
+	List<FaceIdentificationResult> identifyFaces(byte[] imageBytes);
+
+	/*List<FaceIdentificationResult> identify(String personGroupId, List<String> faceIds, int maxCandidates,
+		double confidenceThreshold);*/
 }

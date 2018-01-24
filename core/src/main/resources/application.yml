@@ -40,6 +40,9 @@ cognitive:
   subscription-key: ${cognitive_subscription_key}
   person-group-id: "cognitive_3500"
   person-group-name: "employee_collection"
+  threshold: 0.5
+  max-candidates: 2
+
 
 #
 # AWS Rekognition Services
