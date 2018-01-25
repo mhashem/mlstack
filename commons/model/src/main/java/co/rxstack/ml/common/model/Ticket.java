@@ -1,5 +1,7 @@
 package co.rxstack.ml.common.model;
 
+import java.util.Arrays;
+
 public class Ticket {
 
 	public enum Type {
@@ -50,5 +52,11 @@ public class Ticket {
 
 	public void setPersonName(String personName) {
 		this.personName = personName;
+	}
+
+	@Override
+	public String toString() {
+		return "Ticket{" + "id='" + id + '\'' + ", personId='" + personId + '\'' + ", personName='" + personName + '\''
+			+ ", imageBytes=" + Arrays.toString(imageBytes) + ", type=" + type + '}';
 	}
 }

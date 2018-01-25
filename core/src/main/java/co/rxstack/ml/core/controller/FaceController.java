@@ -65,7 +65,6 @@ public class FaceController {
 			ticket.setPersonName(personName);
 			
 			indexingQueue.push(ticket);
-			/*rekognitionService.indexFace(bytes, ImmutableMap.of("PERSON_ID", personId));*/
 			return ResponseEntity.accepted().body(ImmutableMap.of("ticket", ticket.getId()));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);

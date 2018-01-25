@@ -1,9 +1,11 @@
 package co.rxstack.ml.core.jobs.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import co.rxstack.ml.aggregator.impl.FaceRecognitionService;
+import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.core.jobs.dao.FaceDao;
 import co.rxstack.ml.core.jobs.model.Face;
 
@@ -24,14 +26,14 @@ public class FaceService {
 	private Table<String, String, Face> indexedFaceCacheTable;
 
 	@Autowired
-	public FaceService(FaceDao faceDao, FaceRecognitionService faceRecognitionService) {
+	public FaceService(FaceDao faceDao, IFaceRecognitionService faceRecognitionService) {
 		this.faceDao = faceDao;
 		this.indexedFaceCacheTable = HashBasedTable.create();
 	}
 
 	@Scheduled(fixedRate = 60000, initialDelay = 10000)
 	private void refreshCache() {
-		log.info("refreshing face cache");
+		log.info("Refreshing face(s) cache");
 		List<Face> faceList = faceDao.findAll();
 		faceList.forEach(face -> indexedFaceCacheTable.put(face.getAwsFaceId(), face.getCognitivePersonId(), face));
 		log.info("Refresh complete faces count [{}]", indexedFaceCacheTable.size());
@@ -43,6 +45,16 @@ public class FaceService {
 
 	public Optional<Face> getFaceByCognitivePersonId(String cognitivePersonId) {
 		return indexedFaceCacheTable.column(cognitivePersonId).values().stream().findAny();
+	}
+
+	public Optional<Face> getFaceByPersonId(String personId) {
+		return Optional.ofNullable(getFacesMap().get(personId));
+	}
+	
+	private Map<String, Face> getFacesMap() {
+		return indexedFaceCacheTable.values().stream()
+			.collect(Collectors.toMap(Face::getPersonId, o -> o, 
+				(oldValue, newValue) -> oldValue)); // in case of duplicate prefer old value to prevent exception
 	}
 
 }
