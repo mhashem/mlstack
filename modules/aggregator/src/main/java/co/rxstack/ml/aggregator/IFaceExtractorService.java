@@ -9,10 +9,6 @@ import co.rxstack.ml.aggregator.model.PotentialFace;
 
 public interface IFaceExtractorService {
 
-	Optional<byte[]> extractFace(byte[] imageBytes) throws IOException;
-
-	List<byte[]> detectFaces(byte[] imageBytes) throws IOException;
-
 	List<PotentialFace> detectFaces(BufferedImage image);
 
 }

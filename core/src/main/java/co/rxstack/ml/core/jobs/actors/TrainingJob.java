@@ -3,6 +3,8 @@ package co.rxstack.ml.core.jobs.actors;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +38,8 @@ public class TrainingJob extends UntypedActor {
 	private final ICognitiveService cognitiveService;
 	private final IFaceRecognitionService faceRecognitionService;
 
+	private JobStatus currentStatus;
+
 	@Autowired
 	public TrainingJob(IFaceRecognitionService faceRecognitionService, ICognitiveService cognitiveService,
 		JobDao jobDao) {
@@ -50,10 +54,12 @@ public class TrainingJob extends UntypedActor {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
+		currentStatus = JobStatus.RUNNING;
+
 		job = new Job();
 		job.setName("Training Job");
 		job.setStartDate(Instant.now());
-		job.setStatus(JobStatus.RUNNING.getStatus());
+		job.setStatus(currentStatus.getStatus());
 		job.setTicketId(((Ticket)message).getId());
 		job = jobDao.save(job);
 
@@ -61,26 +67,50 @@ public class TrainingJob extends UntypedActor {
 		try {
 			handle();
 		} catch (Exception e) {
+			log.error("TrainingJob failed");
 			log.error(e.getMessage(), e);
 			handleFailure(e);
-			log.error("TrainingJob failed");
 			return;
 		}
 		handleSuccess();
-		log.info("TrainingJob completed successfully in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+		log.info("-----> TrainingJob completed successfully in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 	}
 
 	private void handle() {
-		log.info("fired training actor");
-		faceRecognitionService.trainModel();
-		log.info("train model");
-		/*cognitiveService.trainPersonGroup();
-		Optional<TrainingStatus> trainingStatus = cognitiveService.getTrainingStatus();
-		if (trainingStatus.isPresent()) {
-			if (trainingStatus.get().getStatus() != TrainingStatus.Status.SUCCEEDED) {
-				cognitiveService.trainPersonGroup();
+		log.info("-----> fired training actor");
+		try {
+			checkIn(5); // started
+			faceRecognitionService.trainModel();
+			checkIn(50); // finished first training
+		} catch (Exception e) {
+			log.error("Failed while training local face recognizer reason: {}", e.getMessage());
+			log.error(e.getMessage(), e);
+
+			String message = "Face Recognition training failed, reason: " + e.getMessage() + " [" + LocalDateTime.now()
+				.format(DateTimeFormatter.ISO_DATE_TIME) + "]";
+			checkInErrorMessage(message);
+			currentStatus = JobStatus.PARTIAL_FAILURE;
+		}
+		log.info("-----> finished local face recognizer training -> will issue Cognitive Service training");
+		try {
+			cognitiveService.trainPersonGroup();
+			Optional<TrainingStatus> trainingStatus = cognitiveService.getTrainingStatus();
+			if (trainingStatus.isPresent()) {
+				if (trainingStatus.get().getStatus() != TrainingStatus.Status.SUCCEEDED) {
+					cognitiveService.trainPersonGroup();
+				}
 			}
-		}*/
+			checkIn(100);
+			currentStatus = currentStatus == JobStatus.RUNNING ? JobStatus.SUCCESS : currentStatus;
+		} catch (Exception e) {
+			log.error("Failed to train Cognitive Service reason: {}", e.getMessage());
+			log.error(e.getMessage(), e);
+
+			String message = "Cognitive service training failed, reason: " + e.getMessage() + " [" + LocalDateTime.now()
+				.format(DateTimeFormatter.ISO_DATE_TIME) + "]";
+			checkInErrorMessage(message);
+			currentStatus = currentStatus == JobStatus.PARTIAL_FAILURE ? JobStatus.FAILED : JobStatus.PARTIAL_FAILURE;
+		}
 	}
 
 	private void checkIn(int progress) {
@@ -88,8 +118,20 @@ public class TrainingJob extends UntypedActor {
 		job = jobDao.save(job);
 	}
 
+	private void checkInErrorMessage(String message) {
+		String data = job.getData();
+		if (data == null) {
+			data = "";
+		} else {
+			data = data + " ------------- ";
+		}
+		data = data + message;
+		job.setData(data);
+		job = jobDao.save(job);
+	}
+
 	private void handleSuccess() {
-		job.setStatus(JobStatus.STOPPED.getStatus());
+		job.setStatus(currentStatus.getStatus());
 		job.setEndDate(Instant.now());
 		jobDao.save(job);
 	}

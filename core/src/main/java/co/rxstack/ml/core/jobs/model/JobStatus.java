@@ -1,8 +1,9 @@
 package co.rxstack.ml.core.jobs.model;
 
 public enum JobStatus {
-	
-	IDLE("idle"), RUNNING("running"), SUCCESS("success"), FAILED("failed"), STOPPED("stopped");
+
+	IDLE("idle"), RUNNING("running"), SUCCESS("success"), FAILED("failed"), STOPPED("stopped"), PARTIAL_FAILURE(
+		"patial failure");
 	
 	private String status;
 	

@@ -64,7 +64,7 @@ public class FaceExtractorService implements IFaceExtractorService {
 		this.faceDBConfig = faceDBConfig;
 	}
 
-	@Override
+	@Deprecated
 	public Optional<byte[]> extractFace(byte[] imageBytes) throws IOException {
 		log.info("extracting face from [image size: {} bytes]", imageBytes.length);
 		MatOfRect faceDetections = new MatOfRect();
@@ -74,7 +74,7 @@ public class FaceExtractorService implements IFaceExtractorService {
 			.findAny();
 	}
 
-	@Override
+	@Deprecated
 	public List<byte[]> detectFaces(byte[] imageBytes) throws IOException {
 		log.info("starting face detection [image size: {} bytes]", imageBytes.length);
 		MatOfRect faceDetections = new MatOfRect();

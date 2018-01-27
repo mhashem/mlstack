@@ -4,6 +4,7 @@ import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
 import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
 import static org.bytedeco.javacpp.opencv_face.createFisherFaceRecognizer;
 import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
+import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_UNCHANGED;
 import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -92,7 +93,10 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 			for (PersonBundle personBundle : personBundleList) {
 				List<Path> faceImagesPaths = personBundle.getFaceImagesPaths();
 				for (Path faceImagesPath : faceImagesPaths) {
-					Mat img = imread(faceImagesPath.toAbsolutePath().toString(), CV_LOAD_IMAGE_GRAYSCALE);
+					Mat img = imread(faceImagesPath.toAbsolutePath().toString(), CV_LOAD_IMAGE_UNCHANGED);
+
+					// faceExtractorService.detectFaces()
+
 					imagesMatVector.put(counter, img);
 					labelsBuf.put(counter, personBundle.getPerson().getFaceId());
 					counter++;
