@@ -11,8 +11,13 @@ with Microsoft Cognitive Services, Amazon AWS Rekognition, and Intel OpenCV.
 
 ### Setup ###
 
-```mlstack``` uses Java as a programming language, Spring Boot as the web/cloud framework, 
-```maven``` for dependency management, and ```postgresql``` as the database
+```mlstack``` makes use of the following: 
+
+Dependency  | Usage
+------------- | -------------
+Java 8 | Programming Language
+Spring / Spring Boot  | Web Framework
+Mavne  | Dependency Management
 
 * Summary of set up
 * Configuration
