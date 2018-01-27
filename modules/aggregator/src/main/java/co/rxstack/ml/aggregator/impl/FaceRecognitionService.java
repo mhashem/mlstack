@@ -2,10 +2,12 @@ package co.rxstack.ml.aggregator.impl;
 
 import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
 import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
+import static org.bytedeco.javacpp.opencv_face.createFisherFaceRecognizer;
 import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
 import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -18,29 +20,41 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import co.rxstack.ml.aggregator.DatasetUtils;
+import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import co.rxstack.ml.aggregator.model.PersonBundleStatistics;
-import co.rxstack.ml.aggregator.model.PredictionResult;
+import co.rxstack.ml.aggregator.model.PotentialFace;
 
 import com.google.common.base.Stopwatch;
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.opencv_core.FileStorage;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
+import org.bytedeco.javacv.Java2DFrameConverter;
+import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.slf4j.Logger;
 
 public class FaceRecognitionService implements IFaceRecognitionService {
 
 	private static final Logger logger = getLogger(FaceRecognitionService.class);
 
+	private static final double THRESHOLD = 150d;
+
 	private FaceDBConfig faceDBConfig;
+	private IFaceExtractorService faceExtractorService;
+
 	private FaceRecognizer faceRecognizer;
 
-	public FaceRecognitionService(FaceDBConfig faceDBConfig) {
+	public FaceRecognitionService(FaceDBConfig faceDBConfig, IFaceExtractorService faceExtractorService) {
 		this.faceDBConfig = faceDBConfig;
-		this.faceRecognizer = createEigenFaceRecognizer();
+		this.faceExtractorService = faceExtractorService;
+
+		//this.faceRecognizer = createEigenFaceRecognizer();
+		this.faceRecognizer = createFisherFaceRecognizer();
 	}
 
 	@Override
@@ -108,21 +122,33 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 	}
 
 	@Override
-	public PredictionResult predict(BufferedImage faceImage) {
-		/*try (IntPointer label = new IntPointer(1); DoublePointer confidence = new DoublePointer(1)) {
-			faceRecognizer.predict(img2Mat(faceImage), label, confidence);
-		}*/
+	public List<PotentialFace> predict(BufferedImage faceImage) {
+		List<PotentialFace> potentialFaces = faceExtractorService.detectFaces(faceImage);
+		for (PotentialFace potentialFace : potentialFaces) {
+			Rectangle faceBox = potentialFace.getBox();
+			BufferedImage subImage = faceImage.getSubimage(faceBox.x, faceBox.y, faceBox.width, faceBox.height);
+			IntPointer prediction = new IntPointer(1);
+			DoublePointer confidence = new DoublePointer(1);
+			faceRecognizer.predict(toMat(subImage), prediction, confidence);
 
-		// 1. load model
-		// 2. predict
-		// 3. return result
+			int label = prediction.get(0);
+			double confidenceVal = confidence.get(0);
 
-		return null;
+			potentialFace.setLabel(label);
+			potentialFace.setConfidence(100 * (THRESHOLD - confidenceVal) / THRESHOLD);
+		}
+		logger.info("Prediction result: {}", potentialFaces);
+		return potentialFaces;
 	}
 
-	/*public static Mat img2Mat(BufferedImage image) {
-		byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-		//Mat mat = new Mat(image.getHeight(), image.getWidth(), CV_8UC3);
-		return imdecode(new MatOfByte(pixels), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-	}*/
+	/**
+	 *
+	 * @param img {@link BufferedImage}
+	 * @return {@link Mat}
+	 */
+	private Mat toMat(BufferedImage img) {
+		OpenCVFrameConverter.ToIplImage cv = new OpenCVFrameConverter.ToIplImage();
+		Java2DFrameConverter jcv = new Java2DFrameConverter();
+		return cv.convertToMat(jcv.convert(img));
+	}
 }

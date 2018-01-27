@@ -3,14 +3,12 @@ package co.rxstack.ml.core.jobs.service.impl;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.core.jobs.dao.FaceDao;
 import co.rxstack.ml.core.jobs.model.Face;
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,38 +21,48 @@ public class FaceService {
 	private static final Logger log = LoggerFactory.getLogger(FaceService.class);
 
 	private FaceDao faceDao;
-	private Table<String, String, Face> indexedFaceCacheTable;
+
+	private final Map<String, Face> faceMap = Maps.newConcurrentMap();
+	private final Map<String, String> awsFaceIdMap = Maps.newConcurrentMap();
+	private final Map<String, String> cognitivePersonIdMap = Maps.newConcurrentMap();
 
 	@Autowired
 	public FaceService(FaceDao faceDao, IFaceRecognitionService faceRecognitionService) {
 		this.faceDao = faceDao;
-		this.indexedFaceCacheTable = HashBasedTable.create();
 	}
 
 	@Scheduled(fixedRate = 60000, initialDelay = 10000)
 	private void refreshCache() {
 		log.info("Refreshing face(s) cache");
 		List<Face> faceList = faceDao.findAll();
-		faceList.forEach(face -> indexedFaceCacheTable.put(face.getAwsFaceId(), face.getCognitivePersonId(), face));
-		log.info("Refresh complete faces count [{}]", indexedFaceCacheTable.size());
+		faceList.forEach(face -> {
+			Optional.ofNullable(face.getAwsFaceId())
+				.ifPresent(awsFaceId -> awsFaceIdMap.put(awsFaceId, face.getPersonId()));
+
+			Optional.ofNullable(face.getCognitivePersonId())
+				.ifPresent(cognitivePersonId -> cognitivePersonIdMap.put(cognitivePersonId, face.getPersonId()));
+			faceMap.put(face.getPersonId(), face);
+		});
+		log.info("Refresh complete faces count [{}]", faceMap.size());
 	}
 
 	public Optional<Face> getFaceByAwsFaceId(String awsFaceId) {
-		return indexedFaceCacheTable.row(awsFaceId).values().stream().findAny();
+		return Optional.ofNullable(awsFaceIdMap.get(awsFaceId)).map(faceMap::get);
 	}
 
 	public Optional<Face> getFaceByCognitivePersonId(String cognitivePersonId) {
-		return indexedFaceCacheTable.column(cognitivePersonId).values().stream().findAny();
+		return Optional.ofNullable(cognitivePersonIdMap.get(cognitivePersonId)).map(faceMap::get);
 	}
 
 	public Optional<Face> getFaceByPersonId(String personId) {
-		return Optional.ofNullable(getFacesMap().get(personId));
+		return Optional.ofNullable(faceMap.get(personId));
 	}
 	
-	private Map<String, Face> getFacesMap() {
+	/*private Map<String, Face> getFacesMap() {
 		return indexedFaceCacheTable.values().stream()
 			.collect(Collectors.toMap(Face::getPersonId, o -> o, 
-				(oldValue, newValue) -> oldValue)); // in case of duplicate prefer old value to prevent exception
-	}
+				(oldValue, newValue) -> oldValue));
+		// in case of duplicate prefer old value to prevent exception
+	}*/
 
 }

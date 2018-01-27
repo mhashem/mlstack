@@ -1,5 +1,8 @@
 package co.rxstack.ml.context;
 
+import static org.bytedeco.javacpp.opencv_core.cvLoad;
+import static org.bytedeco.javacpp.opencv_objdetect.CvHaarClassifierCascade;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -11,13 +14,10 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
-import co.rxstack.ml.opencv.OpenCVDetectorTest;
-import co.rxstack.ml.utils.ResourceHelper;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import nu.pattern.OpenCV;
-import org.opencv.objdetect.CascadeClassifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -56,11 +56,10 @@ public class TestContext {
 	}
 
 	@Bean
-	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
+	public CvHaarClassifierCascade cascadeClassifier() throws URISyntaxException {
 		OpenCV.loadShared();
-		// lbpcascade_frontalface.xml
-		return new CascadeClassifier(
-			ResourceHelper.getFullPath(OpenCVDetectorTest.class, "opencv/haarcascade_frontalface_alt.xml"));
+		return new CvHaarClassifierCascade(cvLoad(TestContext.class.getClassLoader()
+			.getResource("opencv/haarcascade_frontalface_alt.xml").getPath()));
 	}
 
 	@Bean
@@ -72,7 +71,7 @@ public class TestContext {
 	}
 
 	@Bean
-	public FaceExtractorService faceExtractorService(CascadeClassifier cascadeClassifier, FaceDBConfig faceDBConfig) {
+	public FaceExtractorService faceExtractorService(CvHaarClassifierCascade cascadeClassifier, FaceDBConfig faceDBConfig) {
 		return new FaceExtractorService(cascadeClassifier, faceDBConfig);
 	}
 

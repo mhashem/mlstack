@@ -1,13 +1,14 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
 import co.rxstack.ml.aggregator.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIdentification;
+import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
 
@@ -79,16 +80,9 @@ public class FaceController {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(targetImage);
 		try {
-
-			Optional<AggregateFaceIdentification> identificationOptional =
-				aggregatorService.identify(targetImage.getBytes());
-
-			if (identificationOptional.isPresent()) {
-				return ResponseEntity.ok(ImmutableMap.of("candidates", identificationOptional.get()));
-			} else {
-				return ResponseEntity.notFound().build();
-			}
-
+			List<AggregateFaceIdentification> identificationList = aggregatorService.identify(targetImage.getBytes(),
+				ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
+			return ResponseEntity.ok(ImmutableMap.of("candidates", identificationList));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}

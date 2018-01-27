@@ -12,6 +12,8 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_face;
@@ -30,7 +32,7 @@ public class FacialRecognition {
 		public String name;        // name of person at box - null if unidentified
 		public double confidence;  // confidence that face at box is name - NaN if name is null
 
-		static PotentialFace newUnidentifiedFace(Rectangle box) {
+		public static PotentialFace newUnidentifiedFace(Rectangle box) {
 			return new PotentialFace(box, null, Double.NaN);
 		}
 
@@ -122,14 +124,17 @@ public class FacialRecognition {
 			final Rectangle r = face.box;
 			final BufferedImage candidate = image.getSubimage(r.x, r.y, r.width, r.height);
 			final opencv_core.IplImage iplImage = toTinyGray(candidate, scale);
-			final int[] prediction = new int[1];
-			final double[] confidence = new double[1];
-			//algorithm.predict(iplImage, prediction, confidence);
-			if (prediction[0] >= 0 && prediction[0] < names.length) {
+			//final int[] prediction = new int[1];
+			//final double[] confidence = new double[1];
+			IntPointer prediction = new IntPointer(1);
+			DoublePointer confidence = new DoublePointer(1);
+			opencv_core.Mat mat = new opencv_core.Mat(iplImage);
+			algorithm.predict(mat, prediction, confidence);
+			/*if (prediction[0] >= 0 && prediction[0] < names.length) {
 				face.name = names[prediction[0]];
-				//face.confidence = 100*(THRESHHOLD - confidence[0])/THRESHHOLD;
+				face.confidence = 100*(THRESHHOLD - confidence[0])/THRESHHOLD;
 				face.confidence = confidence[0];
-			}
+			}*/
 		}
 	}
 

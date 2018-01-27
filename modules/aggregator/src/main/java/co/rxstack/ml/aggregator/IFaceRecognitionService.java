@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import co.rxstack.ml.aggregator.model.PersonBundle;
-import co.rxstack.ml.aggregator.model.PredictionResult;
+import co.rxstack.ml.aggregator.model.PotentialFace;
 
 public interface IFaceRecognitionService {
 
@@ -17,6 +17,6 @@ public interface IFaceRecognitionService {
 	
 	void trainModel(List<PersonBundle> personBundleList);
 
-	PredictionResult predict(BufferedImage faceImage);
+	List<PotentialFace> predict(BufferedImage faceImage);
 
 }

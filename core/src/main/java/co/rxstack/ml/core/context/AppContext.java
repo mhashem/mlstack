@@ -1,9 +1,9 @@
 package co.rxstack.ml.core.context;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
 
 import co.rxstack.ml.aggregator.IFaceExtractorService;
 import co.rxstack.ml.aggregator.IFaceRecognitionService;
@@ -31,9 +31,12 @@ import co.rxstack.ml.core.factory.AuthRequestInterceptor;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
-import org.opencv.objdetect.CascadeClassifier;
+import org.bytedeco.javacpp.opencv_core;
+import org.bytedeco.javacpp.opencv_objdetect;
+import org.bytedeco.javacpp.opencv_objdetect.CvHaarClassifierCascade;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -142,15 +145,32 @@ public class AppContext {
 	}
 
 	@Bean
-	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
+	public CvHaarClassifierCascade cascadeClassifier() throws URISyntaxException {
 		OpenCV.loadShared();
-		// lbpcascade_frontalface.xml
-		URL url = AppContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml");
-		return new CascadeClassifier(Paths.get(url.toURI()).toFile().getAbsolutePath());
+
+		File classifierFile =
+			new File(AppContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml").getFile());
+		try {
+			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(classifierFile.getCanonicalPath()));
+			//return opencv_objdetect.cvLoadHaarClassifierCascade(classifierFile.getCanonicalPath(), opencv_core.cvSize(0,0));
+		} catch (IOException e) {
+			Throwables.throwIfUnchecked(e);
+			throw new RuntimeException(e);
+		}
+
+			/*classifierFile = AppContext.class.getClassLoader().getResource("").get*/
+/*
+		return new opencv_objdetect.CvHaarClassifierCascade(
+			opencv_core.cvLoad("resources/haarcascade_frontalface_alt.xml"));
+*/
+
+		/*return new CvHaarClassifierCascade(cvLoad(AppContext.class.getClassLoader()
+				.getResource("opencv/haarcascade_frontalface_alt.xml").getPath()));*/
 	}
 
 	@Bean
-	public IFaceExtractorService faceExtractorService(CascadeClassifier cascadeClassifier, FaceDBConfig faceDBConfig) {
+	public IFaceExtractorService faceExtractorService(CvHaarClassifierCascade cascadeClassifier,
+		FaceDBConfig faceDBConfig) {
 		return new FaceExtractorService(cascadeClassifier, faceDBConfig);
 	}
 
@@ -166,8 +186,9 @@ public class AppContext {
 	}
 
 	@Bean
-	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig) {
-		return new FaceRecognitionService(faceDBConfig);
+	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig,
+		IFaceExtractorService faceExtractorService) {
+		return new FaceRecognitionService(faceDBConfig, faceExtractorService);
 	}
 
 	@Bean

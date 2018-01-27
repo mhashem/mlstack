@@ -72,16 +72,15 @@ public class TrainingJob extends UntypedActor {
 
 	private void handle() {
 		log.info("fired training actor");
-		// FIXME
-		// faceRecognitionService.trainModel();
+		faceRecognitionService.trainModel();
 		log.info("train model");
-		cognitiveService.trainPersonGroup();
+		/*cognitiveService.trainPersonGroup();
 		Optional<TrainingStatus> trainingStatus = cognitiveService.getTrainingStatus();
 		if (trainingStatus.isPresent()) {
 			if (trainingStatus.get().getStatus() != TrainingStatus.Status.SUCCEEDED) {
 				cognitiveService.trainPersonGroup();
 			}
-		}
+		}*/
 	}
 
 	private void checkIn(int progress) {
