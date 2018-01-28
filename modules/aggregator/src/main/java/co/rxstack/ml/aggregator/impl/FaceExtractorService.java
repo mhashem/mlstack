@@ -5,7 +5,7 @@ import static org.bytedeco.javacpp.opencv_core.cvGetSeqElem;
 import static org.bytedeco.javacpp.opencv_imgproc.cvCvtColor;
 import static org.bytedeco.javacpp.opencv_imgproc.cvEqualizeHist;
 import static org.bytedeco.javacpp.opencv_imgproc.cvResize;
-import static org.bytedeco.javacpp.opencv_objdetect.CV_HAAR_DO_ROUGH_SEARCH;
+import static org.bytedeco.javacpp.opencv_objdetect.CV_HAAR_DO_CANNY_PRUNING;
 import static org.bytedeco.javacpp.opencv_objdetect.cvHaarDetectObjects;
 
 import java.awt.*;
@@ -43,6 +43,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,11 +57,14 @@ public class FaceExtractorService implements IFaceExtractorService {
 	private static final int F = 4;
 
 	private FaceDBConfig faceDBConfig;
-	private CvHaarClassifierCascade cascadeClassifier;
+	private CascadeClassifier cascadeClassifier;
+	private CvHaarClassifierCascade cvHaarClassifierCascade;
 
 	@Autowired
-	public FaceExtractorService(CvHaarClassifierCascade cascadeClassifier, FaceDBConfig faceDBConfig) {
+	public FaceExtractorService(CvHaarClassifierCascade cvHaarClassifierCascade, CascadeClassifier cascadeClassifier,
+		FaceDBConfig faceDBConfig) {
 		this.cascadeClassifier = cascadeClassifier;
+		this.cvHaarClassifierCascade = cvHaarClassifierCascade;
 		this.faceDBConfig = faceDBConfig;
 	}
 
@@ -69,7 +73,7 @@ public class FaceExtractorService implements IFaceExtractorService {
 		log.info("extracting face from [image size: {} bytes]", imageBytes.length);
 		MatOfRect faceDetections = new MatOfRect();
 		Mat image = bufferedImageToMat(grayscale(ImageIO.read(new ByteArrayInputStream(imageBytes))));
-		//cascadeClassifier.detectMultiScale(image, faceDetections);
+		cascadeClassifier.detectMultiScale(image, faceDetections);
 		return faceDetections.toList().stream().map(rect -> rectByteFunction.apply(rect, image))
 			.findAny();
 	}
@@ -79,17 +83,27 @@ public class FaceExtractorService implements IFaceExtractorService {
 		log.info("starting face detection [image size: {} bytes]", imageBytes.length);
 		MatOfRect faceDetections = new MatOfRect();
 		Mat image = bufferedImageToMat(grayscale(ImageIO.read(new ByteArrayInputStream(imageBytes))));
-		//cascadeClassifier.detectMultiScale(image, faceDetections);
+		cascadeClassifier.detectMultiScale(image, faceDetections);
 		return faceDetections.toList().stream().map(rect -> rectByteFunction.apply(rect, image))
 			.collect(Collectors.toList());
 	}
 
+	@Deprecated
+	@Override
+	public List<PotentialFace> bruteDetectFaces(BufferedImage faceImage) {
+		log.info("starting brute image face(s) detection");
+		MatOfRect faceDetections = new MatOfRect();
+		Mat image = bufferedImageToMat(faceImage);
+		cascadeClassifier.detectMultiScale(image, faceDetections);
+		return faceDetections.toList().stream().map(rect -> {
+			Rectangle box = new Rectangle(rect.x, rect.y, rect.width, rect.height);
+			return PotentialFace.newUnIdentifiedFace(box);
+		}).collect(Collectors.toList());
+	}
+
 	@Override
 	public List<PotentialFace> detectFaces(BufferedImage image) {
-		opencv_core.cvClearMemStorage(storage);
-		final IplImage iplImage = toTinyGray(image, null);
-		final CvSeq cvSeq = cvHaarDetectObjects(iplImage, cascadeClassifier, storage, 1.1, 3,
-			CV_HAAR_DO_ROUGH_SEARCH);
+		final CvSeq cvSeq = this._detectFaces(image).getRight();
 		final int N = cvSeq.total();
 		final List<PotentialFace> ret = Lists.newArrayListWithCapacity(N);
 		for (int i = 0; i < N; i++) {
@@ -100,10 +114,17 @@ public class FaceExtractorService implements IFaceExtractorService {
 		return ret;
 	}
 
+	private synchronized Pair<IplImage, CvSeq> _detectFaces(BufferedImage image) {
+		opencv_core.cvClearMemStorage(storage);
+		final IplImage iplImage = toTinyGray(image, null);
+		return Pair
+			.of(iplImage, cvHaarDetectObjects(iplImage, cvHaarClassifierCascade, storage, 1.1, 2, CV_HAAR_DO_CANNY_PRUNING));
+	}
+
 	/**
 	 * Images should be gray-scaled and scaled-down for faster calculations
 	 */
-	private IplImage toTinyGray(BufferedImage image, Pair<Integer, Integer> scale) {
+	protected static IplImage toTinyGray(BufferedImage image, Pair<Integer, Integer> scale) {
 		OpenCVFrameConverter.ToIplImage toIplImage = new OpenCVFrameConverter.ToIplImage();
 		Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
 		final IplImage iplImage =

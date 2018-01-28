@@ -9,7 +9,7 @@ import co.rxstack.ml.aggregator.model.PotentialFace;
 
 public interface IFaceRecognitionService {
 
-	void loadModel(String modelName);
+	void loadModel();
 
 	void trainModel();
 
@@ -19,4 +19,5 @@ public interface IFaceRecognitionService {
 
 	List<PotentialFace> predict(BufferedImage faceImage);
 
+	List<PotentialFace> predict(BufferedImage bufferedImage, List<PotentialFace> detectedFaces);
 }

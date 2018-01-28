@@ -85,8 +85,8 @@ face:
     name:
       delimiter: "-"
   db:
-    path: "C:\\etc\\mlstack\\facedb"
+    path: "C:/etc/mlstack/facedb"
 
 model:
   storage:
-    path: "C:\\etc\\mlstack\\models"
+    path: "C:/etc/mlstack/models"

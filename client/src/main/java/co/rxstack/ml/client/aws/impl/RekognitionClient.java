@@ -11,6 +11,9 @@ import co.rxstack.ml.client.aws.converter.FaceDetailConverter;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
+import co.rxstack.ml.common.model.FaceRectangle;
+import co.rxstack.ml.common.model.Recognizer;
+import co.rxstack.ml.common.model.SimpleFaceIdentificationResult;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
@@ -129,7 +132,20 @@ public class RekognitionClient implements IRekognitionClient {
 
 		SearchFacesByImageResult searchResult = amazonRekognition.searchFacesByImage(searchRequest);
 		return searchResult.getFaceMatches().stream()
-			.map(faceMatch -> new Candidate(faceMatch.getFace().getFaceId(), faceMatch.getSimilarity()))
+			.map(faceMatch -> {
+
+				// todo use mapper class instead!
+
+				BoundingBox boundingBox = faceMatch.getFace().getBoundingBox();
+				FaceRectangle faceRectangle = new FaceRectangle();
+				faceRectangle.setHeight(boundingBox.getHeight().intValue());
+				faceRectangle.setWidth(boundingBox.getWidth().intValue());
+				faceRectangle.setLeft(boundingBox.getLeft().intValue());
+				faceRectangle.setTop(boundingBox.getTop().intValue());
+
+				return new Candidate(faceMatch.getFace().getFaceId(), faceMatch.getSimilarity(),
+					faceRectangle, Recognizer.AWS_REKOGNITION);
+			})
 			.collect(Collectors.toList());
 	}
 

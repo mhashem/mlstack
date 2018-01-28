@@ -9,6 +9,8 @@ import co.rxstack.ml.aggregator.model.PotentialFace;
 
 public interface IFaceExtractorService {
 
+	List<PotentialFace> bruteDetectFaces(BufferedImage faceImage);
+
 	List<PotentialFace> detectFaces(BufferedImage image);
 
 }

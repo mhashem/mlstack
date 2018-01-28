@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
 
@@ -40,7 +41,7 @@ public class OpenCVDetectorTest {
 
 	@Before
 	public void setup() throws URISyntaxException {
-		imageStream = ResourceHelper.loadImage(OpenCVDetectorTest.class, "multi/multi-faces-4f-1.jpg");
+		imageStream = ResourceHelper.loadImage(OpenCVDetectorTest.class, "multi/multi-faces.jpg");
 	}
 
 	@Test
@@ -51,6 +52,8 @@ public class OpenCVDetectorTest {
 		cascadeClassifier.detectMultiScale(image, faceDetections);
 		System.out
 			.printf("-------> detected %d faces in %dms\n", faceDetections.toArray().length, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+
+		IFaceRecognitionService faceRecognitionService;
 
 		int i = 0;
 		for (Rect rect : faceDetections.toList()) {

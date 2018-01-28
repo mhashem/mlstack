@@ -80,9 +80,9 @@ public class FaceController {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(targetImage);
 		try {
-			List<AggregateFaceIdentification> identificationList = aggregatorService.identify(targetImage.getBytes(),
+			AggregateFaceIdentification faceIdentification = aggregatorService.identify(targetImage.getBytes(),
 				ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
-			return ResponseEntity.ok(ImmutableMap.of("candidates", identificationList));
+			return ResponseEntity.ok(ImmutableMap.of("faceIdentification", faceIdentification));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
