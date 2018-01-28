@@ -1,11 +1,19 @@
 package co.rxstack.ml.core.context;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.dao.FaceDao;
@@ -39,6 +47,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_objdetect;
@@ -49,6 +59,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -162,25 +173,37 @@ public class AppContext {
 		return new AggregatorService(faceService, openCVService, faceRecognitionService, rekognitionService, cognitiveService);
 	}
 
+	@Qualifier("haarCascadeFile")
+	@Bean
+	public File haarCascadeFile() {
+		try {
+			Path tempFile = Files.createTempFile("haarcascade_frontalface_alt", "xml");
+			InputStream inputStream = new ClassPathResource("opencv/haarcascade_frontalface_alt.xml")
+				.getInputStream();
+			Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+			IOUtils.closeQuietly(inputStream);
+			return tempFile.toFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+			Throwables.throwIfUnchecked(e);
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Qualifier("cascadeClassifier")
 	@Bean
-	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
+	public CascadeClassifier cascadeClassifier(File haarCascadeFile) throws URISyntaxException {
 		OpenCV.loadShared();
-		// lbpcascade_frontalface.xml
-		URL url = AppContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml");
-		return new CascadeClassifier(Paths.get(url.toURI()).toFile().getAbsolutePath());
+		return new CascadeClassifier(haarCascadeFile.getAbsolutePath());
 	}
 
 	@Qualifier("cvHaarClassifierCascade")
 	@Bean
-	public CvHaarClassifierCascade cvHaarClassifierCascade() throws URISyntaxException {
+	public CvHaarClassifierCascade cvHaarClassifierCascade(File haarCascadeFile) throws URISyntaxException {
 		OpenCV.loadShared();
-
-		File classifierFile =
-			new File(AppContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml").getFile());
 		try {
-			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(classifierFile.getCanonicalPath()));
-		} catch (IOException e) {
+			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(haarCascadeFile.getAbsolutePath()));
+		} catch (Exception e) {
 			Throwables.throwIfUnchecked(e);
 			throw new RuntimeException(e);
 		}
