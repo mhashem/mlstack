@@ -1,4 +1,4 @@
-package co.rxstack.ml.core.jobs.model;
+package co.rxstack.ml.aggregator.model.db;
 
 import java.time.Instant;
 

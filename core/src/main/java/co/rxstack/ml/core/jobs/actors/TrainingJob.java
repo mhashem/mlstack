@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.common.model.TrainingStatus;

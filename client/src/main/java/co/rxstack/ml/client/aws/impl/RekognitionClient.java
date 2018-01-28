@@ -137,6 +137,7 @@ public class RekognitionClient implements IRekognitionClient {
 				// todo use mapper class instead!
 
 				BoundingBox boundingBox = faceMatch.getFace().getBoundingBox();
+				log.info("[] bounding box : {}", boundingBox.toString());
 				FaceRectangle faceRectangle = new FaceRectangle();
 				faceRectangle.setHeight(boundingBox.getHeight().intValue());
 				faceRectangle.setWidth(boundingBox.getWidth().intValue());

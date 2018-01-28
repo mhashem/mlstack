@@ -1,10 +1,6 @@
 package co.rxstack.ml.core.jobs.deprecated;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

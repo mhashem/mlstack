@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.impl;
+package co.rxstack.ml.aggregator.service.impl;
 
 import static org.bytedeco.javacpp.opencv_core.CV_8UC3;
 import static org.bytedeco.javacpp.opencv_core.cvGetSeqElem;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.aggregator.IFaceExtractorService;
+import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.model.PotentialFace;
 

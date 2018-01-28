@@ -1,12 +1,12 @@
-package co.rxstack.ml.core.jobs.service.impl;
+package co.rxstack.ml.aggregator.service.impl;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
-import co.rxstack.ml.core.jobs.dao.FaceDao;
-import co.rxstack.ml.core.jobs.model.Face;
+import co.rxstack.ml.aggregator.dao.FaceDao;
+import co.rxstack.ml.aggregator.model.db.Face;
+import co.rxstack.ml.aggregator.service.IFaceService;
 
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FaceService {
+public class FaceService implements IFaceService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceService.class);
 
@@ -27,7 +27,7 @@ public class FaceService {
 	private final Map<String, String> cognitivePersonIdMap = Maps.newConcurrentMap();
 
 	@Autowired
-	public FaceService(FaceDao faceDao, IFaceRecognitionService faceRecognitionService) {
+	public FaceService(FaceDao faceDao) {
 		this.faceDao = faceDao;
 	}
 
@@ -43,17 +43,20 @@ public class FaceService {
 				.ifPresent(cognitivePersonId -> cognitivePersonIdMap.put(cognitivePersonId, face.getPersonId()));
 			faceMap.put(face.getPersonId(), face);
 		});
-		log.info("Refresh complete faces count [{}]", faceMap.size());
+		log.info("Refresh complete, found {} faces in db", faceMap.size());
 	}
 
+	@Override
 	public Optional<Face> getFaceByAwsFaceId(String awsFaceId) {
 		return Optional.ofNullable(awsFaceIdMap.get(awsFaceId)).map(faceMap::get);
 	}
 
+	@Override
 	public Optional<Face> getFaceByCognitivePersonId(String cognitivePersonId) {
 		return Optional.ofNullable(cognitivePersonIdMap.get(cognitivePersonId)).map(faceMap::get);
 	}
 
+	@Override
 	public Optional<Face> getFaceByPersonId(String personId) {
 		return Optional.ofNullable(faceMap.get(personId));
 	}

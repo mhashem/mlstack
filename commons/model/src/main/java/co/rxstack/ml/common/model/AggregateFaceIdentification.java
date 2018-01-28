@@ -2,10 +2,15 @@ package co.rxstack.ml.common.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class AggregateFaceIdentification {
 
+	@JsonProperty("aws")
 	private List<Candidate> awsCandidates;
+	@JsonProperty("open_cv")
 	private List<Candidate> openCVCandidates;
+	@JsonProperty("cognitive")
 	private List<Candidate> cognitiveCandidates;
 
 	public List<Candidate> getAwsCandidates() {

@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import co.rxstack.ml.aggregator.impl.AggregatorService;
+import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
-import co.rxstack.ml.core.jobs.dao.FaceDao;
-import co.rxstack.ml.core.jobs.model.Face;
+import co.rxstack.ml.aggregator.dao.FaceDao;
+import co.rxstack.ml.aggregator.model.db.Face;
 
 import akka.actor.UntypedActor;
 import com.google.common.base.Stopwatch;

@@ -1,12 +1,11 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import co.rxstack.ml.aggregator.impl.AggregatorService;
+import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIdentification;
 import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;

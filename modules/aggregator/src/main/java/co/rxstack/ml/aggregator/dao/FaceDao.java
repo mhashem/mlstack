@@ -1,8 +1,8 @@
-package co.rxstack.ml.core.jobs.dao;
+package co.rxstack.ml.aggregator.dao;
 
 import java.util.List;
 
-import co.rxstack.ml.core.jobs.model.Face;
+import co.rxstack.ml.aggregator.model.db.Face;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;

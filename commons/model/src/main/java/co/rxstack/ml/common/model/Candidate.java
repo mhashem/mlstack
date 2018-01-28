@@ -8,6 +8,7 @@ import com.google.common.base.MoreObjects;
 public class Candidate implements Comparable<Candidate> {
 
 	private String personId;
+	private String dbPersonId;
 	private double confidence;
 	private FaceRectangle faceRectangle;
 
@@ -22,8 +23,10 @@ public class Candidate implements Comparable<Candidate> {
 		this.confidence = confidence;
 	}
 
-	public Candidate(String personId, double confidence, FaceRectangle faceRectangle, Recognizer recognizer) {
+	public Candidate(String personId, double confidence, FaceRectangle faceRectangle,
+		Recognizer recognizer) {
 		this.personId = personId;
+		this.dbPersonId = dbPersonId;
 		this.confidence = confidence;
 		this.faceRectangle = faceRectangle;
 		this.recognizer = recognizer;
@@ -35,6 +38,14 @@ public class Candidate implements Comparable<Candidate> {
 
 	public void setPersonId(String personId) {
 		this.personId = personId;
+	}
+
+	public String getDbPersonId() {
+		return dbPersonId;
+	}
+
+	public void setDbPersonId(String dbPersonId) {
+		this.dbPersonId = dbPersonId;
 	}
 
 	public double getConfidence() {

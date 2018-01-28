@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.context.TestContext;
 import co.rxstack.ml.utils.ResourceHelper;
 

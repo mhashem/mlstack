@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.impl;
+package co.rxstack.ml.aggregator.service.impl;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -17,9 +17,11 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.aggregator.IFaceExtractorService;
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.model.PotentialFace;
+import co.rxstack.ml.aggregator.model.db.Face;
+import co.rxstack.ml.aggregator.service.IFaceExtractorService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceService;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
@@ -47,20 +49,25 @@ public class AggregatorService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceExtractorService.class);
 
+	private IFaceService faceService;
 	private ICognitiveService cognitiveService;
 	private IRekognitionService awsRekognitionService;
 	private IFaceExtractorService faceExtractorService;
 	private IFaceRecognitionService faceRecognitionService;
 
 	@Autowired
-	public AggregatorService(IFaceExtractorService faceExtractorService, IFaceRecognitionService faceRecognitionService,
+	public AggregatorService(IFaceService faceService, IFaceExtractorService faceExtractorService,
+		IFaceRecognitionService faceRecognitionService,
 		IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService) {
+
+		Preconditions.checkNotNull(faceService);
 		Preconditions.checkNotNull(faceExtractorService);
 		Preconditions.checkNotNull(faceRecognitionService);
 		Preconditions.checkNotNull(rekognitionService);
 		Preconditions.checkNotNull(cognitiveService);
 
+		this.faceService = faceService;
 		this.cognitiveService = cognitiveService;
 		this.awsRekognitionService = rekognitionService;
 		this.faceExtractorService = faceExtractorService;
@@ -130,6 +137,16 @@ public class AggregatorService {
 			CompletableFuture.allOf(awsCompletableFuture, cognitiveCompletableFuture, openCVDetectionFuture).get();
 
 			if (awsCompletableFuture.isDone()) {
+				List<Candidate> awsCandidateList = awsCompletableFuture.get();
+				awsCandidateList.forEach(candidate -> {
+					Optional<Face> faceOptional = faceService.getFaceByAwsFaceId(candidate.getPersonId());
+					if (faceOptional.isPresent()) {
+						candidate.setDbPersonId(faceOptional.get().getPersonId());
+					} else {
+						log.warn("no face record found for aws person id {}", candidate.getPersonId());
+					}
+				});
+
 				faceIdentification.setAwsCandidates(awsCompletableFuture.get());
 			}
 
@@ -142,8 +159,16 @@ public class AggregatorService {
 				Optional<FaceIdentificationResult> cognitiveResult = cognitiveCompletableFuture.get();
 				if (cognitiveResult.isPresent()) {
 					FaceIdentificationResult identificationResult = cognitiveResult.get();
-					identificationResult.getCandidates()
-						.forEach(candidate -> candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES));
+					identificationResult.getCandidates().forEach(candidate -> {
+						Optional<Face> faceOptional = faceService.getFaceByCognitivePersonId(candidate.getPersonId());
+						if (faceOptional.isPresent()) {
+							candidate.setDbPersonId(faceOptional.get().getPersonId());
+						} else {
+							log.warn("no face record found for cognitive person id {}", candidate.getPersonId());
+						}
+
+						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
+					});
 					faceIdentification.setCognitiveCandidates(identificationResult.getCandidates());
 				}
 			}
@@ -173,8 +198,23 @@ public class AggregatorService {
 
 		List<PotentialFace> predict = faceRecognitionService.predict(targetImage, potentialFaces);
 		return predict.stream().map(pFace -> {
-			return new Candidate(String.valueOf(pFace.getLabel()), pFace.getConfidence(),
+
+			String faceDbId = "";
+			String personId = String.valueOf(pFace.getLabel());
+
+			Face face = null;
+			Optional<Face> faceOptional = faceService.getFaceByPersonId(personId);
+			if (!faceOptional.isPresent()) {
+				log.warn("no corresponding face id found in database: {}", personId);
+			} else {
+				face = faceOptional.get();
+				faceDbId = face.getPersonId();
+			}
+
+			Candidate candidate = new Candidate(personId, pFace.getConfidence(),
 				FaceRectangle.from(pFace.getBox()), Recognizer.OPEN_CV);
+			candidate.setDbPersonId(faceDbId);
+			return candidate;
 		}).collect(Collectors.toList());
 	}
 

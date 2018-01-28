@@ -8,15 +8,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
-import co.rxstack.ml.aggregator.impl.FaceExtractorService;
+import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
-import co.rxstack.ml.opencv.OpenCVDetectorTest;
-import co.rxstack.ml.utils.ResourceHelper;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;

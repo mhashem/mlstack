@@ -1,6 +1,4 @@
-package co.rxstack.ml.aggregator.impl;
-
-import static co.rxstack.ml.aggregator.impl.FaceExtractorService.toTinyGray;
+package co.rxstack.ml.aggregator.service.impl;
 
 import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
 import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
@@ -24,8 +22,8 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 
 import co.rxstack.ml.aggregator.DatasetUtils;
-import co.rxstack.ml.aggregator.IFaceExtractorService;
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceExtractorService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import co.rxstack.ml.aggregator.model.PersonBundleStatistics;
@@ -41,7 +39,6 @@ import org.bytedeco.javacpp.opencv_core.FileStorage;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_face.FaceRecognizer;
-import org.bytedeco.javacpp.opencv_imgcodecs;
 import org.bytedeco.javacpp.opencv_imgproc;
 import org.bytedeco.javacv.Java2DFrameConverter;
 import org.bytedeco.javacv.Java2DFrameUtils;
@@ -215,14 +212,14 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 			IntPointer prediction = new IntPointer(1);
 			DoublePointer confidence = new DoublePointer(1);
 
-			opencv_core.IplImage iplImage = toTinyGray(subImage, scale);
+			opencv_core.IplImage iplImage = FaceExtractorService.toTinyGray(subImage, scale);
 			faceRecognizer.predict(new Mat(iplImage), prediction, confidence);
 
 			int label = prediction.get(0);
 			double confidenceVal = confidence.get(0);
 
 			potentialFace.setLabel(label);
-			potentialFace.setConfidence(100 * (THRESHOLD - confidenceVal) / THRESHOLD);
+			potentialFace.setConfidence(confidenceVal / 100);
 		}
 		logger.info("Prediction result: {}", potentialFaces);
 		return potentialFaces;

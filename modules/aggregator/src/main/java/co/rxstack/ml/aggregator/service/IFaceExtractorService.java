@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator;
+package co.rxstack.ml.aggregator.service;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

@@ -7,12 +7,15 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-import co.rxstack.ml.aggregator.IFaceExtractorService;
-import co.rxstack.ml.aggregator.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
-import co.rxstack.ml.aggregator.impl.AggregatorService;
-import co.rxstack.ml.aggregator.impl.FaceExtractorService;
-import co.rxstack.ml.aggregator.impl.FaceRecognitionService;
+import co.rxstack.ml.aggregator.dao.FaceDao;
+import co.rxstack.ml.aggregator.service.IFaceExtractorService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
+import co.rxstack.ml.aggregator.service.IFaceService;
+import co.rxstack.ml.aggregator.service.impl.AggregatorService;
+import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
+import co.rxstack.ml.aggregator.service.impl.FaceRecognitionService;
+import co.rxstack.ml.aggregator.service.impl.FaceService;
 import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -36,6 +39,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
+import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_objdetect;
 import org.bytedeco.javacpp.opencv_objdetect.CvHaarClassifierCascade;
@@ -52,6 +56,11 @@ import org.springframework.web.client.RestTemplate;
  */
 @Configuration
 public class AppContext {
+
+	static {
+		// Preload the opencv_objdetect module to work around a known bug.
+		Loader.load(opencv_objdetect.class);
+	}
 
 	@Value("${client.service.name}")
 	private String clientServiceName;
@@ -142,10 +151,15 @@ public class AppContext {
 	}
 
 	@Bean
+	public IFaceService faceService(FaceDao faceDao) {
+		return new FaceService(faceDao);
+	}
+
+	@Bean
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
-		IFaceRecognitionService faceRecognitionService) {
-		return new AggregatorService(openCVService, faceRecognitionService, rekognitionService, cognitiveService);
+		IFaceRecognitionService faceRecognitionService, IFaceService faceService) {
+		return new AggregatorService(faceService, openCVService, faceRecognitionService, rekognitionService, cognitiveService);
 	}
 
 	@Qualifier("cascadeClassifier")
