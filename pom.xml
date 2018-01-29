@@ -146,7 +146,7 @@
 		<connection>scm:git:ssh://git@bitbucket.org/swiftx/mlstack.git.git</connection>
 		<developerConnection>scm:git:ssh://git@bitbucket.org/swiftx/mlstack.git</developerConnection>
 		<url>https://bitbucket.org/swiftx/mlstack.git</url>
-		<tag>0.0.1-29012018</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 </project>

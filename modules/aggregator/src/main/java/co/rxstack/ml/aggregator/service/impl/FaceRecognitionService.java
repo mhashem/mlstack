@@ -1,7 +1,8 @@
 package co.rxstack.ml.aggregator.service.impl;
 
 import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
-import static org.bytedeco.javacpp.opencv_face.createEigenFaceRecognizer;
+import static org.bytedeco.javacpp.opencv_face.createFisherFaceRecognizer;
+import static org.bytedeco.javacpp.opencv_face.createLBPHFaceRecognizer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.awt.*;
@@ -22,12 +23,12 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 
 import co.rxstack.ml.aggregator.DatasetUtils;
-import co.rxstack.ml.aggregator.service.IFaceExtractorService;
-import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import co.rxstack.ml.aggregator.model.PersonBundleStatistics;
 import co.rxstack.ml.aggregator.model.PotentialFace;
+import co.rxstack.ml.aggregator.service.IFaceExtractorService;
+import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -64,9 +65,9 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 		this.faceDBConfig = faceDBConfig;
 		this.faceExtractorService = faceExtractorService;
 
-		//this.faceRecognizer = createLBPHFaceRecognizer(1, 8, 8, 8, THRESHOLD);
-		this.faceRecognizer = createEigenFaceRecognizer();
-		//this.faceRecognizer = createFisherFaceRecognizer();
+		this.faceRecognizer = createLBPHFaceRecognizer(1, 8, 8, 8, THRESHOLD);
+		//this.faceRecognizer = createEigenFaceRecognizer();
+		//this.faceRecognizer = createFisherFaceRecognizer(0, THRESHOLD);
 
 		this.loadModel();
 	}
@@ -219,7 +220,7 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 			double confidenceVal = confidence.get(0);
 
 			potentialFace.setLabel(label);
-			potentialFace.setConfidence(confidenceVal / 100);
+			potentialFace.setConfidence(100 * (THRESHOLD - confidenceVal) / THRESHOLD);
 		}
 		logger.info("Prediction result: {}", potentialFaces);
 		return potentialFaces;
