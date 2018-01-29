@@ -81,7 +81,8 @@ public class FaceController {
 		try {
 			AggregateFaceIdentification faceIdentification = aggregatorService.identify(targetImage.getBytes(),
 				ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
-			return ResponseEntity.ok(ImmutableMap.of("faceIdentification", faceIdentification));
+			// ImmutableMap.of("recognitions", faceIdentification.getCandidates())
+			return ResponseEntity.ok(faceIdentification);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}

@@ -1,7 +1,6 @@
 package co.rxstack.ml.core.jobs.service.impl;
 
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 import co.rxstack.ml.common.model.Ticket;

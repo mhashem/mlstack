@@ -1,39 +1,31 @@
 package co.rxstack.ml.common.model;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class AggregateFaceIdentification {
 
-	@JsonProperty("aws")
-	private List<Candidate> awsCandidates;
-	@JsonProperty("open_cv")
-	private List<Candidate> openCVCandidates;
-	@JsonProperty("cognitive")
-	private List<Candidate> cognitiveCandidates;
+	@JsonProperty("candidates")
+	private final CopyOnWriteArrayList<Candidate> candidates;
 
-	public List<Candidate> getAwsCandidates() {
-		return awsCandidates;
+	public AggregateFaceIdentification() {
+		candidates = Lists.newCopyOnWriteArrayList();
 	}
 
-	public void setAwsCandidates(List<Candidate> awsCandidates) {
-		this.awsCandidates = awsCandidates;
+	public List<Candidate> getCandidates() {
+		return ImmutableList.copyOf(candidates);
 	}
 
-	public List<Candidate> getOpenCVCandidates() {
-		return openCVCandidates;
+	public void add(Candidate candidate) {
+		this.candidates.add(candidate);
 	}
 
-	public void setOpenCVCandidates(List<Candidate> openCVCandidates) {
-		this.openCVCandidates = openCVCandidates;
+	public void addAll(List<Candidate> candidateList) {
+		this.candidates.addAll(candidateList);
 	}
-
-	public List<Candidate> getCognitiveCandidates() {
-		return cognitiveCandidates;
-	}
-
-	public void setCognitiveCandidates(List<Candidate> cognitiveCandidates) {
-		this.cognitiveCandidates = cognitiveCandidates;
-	}
+	
 }

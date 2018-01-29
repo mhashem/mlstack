@@ -147,11 +147,11 @@ public class AggregatorService {
 					}
 				});
 
-				faceIdentification.setAwsCandidates(awsCompletableFuture.get());
+				faceIdentification.addAll(awsCompletableFuture.get());
 			}
 
 			if (openCVDetectionFuture.isDone()) {
-				faceIdentification.setOpenCVCandidates(openCVDetectionFuture.get());
+				faceIdentification.addAll(openCVDetectionFuture.get());
 			}
 
 			if (cognitiveCompletableFuture.isDone()) {
@@ -169,7 +169,7 @@ public class AggregatorService {
 
 						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
 					});
-					faceIdentification.setCognitiveCandidates(identificationResult.getCandidates());
+					faceIdentification.addAll(identificationResult.getCandidates());
 				}
 			}
 		} catch (IOException | InterruptedException | ExecutionException e) {
