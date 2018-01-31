@@ -9,6 +9,14 @@ with Microsoft Cognitive Services, Amazon AWS Rekognition, and Intel OpenCV.
 
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
+## Restful API ##
+
+run training POST ```http://localhost:8082/mlstack/api/v1/notification/push?notificationType=1002```
+
+run recognition POST ```http://localhost:8082/mlstack/api/v1/faces/recognition``` + targetImage as file
+
+run index faces POST ```http://localhost:8082/mlstack/api/v1/faces/12/index?personName=Mahmoud``` + faceImage as file
+
 ## Setup ##
 
 ```mlstack``` makes use of the following: 
