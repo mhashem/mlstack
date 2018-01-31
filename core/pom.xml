@@ -116,7 +116,7 @@
 	</dependencyManagement>
 
 	<build>
-		<finalName>app</finalName>
+		<finalName>mlstack-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
