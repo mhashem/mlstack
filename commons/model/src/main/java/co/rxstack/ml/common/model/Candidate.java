@@ -26,7 +26,6 @@ public class Candidate implements Comparable<Candidate> {
 	public Candidate(String personId, double confidence, FaceRectangle faceRectangle,
 		Recognizer recognizer) {
 		this.personId = personId;
-		this.dbPersonId = dbPersonId;
 		this.confidence = confidence;
 		this.faceRectangle = faceRectangle;
 		this.recognizer = recognizer;

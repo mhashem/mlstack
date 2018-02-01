@@ -19,11 +19,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
 import co.rxstack.ml.aggregator.DatasetUtils;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
+import co.rxstack.ml.aggregator.exception.ModelNotLoadedException;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import co.rxstack.ml.aggregator.model.PersonBundleStatistics;
 import co.rxstack.ml.aggregator.model.PotentialFace;
@@ -50,12 +53,15 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 
 	private static final Logger logger = getLogger(FaceRecognitionService.class);
 
+	// matches model name: model_2018-01-29.yml for example
 	private static final String MODEL_NAME_REG_EX =
 		"model_[0-9]{4}-(((0[13578]|(10|12))-(0[1-9]|[1-2][0-9]|3[0-1]))|(02-(0[1-9]|[1-2][0-9]))|((0[469]|11)-(0[1-9]|[1-2][0-9]|30))).yml";
 
-	private static final double THRESHOLD = 150d;
+	private static final double THRESHOLD = 123.0d;
 	private static final Pair<Integer, Integer> scale = Pair.of(100, 100);
 
+	private final AtomicBoolean isModelLoaded = new AtomicBoolean(false);
+	
 	private FaceDBConfig faceDBConfig;
 	private IFaceExtractorService faceExtractorService;
 
@@ -68,25 +74,29 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 		this.faceRecognizer = createLBPHFaceRecognizer(1, 8, 8, 8, THRESHOLD);
 		//this.faceRecognizer = createEigenFaceRecognizer();
 		//this.faceRecognizer = createFisherFaceRecognizer(0, THRESHOLD);
-
 		this.loadModel();
 	}
 
 	@Override
 	public void loadModel() {
-		try {
-			Path modelsDir = Paths.get(faceDBConfig.getModelStoragePath());
-			Optional<Path> lastFilePath;
-			lastFilePath = Files.list(modelsDir).filter(f -> !Files.isDirectory(f))
-				.filter(f -> f.toFile().getName().matches(MODEL_NAME_REG_EX))
-				.max(Comparator.comparingLong(f -> f.toFile().lastModified()));
-			if (lastFilePath.isPresent()) {
-				logger.info("Loading model file: {}", lastFilePath.get().getFileName());
-				faceRecognizer.load(lastFilePath.get().toFile().getAbsolutePath());
-				logger.info("Model loaded successfully");
+		Path modelsDir = Paths.get(faceDBConfig.getModelStoragePath());
+		Optional<Path> latestFilePath;
+		try (Stream<Path> pathStream = Files.list(modelsDir)){
+			
+			latestFilePath = pathStream.map(Path::toFile).filter(f -> !f.isDirectory())
+				.filter(f -> f.getName().matches(MODEL_NAME_REG_EX))
+				.max(Comparator.comparingLong(File::lastModified))
+				.map(File::toPath);
+			
+			if (latestFilePath.isPresent()) {
+				logger.info("Loading model file: {}", latestFilePath.get().getFileName());
+				faceRecognizer.load(latestFilePath.get().toFile().getAbsolutePath());
+				isModelLoaded.set(true);
+				logger.info("Model {} loaded successfully", latestFilePath.get().getFileName());
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
+			isModelLoaded.set(false);
 		}
 	}
 
@@ -207,6 +217,11 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 
 	@Override
 	public List<PotentialFace> predict(BufferedImage faceImage, List<PotentialFace> potentialFaces) {
+		
+		if (!isModelLoaded.get()) {
+			throw new ModelNotLoadedException("Cannot predict class! model was not loaded successfully");
+		}
+		
 		for (PotentialFace potentialFace : potentialFaces) {
 			Rectangle faceBox = potentialFace.getBox();
 			BufferedImage subImage = faceImage.getSubimage(faceBox.x, faceBox.y, faceBox.width, faceBox.height);

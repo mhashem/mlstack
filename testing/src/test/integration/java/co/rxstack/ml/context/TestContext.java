@@ -1,11 +1,16 @@
 package co.rxstack.ml.context;
 
 import static org.bytedeco.javacpp.opencv_objdetect.CvHaarClassifierCascade;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
@@ -20,11 +25,16 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.base.Throwables;
 import nu.pattern.OpenCV;
+import org.apache.commons.io.IOUtils;
+import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_objdetect;
 import org.opencv.objdetect.CascadeClassifier;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 /**
  * @author mhachem on 9/27/2017.
@@ -32,7 +42,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class TestContext {
 
-	private static final String AWS_REGION = "eu-west-1";
+	static {
+		// Preload the opencv_objdetect module to work around a known bug.
+		Loader.load(opencv_objdetect.class);
+		OpenCV.loadShared();
+	}
+	
+	private static final Logger logger = getLogger(TestContext.class);
+	
+	public static final String AWS_REGION = "eu-west-1";
 
 	@Bean("cognitiveServicesUri")
 	public URI cognitiveServicesUri() {
@@ -60,22 +78,35 @@ public class TestContext {
 		return new CloudStorageService(AWS_REGION, "mlstack", "index", awsStaticCredentialsProvider);
 	}
 
+	@Qualifier("haarCascadeFile")
 	@Bean
-	public CascadeClassifier cascadeClassifier() throws URISyntaxException {
-		// lbpcascade_frontalface.xml
-		File classifierFile = new File(
-			TestContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml").getFile());
-		return new CascadeClassifier(classifierFile.getAbsolutePath());
+	public File haarCascadeFile() {
+		try {
+			Path tempFile = Files.createTempFile("haarcascade_frontalface_alt", "xml");
+			InputStream inputStream = new ClassPathResource("opencv/haarcascade_frontalface_alt.xml")
+				.getInputStream();
+			Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+			IOUtils.closeQuietly(inputStream);
+			return tempFile.toFile();
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
 	}
 
+	@Qualifier("cascadeClassifier")
 	@Bean
-	public CvHaarClassifierCascade cvHaarClassifierCascade() throws URISyntaxException {
-		OpenCV.loadShared();
-		File classifierFile = new File(
-			TestContext.class.getClassLoader().getResource("opencv/haarcascade_frontalface_alt.xml").getFile());
+	public CascadeClassifier cascadeClassifier(File haarCascadeFile) {
+		return new CascadeClassifier(haarCascadeFile.getAbsolutePath());
+	}
+
+	@Qualifier("cvHaarClassifierCascade")
+	@Bean
+	public CvHaarClassifierCascade cvHaarClassifierCascade(File haarCascadeFile) {
 		try {
-			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(classifierFile.getCanonicalPath()));
-		} catch (IOException e) {
+			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(haarCascadeFile.getAbsolutePath()));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 			Throwables.throwIfUnchecked(e);
 			throw new RuntimeException(e);
 		}

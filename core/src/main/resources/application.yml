@@ -20,12 +20,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  jackson:
+    serialization: {indent_output: true}
 
 endpoints:
   beans:
     id: springbeans
     sensitive: false
     enabled: true
+
 
 
 management:

@@ -1,18 +1,13 @@
 package co.rxstack.ml.core.context;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
@@ -47,13 +42,13 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import nu.pattern.OpenCV;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_objdetect;
 import org.bytedeco.javacpp.opencv_objdetect.CvHaarClassifierCascade;
 import org.opencv.objdetect.CascadeClassifier;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -68,9 +63,12 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class AppContext {
 
+	private static final Logger logger = getLogger(AppContext.class);
+	
 	static {
 		// Preload the opencv_objdetect module to work around a known bug.
 		Loader.load(opencv_objdetect.class);
+		OpenCV.loadShared();
 	}
 
 	@Value("${client.service.name}")
@@ -184,7 +182,7 @@ public class AppContext {
 			IOUtils.closeQuietly(inputStream);
 			return tempFile.toFile();
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 			Throwables.throwIfUnchecked(e);
 			throw new RuntimeException(e);
 		}
@@ -192,18 +190,17 @@ public class AppContext {
 
 	@Qualifier("cascadeClassifier")
 	@Bean
-	public CascadeClassifier cascadeClassifier(File haarCascadeFile) throws URISyntaxException {
-		OpenCV.loadShared();
+	public CascadeClassifier cascadeClassifier(File haarCascadeFile) {
 		return new CascadeClassifier(haarCascadeFile.getAbsolutePath());
 	}
 
 	@Qualifier("cvHaarClassifierCascade")
 	@Bean
-	public CvHaarClassifierCascade cvHaarClassifierCascade(File haarCascadeFile) throws URISyntaxException {
-		OpenCV.loadShared();
+	public CvHaarClassifierCascade cvHaarClassifierCascade(File haarCascadeFile) {
 		try {
 			return new opencv_objdetect.CvHaarClassifierCascade(opencv_core.cvLoad(haarCascadeFile.getAbsolutePath()));
 		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 			Throwables.throwIfUnchecked(e);
 			throw new RuntimeException(e);
 		}
