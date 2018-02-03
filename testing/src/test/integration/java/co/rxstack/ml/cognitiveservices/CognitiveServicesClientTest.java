@@ -65,8 +65,12 @@ public class CognitiveServicesClientTest {
 	public void testGetPersonGroup() {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
 		Assert.assertTrue(result);
-		
-		Optional<PersonGroup> personGroupOptional = cognitiveServicesClient.getPersonGroup(validPersonGroupId);
+
+		List<PersonGroup> personGroups = cognitiveServicesClient.getPersonGroups();
+		Assert.assertFalse(personGroups.isEmpty());
+		Optional<PersonGroup> personGroupOptional = personGroups.stream()
+			.filter(personGroup -> personGroup.getPersonGroupId().equalsIgnoreCase(validPersonGroupId)).findAny();
+
 		Assert.assertTrue(personGroupOptional.isPresent());
 		Assert.assertEquals("test-group", personGroupOptional.get().getName());
 		Assert.assertEquals(validPersonGroupId, personGroupOptional.get().getPersonGroupId());
@@ -185,14 +189,14 @@ public class CognitiveServicesClientTest {
 					faceDetectionResults1.get(0).getFaceRectangle(), imageBytes1);
 
 			Assert.assertTrue(persistedFaceIdOptional1.isPresent());
-			//Assert.assertEquals(faceDetectionResults1.get(0).getFaceId(), persistedFaceIdOptional1.get());
+			//Assert.assertEquals(faceDetectionResults1.get(0).getId(), persistedFaceIdOptional1.get());
 			
 			Optional<String> persistedFaceIdOptional2 = cognitiveServicesClient
 				.addPersonFace(validPersonGroupId, createPersonOptional.get().getPersonId(),
 					faceDetectionResults2.get(0).getFaceRectangle(), imageBytes2);
 
 			Assert.assertTrue(persistedFaceIdOptional2.isPresent());
-			//Assert.assertEquals(faceDetectionResults2.get(0).getFaceId(), persistedFaceIdOptional2.get());
+			//Assert.assertEquals(faceDetectionResults2.get(0).getId(), persistedFaceIdOptional2.get());
 
 			// 5 train person group
 			
@@ -209,15 +213,14 @@ public class CognitiveServicesClientTest {
 			if (trainingStatusOptional.isPresent()) {
                 trainingStatus = trainingStatusOptional.get();
                 while (trainingStatus.getStatus() == TrainingStatus.Status.RUNNING) {
-                    System.out.println("Person group " + validPersonGroupId + " is still training...");
-                    trainingStatusOptional =
-                        cognitiveServicesClient.getPersonGroupTrainingStatus(validPersonGroupId);
-                    if (trainingStatusOptional.isPresent()) {
-                        trainingStatus = trainingStatusOptional.get();
-                    } else {
-                        System.out.println("Failed to get training status!");
-                        break;
-                    }
+					System.out.println("Identity group " + validPersonGroupId + " is still training...");
+					trainingStatusOptional = cognitiveServicesClient.getPersonGroupTrainingStatus(validPersonGroupId);
+					if (trainingStatusOptional.isPresent()) {
+						trainingStatus = trainingStatusOptional.get();
+					} else {
+						System.out.println("Failed to get training status!");
+						break;
+					}
                     Thread.sleep(1000L);
                 }
 

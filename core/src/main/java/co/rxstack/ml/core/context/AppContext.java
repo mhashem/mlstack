@@ -12,13 +12,16 @@ import java.nio.file.StandardCopyOption;
 
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.dao.FaceDao;
+import co.rxstack.ml.aggregator.dao.IdentityDao;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.service.IFaceService;
+import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
 import co.rxstack.ml.aggregator.service.impl.FaceRecognitionService;
-import co.rxstack.ml.aggregator.service.impl.FaceService;
+import co.rxstack.ml.aggregator.service.impl.IdentityService;
+import co.rxstack.ml.aggregator.service.impl.StorageService;
 import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
@@ -160,15 +163,16 @@ public class AppContext {
 	}
 
 	@Bean
-	public IFaceService faceService(FaceDao faceDao) {
-		return new FaceService(faceDao);
+	public IIdentityService identityService(IdentityDao identityDao, FaceDao faceDao) {
+		return new IdentityService(identityDao, faceDao);
 	}
 
 	@Bean
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
-		IFaceRecognitionService faceRecognitionService, IFaceService faceService) {
-		return new AggregatorService(faceService, openCVService, faceRecognitionService, rekognitionService, cognitiveService);
+		IFaceRecognitionService faceRecognitionService, IIdentityService identityService) {
+		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
+			cognitiveService);
 	}
 
 	@Qualifier("haarCascadeFile")
@@ -227,6 +231,11 @@ public class AppContext {
 	public IFaceRecognitionService faceRecognitionService(FaceDBConfig faceDBConfig,
 		IFaceExtractorService faceExtractorService) {
 		return new FaceRecognitionService(faceDBConfig, faceExtractorService);
+	}
+
+	@Bean
+	public IStorageService storageService(FaceDBConfig faceDBConfig, ICloudStorageService cloudStorageService) {
+		return new StorageService(faceDBConfig, cloudStorageService);
 	}
 
 	@Bean

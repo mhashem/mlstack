@@ -20,6 +20,7 @@ public class JobsController {
 	
 	@GetMapping("/api/v1/jobs")
 	public ResponseEntity getLastNJobs() {
+		// todo implement jobs api!
 		List<String> jobs = Lists.newArrayList();
 		IntStream.range(1, 10).forEach(value -> jobs.add(UUID.randomUUID().toString()));
 		return ResponseEntity.ok(ImmutableMap.of("jobs", jobs));

@@ -8,7 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 
 @Component
-public interface FaceDao extends CrudRepository<Face, String> {
+public interface FaceDao extends CrudRepository<Face, Integer> {
 
 	List<Face> findAll();
 }

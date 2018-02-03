@@ -19,6 +19,8 @@ public interface ICognitiveServicesClient {
 
 	boolean deletePersonGroup(String personGroupId);
 	
+	List<PersonGroup> getPersonGroups();
+
 	Optional<PersonGroup> getPersonGroup(String personGroupId);
 
 	Optional<TrainingStatus> getPersonGroupTrainingStatus(String personGroupId);

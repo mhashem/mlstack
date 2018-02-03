@@ -41,17 +41,17 @@ public class FaceController {
 		this.indexingQueue = indexingQueue;
 	}
 
-	@PostMapping("/api/v1/faces/{personId}/index")
+	@PostMapping("/api/v1/faces/{identityId}/index")
 	public ResponseEntity indexFace(
-		@PathVariable("personId")
-			String personId,
+		@PathVariable("identityId")
+			String identityId,
 		@RequestParam("personName")
 			String personName,
 		@RequestParam("faceImage")
 			MultipartFile faceImage) {
 		log.info("Intercepted: index face request");
 
-		Preconditions.checkNotNull(personId);
+		Preconditions.checkNotNull(identityId);
 		Preconditions.checkNotNull(faceImage);
 		// todo use something like phash to compute the hash of the image (media hash)
 		// log.info("image hash: {}", Hashing.sha256().hashBytes(bytes).toString());
@@ -60,7 +60,7 @@ public class FaceController {
 			byte[] bytes = faceImage.getBytes();
 			Ticket ticket = new Ticket(UUID.randomUUID().toString());
 			ticket.setType(Ticket.Type.INDEXING);
-			ticket.setPersonId(personId);
+			ticket.setPersonId(identityId);
 			ticket.setImageBytes(bytes);
 			ticket.setPersonName(personName);
 			

@@ -109,11 +109,9 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 	}
 
 	@Override
-	public Optional<PersonGroup> getPersonGroup(String personGroupId) {
-		log.info("getting person group {}", personGroupId);
-		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups")
-			.pathSegment(personGroupId).build().toUri();
-
+	public List<PersonGroup> getPersonGroups() {
+		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups").build().toUri();
+			//.pathSegment(personGroupId).build().toUri();
 		try {
 			HttpResponse<JsonNode> response =
 				Unirest.get(uri.toString())
@@ -121,13 +119,19 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 					.asJson();
 			
 			if (response.getStatus() == HttpStatus.SC_OK) {
-				PersonGroup personGroup = objectMapper.readValue(response.getRawBody(), PersonGroup.class);
-				return Optional.ofNullable(personGroup);
+				return objectMapper.readValue(response.getRawBody(), new TypeReference<List<PersonGroup>>() {
+				});
 			}
 		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);
 		}
-		return Optional.empty();
+		return ImmutableList.of();
+	}
+
+	@Override
+	public Optional<PersonGroup> getPersonGroup(String personGroupId) {
+		return this.getPersonGroups().stream()
+			.filter(pGroup -> pGroup.getPersonGroupId().equals(personGroupId)).findFirst();
 	}
 
 	@Override

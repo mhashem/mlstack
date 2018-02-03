@@ -35,8 +35,8 @@ public class DatasetUtilsTest {
 
 /*			PersonBundle personBundle = personBundleList.get(0);
 
-			Assert.assertEquals(1, personBundle.getPerson().getFaceId());
-			Assert.assertEquals("foo", personBundle.getPerson().getName());
+			Assert.assertEquals(1, personBundle.getIdentity().getFaceId());
+			Assert.assertEquals("foo", personBundle.getIdentity().getName());
 			Assert.assertEquals(Paths.get("C:\\etc\\facedb\\1-foo\\1.png"), personBundle.getFaceImagesPaths().get(0));
 */
 		}

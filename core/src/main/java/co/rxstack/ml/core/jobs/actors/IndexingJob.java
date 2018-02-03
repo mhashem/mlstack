@@ -2,18 +2,19 @@ package co.rxstack.ml.core.jobs.actors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import co.rxstack.ml.aggregator.dao.FaceDao;
+import co.rxstack.ml.aggregator.model.db.Face;
+import co.rxstack.ml.aggregator.model.db.Identity;
+import co.rxstack.ml.aggregator.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
-import co.rxstack.ml.aggregator.dao.FaceDao;
-import co.rxstack.ml.aggregator.model.db.Face;
 
 import akka.actor.UntypedActor;
 import com.google.common.base.Stopwatch;
@@ -28,47 +29,62 @@ import org.springframework.stereotype.Component;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class IndexingJob extends UntypedActor {
 
-	private static final Logger logger = getLogger(IndexingJob.class);
+	private static final Logger log = getLogger(IndexingJob.class);
 
 	private FaceDao faceDao;
 	private IndexingQueue indexingQueue;
 	private AggregatorService aggregatorService;
+	private IIdentityService identityService;
 
 	@Autowired
-	public IndexingJob(FaceDao faceDao, AggregatorService aggregatorService, IndexingQueue indexingQueue) {
+	public IndexingJob(FaceDao faceDao, IIdentityService identityService, AggregatorService aggregatorService,
+		IndexingQueue indexingQueue) {
 		this.aggregatorService = aggregatorService;
 		this.indexingQueue = indexingQueue;
 		this.faceDao = faceDao;
+		this.identityService = identityService;
 	}
 
 	@Override
 	public void onReceive(Object message) throws Throwable {
-		logger.info("IndexingJob fired with message {}", message);
+		log.info("IndexingJob fired with message {}", message);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		List<Ticket> tickets = indexingQueue.getTickets();
 		indexingQueue.clear();
 		if (tickets.isEmpty()) {
-			logger.info("no tickets found in indexing queue");
+			log.info("no tickets found in indexing queue");
 			return;
 		}
-		logger.info("found {} tickets in indexing queue", tickets.size());
+		log.info("found {} tickets in indexing queue", tickets.size());
 		for (Ticket ticket : tickets) {
 			Optional<AggregateFaceIndexingResult> faceIndexingResultOptional = aggregatorService
 				.indexFaces(ticket.getImageBytes(), ImmutableMap
 					.of(Constants.PERSON_ID, ticket.getPersonId(), Constants.PERSON_NAME, ticket.getPersonName()))
 				.stream().findAny();
 			if (faceIndexingResultOptional.isPresent()) {
-				logger.info("Indexing result {}", faceIndexingResultOptional.get());
+				log.info("Indexing result {}", faceIndexingResultOptional.get());
 				AggregateFaceIndexingResult faceIndexingResult = faceIndexingResultOptional.get();
+
+				Identity identity = null;
+				Optional<Identity> identityOptional =
+					identityService.findIdentityById(Integer.parseInt(ticket.getPersonId()));
+				if (!identityOptional.isPresent()) {
+					identity = new Identity();
+					identity.setName(ticket.getPersonName());
+					identity = identityService.save(identity);
+				} else {
+					identity= identityOptional.get();
+				}
+
 				Face face = new Face();
-				face.setPersonId(ticket.getPersonId());
+				face.setIdentity(identity);
 				face.setAwsFaceId(faceIndexingResult.awsFaceId);
 				face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
-				face.setCreationDate(Instant.now());
 				faceDao.save(face);
+				log.info("face {} saved successfully", face);
 			}
 		}
-		logger.info("IndexingJob completed in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+		log.info("IndexingJob completed in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 	}
 
 }
