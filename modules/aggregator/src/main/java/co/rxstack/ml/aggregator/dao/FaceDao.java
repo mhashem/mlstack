@@ -11,4 +11,7 @@ import org.springframework.stereotype.Component;
 public interface FaceDao extends CrudRepository<Face, Integer> {
 
 	List<Face> findAll();
+
+	List<Face> findAllByIdentityId(int identityId);
+
 }

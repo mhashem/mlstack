@@ -18,6 +18,8 @@ public interface IIdentityService {
 
 	Optional<Identity> findIdentityById(int id);
 
+	List<Face> findFaceListByIdentityId(int identityId);
+
 	Identity save(Identity identity);
 
 }

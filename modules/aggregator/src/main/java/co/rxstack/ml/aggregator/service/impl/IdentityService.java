@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import co.rxstack.ml.aggregator.dao.FaceDao;
 import co.rxstack.ml.aggregator.dao.IdentityDao;
@@ -28,6 +29,7 @@ public class IdentityService implements IIdentityService {
 	private FaceDao faceDao;
 	private IdentityDao identityDao;
 
+	private final Map<Integer, List<Face>> identityFaceListMap = Maps.newConcurrentMap();
 	private final Map<Integer, Identity> identityMap = Maps.newConcurrentMap();
 	private final Map<Integer, Identity> faceIdentityMap = Maps.newConcurrentMap();
 	private final Map<String, Integer> awsFaceIdMap = Maps.newConcurrentMap();
@@ -37,11 +39,12 @@ public class IdentityService implements IIdentityService {
 	public IdentityService(IdentityDao identityDao, FaceDao faceDao) {
 		this.faceDao = faceDao;
 		this.identityDao = identityDao;
+		refreshCache();
 	}
 
 	@Scheduled(fixedRate = 60000, initialDelay = 10000)
 	private void refreshCache() {
-		log.info("Refreshing face(s) cache");
+		log.info("Refreshing identity cache");
 		List<Face> faceList = faceDao.findAll();
 		faceList.forEach(face -> {
 			int faceId = face.getId();
@@ -52,7 +55,9 @@ public class IdentityService implements IIdentityService {
 
 			faceIdentityMap.put(faceId, face.getIdentity());
 		});
-		log.info("Refresh complete, found {} faces in db", faceList.size());
+
+		identityFaceListMap.putAll(
+			faceList.stream().collect(Collectors.groupingBy(o -> o.getIdentity().getId(), Collectors.toList())));
 
 		Set<Integer> idSet = Sets.newHashSet();
 		identityDao.findAll().forEach(identity -> {
@@ -61,6 +66,8 @@ public class IdentityService implements IIdentityService {
 		});
 
 		identityMap.keySet().retainAll(idSet);
+
+		log.info("Refresh complete, found {} faces in db", faceList.size());
 	}
 
 	@Override
@@ -91,6 +98,11 @@ public class IdentityService implements IIdentityService {
 			return identityOptional;
 		}
 		return identityDao.findById(id);
+	}
+
+	@Override
+	public List<Face> findFaceListByIdentityId(int identityId) {
+		return identityFaceListMap.get(identityId);
 	}
 
 	@Override

@@ -14,6 +14,8 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity(name = "Face")
 @Table(name = "face", indexes = {
 	@Index(name = "aws_face_ids_idx", columnList = "aws_face_id"),
@@ -34,6 +36,7 @@ public class Face {
 	@Column(name = "image")
 	private String image;
 
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name="identity_id", nullable=false)
 	private Identity identity;
