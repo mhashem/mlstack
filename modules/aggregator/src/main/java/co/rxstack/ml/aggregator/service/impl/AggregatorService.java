@@ -125,13 +125,23 @@ public class AggregatorService {
 
 			CompletableFuture<List<Candidate>> awsCompletableFuture = CompletableFuture.supplyAsync(() -> {
 					log.info("AWS Rekognition ---> async searching faces by image");
-				return awsRekognitionService.searchFacesByImage(bytes);
+				try {
+					return awsRekognitionService.searchFacesByImage(bytes);
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
+					return ImmutableList.of();
+				}
 			});
 
 			CompletableFuture<Optional<FaceIdentificationResult>> cognitiveCompletableFuture =
 				CompletableFuture.supplyAsync(() -> {
 					log.info("Cognitive ---> async searching faces by image");
-					return cognitiveService.identifyFace(bytes);
+					try {
+						return cognitiveService.identifyFace(bytes);
+					} catch (Exception e){
+						log.error(e.getMessage(), e);
+						return Optional.empty();
+					}
 				});
 
 			CompletableFuture.allOf(awsCompletableFuture, cognitiveCompletableFuture, openCVDetectionFuture).get();
