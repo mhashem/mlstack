@@ -17,7 +17,7 @@
 	<modules>
 		<module>client</module>
 		<module>commons</module>
-		<module>core</module>
+		<module>component</module>
 		<module>modules</module>
 		<module>testing</module>
 	</modules>

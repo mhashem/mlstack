@@ -10,9 +10,11 @@ spring:
       discovery:
         prefer-ip-address: true
         health-check-path: /mlstack/health
+        enabled: false
       host: 127.0.0.1
       port: 8500
       config:
         enabled: true
         watch:
           enabled: true
+      enabled: false
