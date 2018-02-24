@@ -17,19 +17,27 @@ package co.rxstack.ml.tensorflow;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Stopwatch;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
+import org.tensorflow.Operation;
 import org.tensorflow.Output;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.TensorFlow;
+import org.tensorflow.Tensors;
 import org.tensorflow.types.UInt8;
 
 /**
@@ -58,19 +66,22 @@ public class LabelImage {
 		String modelDir = args[0];
 		String imageFile = args[1];
 
-		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, "tensorflow_inception_graph.pb"));
-		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, "imagenet_comp_graph_label_strings.txt"));
+		String graphFile = "face_net_graph_2.pb"; //"tensorflow_inception_graph.pb";
+		String labelsFile = "retrained_labels.txt";
+
+		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
+		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
 		byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
 
-		try (Tensor<Float> image = constructAndExecuteGraphToNormalizeImage(imageBytes)) {
-			float[] labelProbabilities = executeInceptionGraph(graphDef, image);
+		try (Tensor<String> image = Tensors.create(imageBytes)) {
+		float[] labelProbabilities = executeInceptionGraph(graphDef, image);
 			int bestLabelIdx = maxIndex(labelProbabilities);
 			System.out.println(String.format("BEST MATCH: %s (%.2f%% likely)", labels.get(bestLabelIdx),
 				labelProbabilities[bestLabelIdx] * 100f));
 		}
 	}
 
-	private static Tensor<Float> constructAndExecuteGraphToNormalizeImage(byte[] imageBytes) {
+	private static Tensor<String> constructAndExecuteGraphToNormalizeImage(byte[] imageBytes) {
 		try (Graph g = new Graph()) {
 			GraphBuilder b = new GraphBuilder(g);
 			// Some constants specific to the pre-trained model at:
@@ -89,29 +100,51 @@ public class LabelImage {
 			// have been more appropriate.
 			final Output<String> input = b.constant("input", imageBytes);
 			final Output<Float> output = b.div(b.sub(
-				b.resizeBilinear(b.expandDims(b.cast(b.decodeJpeg(input, 3), Float.class), b.constant("make_batch", 0)),
+				b.resizeBilinear(b.expandDims(b.cast(b.decodeJpeg(input, 3), String.class), b.constant("make_batch", 0)),
 					b.constant("size", new int[] { H, W })), b.constant("mean", mean)), b.constant("scale", scale));
 			try (Session s = new Session(g)) {
-				return s.runner().fetch(output.op().name()).run().get(0).expect(Float.class);
+				return s.runner().fetch(output.op().name()).run().get(0).expect(String.class);
 			}
 		}
 	}
 
-	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<Float> image) {
+	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<String> image) {
 		try (Graph g = new Graph()) {
 			g.importGraphDef(graphDef);
-			try (Session s = new Session(g);
-				Tensor<Float> result = s.runner().feed("input", image).fetch("output").run().get(0)
-					.expect(Float.class)) {
+
+			Iterator<Operation> operations = g.operations();
+
+			while (operations.hasNext()) {
+				System.out.println(operations.next().name());
+			}
+
+			try(Session s = new Session(g)) {
+
+				Stopwatch stopwatch = Stopwatch.createStarted();
+
+				Tensor<Float> result = s.runner()
+					.feed("DecodeJpeg/contents:0", image)
+					.fetch("final_result:0").run().get(0)
+					.expect(Float.class);
+
+				System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
+
 				final long[] rshape = result.shape();
+
 				if (result.numDimensions() != 2 || rshape[0] != 1) {
 					throw new RuntimeException(String.format(
 						"Expected model to produce a [1 N] shaped tensor where N is the number of labels, instead it produced one with shape %s",
 						Arrays.toString(rshape)));
 				}
 				int nlabels = (int) rshape[1];
-				return result.copyTo(new float[1][nlabels])[0];
+				float[][] floats = result.copyTo(new float[1][nlabels]);
+
+				return floats[0];
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
+
+			return null;
 		}
 	}
 
