@@ -17,6 +17,11 @@
 			<artifactId>tensorflow</artifactId>
 			<version>${tensorflow.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>23.0</version>
+		</dependency>
 	</dependencies>
 	
 </project>

@@ -13,10 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package co.rxstack.ml.tensorflow;
+package co.rxstack.ml.tensorflow.experimental;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +29,10 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
 
 import com.google.common.base.Stopwatch;
 import org.tensorflow.DataType;
@@ -40,7 +48,8 @@ import org.tensorflow.types.UInt8;
 /**
  * Sample use of the TensorFlow Java API to label images using a pre-trained model.
  */
-public class LabelImage {
+@SuppressWarnings("ALL")
+public class FaceNetLabeling {
 	private static void printUsage(PrintStream s) {
 		final String url = "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip";
 		s.println("Java program that uses a pre-trained Inception model (http://arxiv.org/abs/1512.00567)");
@@ -62,21 +71,24 @@ public class LabelImage {
 		}
 		String modelDir = args[0];
 		String imageFile = args[1];
-		String imagesDir = args[2];
 
-		String graphFile = "face_net_graph_3.pb"; //"tensorflow_inception_graph.pb";
-		String labelsFile = "retrained_labels.txt";
+		String graphFile = "20170511-185253.pb";
+		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
 		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
 		byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
 
-		Files.list(Paths.get(imagesDir)).forEach(path -> {
-			System.out.println(path.toFile().getAbsolutePath());
-		});
 
-		try (Tensor<String> image = Tensors.create(imageBytes)) {
-		float[] labelProbabilities = executeInceptionGraph(graphDef, image);
+		ByteBuffer buf = ByteBuffer.wrap(imageBytes);
+		FloatBuffer floatBuffer = ((ByteBuffer) buf.rewind()).asFloatBuffer();
+
+		// fromFileMultipleChannels(Paths.get(imageFile).toFile()))
+
+		// Tensor.create(fromFileMultipleChannels(Paths.get(imageFile).toFile())))
+
+		try (Tensor<?> image = Tensors.create(fromFileMultipleChannels(Paths.get(imageFile).toFile()))) {
+			float[] labelProbabilities = executeInceptionGraph(graphDef, image);
 			int bestLabelIdx = maxIndex(labelProbabilities);
 			System.out.println(String.format("BEST MATCH: %s (%.2f%% likely)", labels.get(bestLabelIdx),
 				labelProbabilities[bestLabelIdx] * 100f));
@@ -110,7 +122,7 @@ public class LabelImage {
 		}
 	}
 
-	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<String> image) {
+	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<?> image) {
 		try (Graph g = new Graph()) {
 			g.importGraphDef(graphDef);
 
@@ -124,10 +136,16 @@ public class LabelImage {
 
 				Stopwatch stopwatch = Stopwatch.createStarted();
 
-				Tensor<Float> result = s.runner()
-					.feed("DecodeJpeg/contents:0", image)
-					.fetch("final_result:0").run().get(0)
-					.expect(Float.class);
+
+				// input:0
+				// embeddings:0
+				// phase_train:0
+
+				Tensor<float[]> result = s.runner()
+					.feed("input:0", image)
+					.feed("phase_train:0", Tensors.create(false))
+					.fetch("embeddings:0").run().get(0)
+					.expect(float[].class);
 
 				System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
 
@@ -139,7 +157,6 @@ public class LabelImage {
 						Arrays.toString(rshape)));
 				}
 				int nlabels = (int) rshape[1];
-				System.out.println("nlabels " + nlabels);
 				float[][] floats = result.copyTo(new float[1][nlabels]);
 
 				return floats[0];
@@ -248,4 +265,83 @@ public class LabelImage {
 
 		private Graph g;
 	}
+
+
+	/**
+	 * Load a rastered image from file
+	 * @param file the file to load
+	 * @return the rastered image
+	 * @throws IOException
+	 */
+	public static float[][][][] fromFileMultipleChannels(File file) throws IOException {
+		BufferedImage image = ImageIO.read(file);
+		//image = scalingIfNeed(image, false);
+
+		int w = image.getWidth(), h = image.getHeight();
+		int bands = image.getSampleModel().getNumBands();
+		float[][][][] ret = new float[128][w][h][3];
+		byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				for (int k = 0; k < 3; k++) {
+					if (k >= bands)
+						break;
+					ret[0][i][j][3] = pixels[3 * w * i + 3 * j + k];
+				}
+			}
+		}
+		return ret;
+	}
+
+	/*protected BufferedImage scalingIfNeed(BufferedImage image, boolean needAlpha) {
+		return scalingIfNeed(image, image.getHeight(), image.getWidth(), needAlpha);
+	}*/
+
+	/*protected BufferedImage scalingIfNeed(BufferedImage image, int dstHeight, int dstWidth, boolean needAlpha) {
+		if (dstHeight > 0 && dstWidth > 0 && (image.getHeight() != dstHeight || image.getWidth() != dstWidth)) {
+			Image scaled = image.getScaledInstance(dstWidth, dstHeight, Image.SCALE_SMOOTH);
+
+			if (needAlpha && image.getColorModel().hasAlpha() && 3 == BufferedImage.TYPE_4BYTE_ABGR) {
+				return toBufferedImage(scaled, BufferedImage.TYPE_4BYTE_ABGR);
+			} else {
+				if (channels == BufferedImage.TYPE_BYTE_GRAY)
+					return toBufferedImage(scaled, BufferedImage.TYPE_BYTE_GRAY);
+				else
+					return toBufferedImage(scaled, BufferedImage.TYPE_3BYTE_BGR);
+			}
+		} else {
+			if (image.getType() == BufferedImage.TYPE_4BYTE_ABGR || image.getType() == BufferedImage.TYPE_3BYTE_BGR) {
+				return image;
+			} else if (needAlpha && image.getColorModel().hasAlpha() && channels == BufferedImage.TYPE_4BYTE_ABGR) {
+				return toBufferedImage(image, BufferedImage.TYPE_4BYTE_ABGR);
+			} else {
+				if (channels == BufferedImage.TYPE_BYTE_GRAY)
+					return toBufferedImage(image, BufferedImage.TYPE_BYTE_GRAY);
+				else
+					return toBufferedImage(image, BufferedImage.TYPE_3BYTE_BGR);
+			}
+		}
+	}*/
+
+	public static Tensor<?> test() {
+		Random r = new Random();
+		int imageSize = 224 * 224 * 3;
+		int batch = 128;
+		long[] shape = new long[] {batch, imageSize};
+		FloatBuffer buf = FloatBuffer.allocate(imageSize * batch);
+		for (int i = 0; i < imageSize * batch; ++i) {
+			buf.put(r.nextFloat());
+		}
+		buf.flip();
+
+		long start = System.nanoTime();
+		Tensor<Float> floatTensor = Tensor.create(shape, buf);
+		long end = System.nanoTime();
+		System.out.println("Took: " + (end - start));
+
+		return floatTensor;
+	}
+
+
 }
