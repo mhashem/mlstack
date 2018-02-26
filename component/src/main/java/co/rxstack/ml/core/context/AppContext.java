@@ -28,6 +28,7 @@ import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
 import co.rxstack.ml.client.IStackClient;
+import co.rxstack.ml.client.PreprocessorClient;
 import co.rxstack.ml.client.StackClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
@@ -39,6 +40,8 @@ import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
+import co.rxstack.ml.tensorflow.InceptionConfig;
+import co.rxstack.ml.tensorflow.InceptionService;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -96,6 +99,12 @@ public class AppContext {
 	@Value("${face.standard.height}")
 	private int standardHeight;
 
+	@Value("${tensor.graph.path}")
+	private String graphPath;
+	@Value("${tensor.labels.path}")
+	private String labelsPath;
+	@Value("${preprocesser.host}")
+	private String preprocessorHost;
 
 	@Qualifier("stackClientRestTemplate")
 	@Bean
@@ -170,9 +179,10 @@ public class AppContext {
 	@Bean
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
-		IFaceRecognitionService faceRecognitionService, IIdentityService identityService) {
+		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
+		InceptionService inceptionService, PreprocessorClient preprocessorClient) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
-			cognitiveService);
+			cognitiveService, inceptionService, preprocessorClient);
 	}
 
 	@Qualifier("haarCascadeFile")
@@ -256,7 +266,28 @@ public class AppContext {
 		config.setThreshold(cognitiveServicesProperties.getThreshold());
 		return config;
 	}
-	
-	
-	
+
+	@Bean
+	public InceptionConfig inceptionConfig() {
+		InceptionConfig inceptionConfig = new InceptionConfig();
+		inceptionConfig.setGraphPath(graphPath);
+		inceptionConfig.setLabelsPath(labelsPath);
+		return inceptionConfig;
+	}
+
+	@Bean
+	public InceptionService inceptionService(InceptionConfig inceptionConfig) {
+		try {
+			return new InceptionService(inceptionConfig);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Bean
+	public PreprocessorClient preprocessorClient() {
+		return new PreprocessorClient(preprocessorHost);
+	}
+
 }

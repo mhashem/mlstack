@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package co.rxstack.ml.tensorflow;
+package co.rxstack.ml.tensorflow.experimental;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -40,6 +40,7 @@ import org.tensorflow.types.UInt8;
 /**
  * Sample use of the TensorFlow Java API to label images using a pre-trained model.
  */
+@SuppressWarnings("ALL")
 public class LabelImage {
 	private static void printUsage(PrintStream s) {
 		final String url = "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip";
@@ -62,18 +63,18 @@ public class LabelImage {
 		}
 		String modelDir = args[0];
 		String imageFile = args[1];
-		String imagesDir = args[2];
+		//String imagesDir = args[2];
 
-		String graphFile = "face_net_graph_3.pb"; //"tensorflow_inception_graph.pb";
-		String labelsFile = "retrained_labels.txt";
+		String graphFile = "face_net_graph_4.pb"; //"tensorflow_inception_graph.pb";
+		String labelsFile = "retrained_labels_4.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
 		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
 		byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
 
-		Files.list(Paths.get(imagesDir)).forEach(path -> {
+		/*Files.list(Paths.get(imagesDir)).forEach(path -> {
 			System.out.println(path.toFile().getAbsolutePath());
-		});
+		});*/
 
 		try (Tensor<String> image = Tensors.create(imageBytes)) {
 		float[] labelProbabilities = executeInceptionGraph(graphDef, image);
@@ -114,11 +115,11 @@ public class LabelImage {
 		try (Graph g = new Graph()) {
 			g.importGraphDef(graphDef);
 
-			Iterator<Operation> operations = g.operations();
+			/*Iterator<Operation> operations = g.operations();
 
 			while (operations.hasNext()) {
 				System.out.println(operations.next().name());
-			}
+			}*/
 
 			try(Session s = new Session(g)) {
 

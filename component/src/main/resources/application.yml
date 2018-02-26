@@ -93,3 +93,13 @@ face:
 model:
   storage:
     path: "C:/etc/mlstack/models"
+
+
+tensor:
+  graph:
+    path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_6.pb"
+  labels:
+    path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_6.txt"
+
+preprocesser:
+  host: "http://127.0.0.1:5000"

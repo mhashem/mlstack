@@ -1,12 +1,10 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import co.rxstack.ml.aggregator.model.db.Identity;
 import co.rxstack.ml.aggregator.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIdentification;
@@ -100,6 +98,21 @@ public class FaceController {
 		}
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 			.body(ImmutableMap.of("message", "no matching face(s) found"));
+	}
+
+	@PostMapping("/api/v2/faces/recognition")
+	public ResponseEntity recognize(
+		@RequestParam("image")
+			MultipartFile image, HttpServletRequest request) {
+		log.info("Intercepted request for image recognition from {}", request.getRemoteAddr());
+
+		Preconditions.checkNotNull(image);
+		try {
+			return ResponseEntity.ok(aggregatorService.recognize(image.getBytes()));
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return ResponseEntity.badRequest().build();
 	}
 
 }
