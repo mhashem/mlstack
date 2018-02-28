@@ -3,10 +3,18 @@ package co.rxstack.ml.client;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import co.rxstack.ml.common.model.FaceBox;
+import co.rxstack.ml.common.model.FaceIdentificationResult;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.io.FileUtils;
@@ -20,8 +28,11 @@ public class PreprocessorClient {
 
 	private final String serviceUri;
 
+	private ObjectMapper objectMapper;
+
 	public PreprocessorClient(String serviceUri) {
 		this.serviceUri = serviceUri;
+		objectMapper = new ObjectMapper();
 	}
 
 	/**
@@ -36,14 +47,14 @@ public class PreprocessorClient {
 			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");
 			tempFile.deleteOnExit();
 			FileUtils.writeByteArrayToFile(tempFile, imageBytes);
-			HttpResponse<InputStream> jsonResponse = Unirest.post(serviceUri + "/api/v1/faces/alignment")
+			HttpResponse<InputStream> response = Unirest.post(serviceUri + "/api/v1/faces/alignment")
 				.header("accept", "application/json")
 				.field("image", tempFile)
 				.asObject(InputStream.class);
 
-			if (jsonResponse.getStatus() == 200) {
+			if (response.getStatus() == 200) {
 				log.info("image aligned successfully");
-				return Optional.of(IOUtils.toByteArray(jsonResponse.getRawBody()));
+				return Optional.of(IOUtils.toByteArray(response.getRawBody()));
 			}
 		} catch (UnirestException | IOException e) {
 			log.error(e.getMessage(), e);
@@ -52,6 +63,31 @@ public class PreprocessorClient {
 				tempFile.delete();
 		}
 		return Optional.empty();
+	}
+
+	public List<FaceBox> detectFaces(byte[] imageBytes) {
+		File tempFile = null;
+		try {
+			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");
+			tempFile.deleteOnExit();
+			FileUtils.writeByteArrayToFile(tempFile, imageBytes);
+			HttpResponse<JsonNode> jsonResponse = Unirest.post(serviceUri + "/api/v1/faces/detection")
+				.header("accept", "application/json")
+				.field("image", tempFile)
+				.asJson();
+
+			if (jsonResponse.getStatus() == 200) {
+				log.info("image aligned successfully");
+				return  objectMapper.readValue(jsonResponse.getRawBody(),
+					new TypeReference<List<FaceBox>>(){});
+			}
+		} catch (UnirestException | IOException e) {
+			log.error(e.getMessage(), e);
+		} finally {
+			if (tempFile != null)
+				tempFile.delete();
+		}
+		return ImmutableList.of();
 	}
 
 	/*public static void main(String[] args) throws IOException {
@@ -65,5 +101,16 @@ public class PreprocessorClient {
 			FileUtils.writeByteArrayToFile(new File("C:\\Users\\mahmoud\\Pictures\\People\\sheikh_akram_aligned.jpg"), alignOptional.get(), false);
 		}
 	}*/
+
+	public static void main(String[] args) throws IOException {
+		PreprocessorClient client = new PreprocessorClient("http://localhost:5000");
+		byte[] imageBytes = FileUtils.readFileToByteArray(new File("C:\\etc\\mlstack\\misc\\23167642_10155853806249108_1032955621687484260_n.jpg"));
+
+		List<FaceBox> faceBoxes = client.detectFaces(imageBytes);
+		for (FaceBox faceBox : faceBoxes) {
+			System.out.println(faceBox);
+		}
+
+	}
 
 }

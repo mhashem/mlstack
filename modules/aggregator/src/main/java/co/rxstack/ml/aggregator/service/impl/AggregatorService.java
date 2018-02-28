@@ -31,6 +31,7 @@ import co.rxstack.ml.common.model.AggregateFaceIdentification;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.Constants;
+import co.rxstack.ml.common.model.FaceBox;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
@@ -90,33 +91,28 @@ public class AggregatorService {
 		final List<TensorFlowResult> tfResutls = Lists.newArrayList();
 		try {
 			BufferedImage bufferedImage = bytesToBufferedImage(imageBytes);
-			List<PotentialFace> potentialFaces = faceExtractorService.detectFaces(bufferedImage);
-			potentialFaces.forEach(potentialFace -> {
-				Rectangle faceBox = potentialFace.getBox();
-				BufferedImage faceImage =
-					bufferedImage.getSubimage(faceBox.x, faceBox.y, faceBox.width, faceBox.height);
+			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
+			faceBoxes.forEach(faceBox -> {
+				BufferedImage faceImage = bufferedImage
+					.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
+						(faceBox.getBottom() - faceBox.getTop()));
+
 				try {
+					//BufferedImage deepCopy = deepCopy(faceImage);
+					//ImageIO.write(faceImage, "jpg", new File("C:\\etc\\mlstack\\misc\\faces\\" + System.currentTimeMillis() + ".jpg"));
+
+
 					Optional<byte[]> alignedImageByteArray =
 						preprocessorClient.align(bufferedImageToByteArray(faceImage));
 					if (alignedImageByteArray.isPresent()) {
 						Optional<TensorFlowResult> tensorFlowResult =
 							inceptionService.predictBest(alignedImageByteArray.get());
 						tensorFlowResult.ifPresent(tfResutls::add);
-						/*PotentialFace p2 = PotentialFace.newUnIdentifiedFace(potentialFace.getBox());
-
-						if (tensorFlowResult.isPresent()) {
-							p2.setConfidence(tensorFlowResult.get().getConfidence());
-							p2.setLabelString(tensorFlowResult.get().getLabel());
-						} else {
-							p2.setConfidence(0.0);
-							p2.setLabel(0);
-						}*/
 					}
 				} catch (IOException e) {
 					log.error(e.getMessage(), e);
 				}
 			});
-
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
