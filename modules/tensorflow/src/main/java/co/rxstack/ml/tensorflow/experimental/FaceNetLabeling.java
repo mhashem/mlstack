@@ -86,8 +86,8 @@ public class FaceNetLabeling {
 		// fromFileMultipleChannels(Paths.get(imageFile).toFile()))
 
 		// Tensor.create(fromFileMultipleChannels(Paths.get(imageFile).toFile())))
-
-		try (Tensor<?> image = Tensors.create(fromFileMultipleChannels(Paths.get(imageFile).toFile()))) {
+		
+		try (Tensor<?> image = Tensors.create(imageBytes)) {
 			float[] labelProbabilities = executeInceptionGraph(graphDef, image);
 			int bestLabelIdx = maxIndex(labelProbabilities);
 			System.out.println(String.format("BEST MATCH: %s (%.2f%% likely)", labels.get(bestLabelIdx),

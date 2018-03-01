@@ -24,7 +24,7 @@ import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.service.IIdentityService;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
-import co.rxstack.ml.client.PreprocessorClient;
+import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.AggregateFaceIdentification;
@@ -96,12 +96,7 @@ public class AggregatorService {
 				BufferedImage faceImage = bufferedImage
 					.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
 						(faceBox.getBottom() - faceBox.getTop()));
-
 				try {
-					//BufferedImage deepCopy = deepCopy(faceImage);
-					//ImageIO.write(faceImage, "jpg", new File("C:\\etc\\mlstack\\misc\\faces\\" + System.currentTimeMillis() + ".jpg"));
-
-
 					Optional<byte[]> alignedImageByteArray =
 						preprocessorClient.align(bufferedImageToByteArray(faceImage));
 					if (alignedImageByteArray.isPresent()) {

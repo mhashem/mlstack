@@ -1,4 +1,4 @@
-package co.rxstack.ml.client;
+package co.rxstack.ml.client.preprocessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import co.rxstack.ml.common.model.FaceBox;
-import co.rxstack.ml.common.model.FaceIdentificationResult;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PreprocessorClient {
+public class PreprocessorClient implements IPreprocessorClient {
 
 	private static final Logger log = LoggerFactory.getLogger(PreprocessorClient.class);
 
@@ -41,6 +40,7 @@ public class PreprocessorClient {
 	 * @param imageBytes byte[]
 	 * @return {@link Optional}
 	 */
+	@Override
 	public Optional<byte[]> align(byte[] imageBytes) {
 		File tempFile = null;
 		try {
@@ -65,6 +65,13 @@ public class PreprocessorClient {
 		return Optional.empty();
 	}
 
+	/**
+	 * This method has higher accuracy detecting faces in an image
+	 *  
+	 * @param imageBytes byte[]
+	 * @return List<FaceBox> list of face boxes
+	 */
+	@Override
 	public List<FaceBox> detectFaces(byte[] imageBytes) {
 		File tempFile = null;
 		try {
@@ -102,7 +109,7 @@ public class PreprocessorClient {
 		}
 	}*/
 
-	public static void main(String[] args) throws IOException {
+	/*public static void main(String[] args) throws IOException {
 		PreprocessorClient client = new PreprocessorClient("http://localhost:5000");
 		byte[] imageBytes = FileUtils.readFileToByteArray(new File("C:\\etc\\mlstack\\misc\\23167642_10155853806249108_1032955621687484260_n.jpg"));
 
@@ -111,6 +118,6 @@ public class PreprocessorClient {
 			System.out.println(faceBox);
 		}
 
-	}
+	}*/
 
 }

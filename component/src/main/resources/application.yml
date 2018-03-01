@@ -21,7 +21,7 @@ spring:
     hibernate:
       ddl-auto: update
   jackson:
-    serialization: {indent_output: true}
+    serialization: {INDENT_OUTPUT: true, WRITE_DATES_AS_TIMESTAMPS: false}
 
 endpoints:
   beans:

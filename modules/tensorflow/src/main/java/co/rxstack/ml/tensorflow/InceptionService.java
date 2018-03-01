@@ -78,8 +78,8 @@ public class InceptionService {
 		log.info("Predicting best result for image with {} bytes", imageBytes.length);
 		try(Tensor<String> image = Tensors.create(imageBytes)) {
 			float[] labelProbabilities = executeInceptionGraph(image);
-			int bestLabelIdx = maxIndex(labelProbabilities);
-			TensorFlowResult result = new TensorFlowResult(labels.get(bestLabelIdx), labelProbabilities[bestLabelIdx] * 100f);
+			int bestLabelIdx = maxIndex(labelProbabilities);			
+			TensorFlowResult result = new TensorFlowResult(labels.get(bestLabelIdx), Math.round(labelProbabilities[bestLabelIdx] * 100f));
 			return Optional.of(result);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);

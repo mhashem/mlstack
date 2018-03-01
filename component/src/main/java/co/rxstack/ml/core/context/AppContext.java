@@ -28,7 +28,7 @@ import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
 import co.rxstack.ml.client.IStackClient;
-import co.rxstack.ml.client.PreprocessorClient;
+import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.client.StackClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
