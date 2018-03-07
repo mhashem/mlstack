@@ -42,6 +42,7 @@ public class PreprocessorClient implements IPreprocessorClient {
 	 */
 	@Override
 	public Optional<byte[]> align(byte[] imageBytes) {
+		log.info("Calling preprocessor service to process image with {} bytes", imageBytes.length);
 		File tempFile = null;
 		try {
 			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");
