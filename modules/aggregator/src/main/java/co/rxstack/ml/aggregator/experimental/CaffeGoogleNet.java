@@ -32,8 +32,13 @@ public class CaffeGoogleNet {
 
 		try {
 			caffeGoogleNet = new opencv_dnn.Net();
+/*
 			File protobuf = new File(getClass().getResource("/caffe/bvlc_googlenet.prototxt").toURI());
 			File caffeModel = new File(getClass().getResource("/caffe/bvlc_googlenet.caffemodel").toURI());
+*/
+
+			File protobuf = new File("C:\\Users\\mahmoud\\Downloads\\deep-learning-face-detection\\deep-learning-face-detection\\deploy.prototxt");
+			File caffeModel = new File("C:\\Users\\mahmoud\\Downloads\\deep-learning-face-detection\\deep-learning-face-detection\\res10_300x300_ssd_iter_140000.caffemodel");
 
 			//File vggProbuf = new File(getClass().getResource("/caffe/VGG_ILSVRC_16_layers_deploy.prototxt").toURI());
 			//File vggCaffeModel = new File("C:\\Users\\mahmoud\\Downloads\\VGG_ILSVRC_16_layers.caffemodel");
@@ -49,7 +54,7 @@ public class CaffeGoogleNet {
 	}
 
 	public void predict(opencv_core.Mat img) {
-		opencv_imgproc.resize(img, img, new opencv_core.Size(224, 224)); //GoogLeNet accepts only 224x224 RGB-images
+		opencv_imgproc.resize(img, img, new opencv_core.Size(300, 300)); //GoogLeNet accepts only 224x224 RGB-images
 		opencv_dnn.Blob inputBlob = opencv_dnn.Blob.fromImages(img);//Convert Mat to 4-dimensional dnn::Blob from image
 		//! [Prepare blob]
 
@@ -57,12 +62,14 @@ public class CaffeGoogleNet {
 		caffeGoogleNet.setBlob(".data", inputBlob);      //set the network input
 		//! [Set input blob]
 
+		//opencv_dnn.DictValue dictValue = new opencv_dnn.DictValue("detection_out");
+
 		//! [Make forward pass]
 		caffeGoogleNet.forward();                        //compute output
 		//! [Make forward pass]
 
 		//! [Gather output]
-		opencv_dnn.Blob prob = caffeGoogleNet.getBlob("prob");      //gather output of "prob" layer
+		opencv_dnn.Blob prob = caffeGoogleNet.getBlob("detection_out");      //gather output of "prob" layer
 
 		opencv_core.Point classId = new opencv_core.Point();
 		double[] classProb = new double[1];
@@ -70,9 +77,9 @@ public class CaffeGoogleNet {
 		//! [Gather output]
 
 		//! [Print results]
-		List<String> classNames = readClassNames();
+		//List<String> classNames = readClassNames();
 
-		System.out.println("Best class: #" + classId.x() + " '" + classNames.get(classId.x()) + "'");
+		//System.out.println("Best class: #" + classId.x() + " '" + classNames.get(classId.x()) + "'");
 		System.out.println("Best class: #" + classId.x());
 		System.out.println("Probability: " + classProb[0] * 100 + "%");
 		//! [Print results]
@@ -106,7 +113,8 @@ public class CaffeGoogleNet {
 	}
 
 	public static void main(String[] args) throws IOException {
-		BufferedImage image = ImageIO.read(CNNGenderDetector.class.getClassLoader().getResourceAsStream("books.jpg"));
+		// CNNGenderDetector.class.getClassLoader().getResourceAsStream("books.jpg")
+		BufferedImage image = ImageIO.read(new File("C:\\Users\\mahmoud\\Pictures\\People\\mohammad_shokor-hussein-khazzal.jpg"));
 		CaffeGoogleNet caffeGoogleNet = new CaffeGoogleNet();
 		caffeGoogleNet.predict(Java2DFrameUtils.toMat(image));
 	}
