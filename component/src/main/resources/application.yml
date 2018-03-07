@@ -88,7 +88,7 @@ face:
     name:
       delimiter: "-"
   db:
-    path: "C:/etc/mlstack/facedb"
+    path: "C:/etc/mlstack/output/intermediate2"
 
 model:
   storage:
@@ -97,9 +97,9 @@ model:
 
 tensor:
   graph:
-    path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_6.pb"
+    path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
   labels:
-    path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_6.txt"
+    path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
 
 preprocesser:
   host: "http://127.0.0.1:5000"
