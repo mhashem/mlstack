@@ -15,26 +15,32 @@ limitations under the License.
 
 package co.rxstack.ml.tensorflow.experimental;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.geometry.euclidean.threed.Euclidean3D;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
@@ -65,34 +71,80 @@ public class FaceNetLabeling {
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length != 2) {
+		if (args.length < 2) {
 			printUsage(System.err);
 			System.exit(1);
 		}
 		String modelDir = args[0];
 		String imageFile = args[1];
+		String imageDir = args[2];
 
 		String graphFile = "20170511-185253.pb";
 		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
 		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
-		byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
+
+		Map<String, BufferedImage> nameBufferedImageMap = readBufferedImages(Paths.get(imageDir));
+		Map<String, float[]> embeddings = Maps.newHashMap();
+
+		for (String name : nameBufferedImageMap.keySet()) {
+			embeddings.put(name, computeEmbeddings(graphDef, nameBufferedImageMap.get(name)));
+		}
+
+		BufferedImage testImage = readBufImage(Paths.get(imageFile));
+
+		EuclideanDistance distance = new EuclideanDistance();
+
+		/*double testAliDistance = distance
+			.compute(toDoubleArray(embeddings.get("ali_mohammad_test")),
+				toDoubleArray(embeddings.get("ali_mohammad")));
+
+		double testMahmoudDistance = distance
+			.compute(toDoubleArray(embeddings.get("ali_mohammad_test")),
+				toDoubleArray(embeddings.get("mahmoud_hachem")));
+
+		double testMahmoudMahmoudDistance = distance
+			.compute(toDoubleArray(embeddings.get("mahmoud_hachem_test")),
+				toDoubleArray(embeddings.get("mahmoud_hachem")));
+
+		double testAliMamoudDistance = distance
+			.compute(toDoubleArray(embeddings.get("mahmoud_hachem_test")),
+				toDoubleArray(embeddings.get("ali_mohammad")));
+*/
+		double[] testFloatVector = toDoubleArray(computeEmbeddings(graphDef, testImage));
+		Map<Double, String> resultsVector = Maps.newHashMap();
+
+		embeddings.keySet().forEach(label -> {
+			double d = distance.compute(toDoubleArray(embeddings.get(label)), testFloatVector);
+			resultsVector.put(d, label);
+		});
+
+		Double aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder()).get();
+		System.out.println(resultsVector.get(aDouble));
+
+/*
+		System.out.println("Ali to Ali Test: " + testAliDistance);
+		System.out.println("Mahmoud to Ali Test: " + testMahmoudDistance);
+		System.out.println("Mahmoud to Mahmoud Test: " + testMahmoudMahmoudDistance);
+		System.out.println("Ali to Mahmoud Test: " + testAliMamoudDistance);
+*/
 
 
-		ByteBuffer buf = ByteBuffer.wrap(imageBytes);
-		FloatBuffer floatBuffer = ((ByteBuffer) buf.rewind()).asFloatBuffer();
-
-		// fromFileMultipleChannels(Paths.get(imageFile).toFile()))
-
-		// Tensor.create(fromFileMultipleChannels(Paths.get(imageFile).toFile())))
-		
-		try (Tensor<?> image = Tensors.create(imageBytes)) {
+		/*try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImages.get(0)))) {
 			float[] labelProbabilities = executeInceptionGraph(graphDef, image);
 			int bestLabelIdx = maxIndex(labelProbabilities);
 			System.out.println(String.format("BEST MATCH: %s (%.2f%% likely)", labels.get(bestLabelIdx),
 				labelProbabilities[bestLabelIdx] * 100f));
+		}*/
+	}
+
+	public static double[] toDoubleArray(float[] e) {
+		double[] vector = new double[e.length];
+		for (int i = 0; i < e.length; i++) {
+			vector[i] = e[i];
 		}
+		return vector;
 	}
 
 	private static Tensor<String> constructAndExecuteGraphToNormalizeImage(byte[] imageBytes) {
@@ -122,6 +174,26 @@ public class FaceNetLabeling {
 		}
 	}
 
+	public static float[] computeEmbeddings(byte[] graphDef, BufferedImage bufferedImage) {
+		try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImage)); Graph g = new Graph()) {
+			g.importGraphDef(graphDef);
+			try (Session s = new Session(g)) {
+				Stopwatch stopwatch = Stopwatch.createStarted();
+				Tensor<Float> result =
+					s.runner().feed("input:0", image).feed("phase_train:0", Tensors.create(false)).fetch("embeddings:0")
+						.run().get(0).expect(Float.class);
+
+				float[] embeddings = new float[128];
+				result.writeTo(FloatBuffer.wrap(embeddings));
+				System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
+				return embeddings;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+	}
+
 	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<?> image) {
 		try (Graph g = new Graph()) {
 			g.importGraphDef(graphDef);
@@ -141,11 +213,17 @@ public class FaceNetLabeling {
 				// embeddings:0
 				// phase_train:0
 
-				Tensor<float[]> result = s.runner()
-					.feed("input:0", image)
-					.feed("phase_train:0", Tensors.create(false))
-					.fetch("embeddings:0").run().get(0)
-					.expect(float[].class);
+				Tensor<Float> result =
+					s.runner().feed("input:0", image).feed("phase_train:0", Tensors.create(false)).fetch("embeddings:0")
+						.run().get(0).expect(Float.class);
+
+				result.shape();
+
+				float[] embeddings = new float[128];
+
+				result.writeTo(FloatBuffer.wrap(embeddings));
+
+				System.out.println(Arrays.toString(embeddings));
 
 				System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
 
@@ -186,6 +264,29 @@ public class FaceNetLabeling {
 			System.exit(1);
 		}
 		return null;
+	}
+
+	static class Holder {
+		String name;
+		BufferedImage image;
+	}
+
+	private static BufferedImage readBufImage(Path imagePath) throws IOException {
+		return ImageIO.read(imagePath.toFile());
+	}
+
+	private static Map<String, BufferedImage> readBufferedImages(Path dir) {
+		return Arrays.stream(dir.toFile().listFiles()).map(file -> {
+			try {
+				Holder holder = new Holder();
+				holder.name = FilenameUtils.getBaseName(file.getAbsolutePath());
+				holder.image = ImageIO.read(file);
+				return holder;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}).filter(Objects::nonNull).collect(Collectors.toMap(o -> o.name, o -> o.image));
 	}
 
 	private static List<String> readAllLinesOrExit(Path path) {
@@ -266,82 +367,27 @@ public class FaceNetLabeling {
 		private Graph g;
 	}
 
+	public static float[][][][] imageToMultiArray(BufferedImage bi) {
+		int height = 0, width = 0, depth = 3;
+		//reads a jpeg image from a specified file path and writes it to a specified array
+		//final image array for output of fireworks
+		float image[][][][] = new float[1][160][160][3];
 
-	/**
-	 * Load a rastered image from file
-	 * @param file the file to load
-	 * @return the rastered image
-	 * @throws IOException
-	 */
-	public static float[][][][] fromFileMultipleChannels(File file) throws IOException {
-		BufferedImage image = ImageIO.read(file);
-		//image = scalingIfNeed(image, false);
+		int imageCount = 0;
+		width = bi.getWidth();
+		height = bi.getHeight();
 
-		int w = image.getWidth(), h = image.getHeight();
-		int bands = image.getSampleModel().getNumBands();
-		float[][][][] ret = new float[128][w][h][3];
-		byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-
-		for (int i = 0; i < h; i++) {
-			for (int j = 0; j < w; j++) {
-				for (int k = 0; k < 3; k++) {
-					if (k >= bands)
-						break;
-					ret[0][i][j][3] = pixels[3 * w * i + 3 * j + k];
-				}
+		for (int i = 0; i < width; ++i) {
+			for (int j = 0; j < height; ++j) {
+				int rgb = bi.getRGB(i, j);
+				Color color = new Color(rgb);
+				image[imageCount][i][j][0] = color.getRed();
+				image[imageCount][i][j][1] = color.getGreen();
+				image[imageCount][i][j][2] = color.getBlue();
 			}
 		}
-		return ret;
+
+		return image;
 	}
-
-	/*protected BufferedImage scalingIfNeed(BufferedImage image, boolean needAlpha) {
-		return scalingIfNeed(image, image.getHeight(), image.getWidth(), needAlpha);
-	}*/
-
-	/*protected BufferedImage scalingIfNeed(BufferedImage image, int dstHeight, int dstWidth, boolean needAlpha) {
-		if (dstHeight > 0 && dstWidth > 0 && (image.getHeight() != dstHeight || image.getWidth() != dstWidth)) {
-			Image scaled = image.getScaledInstance(dstWidth, dstHeight, Image.SCALE_SMOOTH);
-
-			if (needAlpha && image.getColorModel().hasAlpha() && 3 == BufferedImage.TYPE_4BYTE_ABGR) {
-				return toBufferedImage(scaled, BufferedImage.TYPE_4BYTE_ABGR);
-			} else {
-				if (channels == BufferedImage.TYPE_BYTE_GRAY)
-					return toBufferedImage(scaled, BufferedImage.TYPE_BYTE_GRAY);
-				else
-					return toBufferedImage(scaled, BufferedImage.TYPE_3BYTE_BGR);
-			}
-		} else {
-			if (image.getType() == BufferedImage.TYPE_4BYTE_ABGR || image.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-				return image;
-			} else if (needAlpha && image.getColorModel().hasAlpha() && channels == BufferedImage.TYPE_4BYTE_ABGR) {
-				return toBufferedImage(image, BufferedImage.TYPE_4BYTE_ABGR);
-			} else {
-				if (channels == BufferedImage.TYPE_BYTE_GRAY)
-					return toBufferedImage(image, BufferedImage.TYPE_BYTE_GRAY);
-				else
-					return toBufferedImage(image, BufferedImage.TYPE_3BYTE_BGR);
-			}
-		}
-	}*/
-
-	public static Tensor<?> test() {
-		Random r = new Random();
-		int imageSize = 224 * 224 * 3;
-		int batch = 128;
-		long[] shape = new long[] {batch, imageSize};
-		FloatBuffer buf = FloatBuffer.allocate(imageSize * batch);
-		for (int i = 0; i < imageSize * batch; ++i) {
-			buf.put(r.nextFloat());
-		}
-		buf.flip();
-
-		long start = System.nanoTime();
-		Tensor<Float> floatTensor = Tensor.create(shape, buf);
-		long end = System.nanoTime();
-		System.out.println("Took: " + (end - start));
-
-		return floatTensor;
-	}
-
 
 }
