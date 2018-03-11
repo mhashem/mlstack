@@ -15,11 +15,21 @@ limitations under the License.
 
 package co.rxstack.ml.tensorflow.experimental;
 
+import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
+import static org.bytedeco.javacpp.opencv_core.CV_STORAGE_WRITE;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.Buffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,17 +40,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.math3.geometry.euclidean.threed.Euclidean3D;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
+import org.bytedeco.javacpp.opencv_core;
+import org.bytedeco.javacpp.opencv_core.CvTermCriteria;
+import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_ml;
+import org.bytedeco.javacpp.opencv_ml.SVM;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
@@ -56,6 +70,10 @@ import org.tensorflow.types.UInt8;
  */
 @SuppressWarnings("ALL")
 public class FaceNetLabeling {
+
+
+	private static Graph tensorflowGraph;
+
 	private static void printUsage(PrintStream s) {
 		final String url = "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip";
 		s.println("Java program that uses a pre-trained Inception model (http://arxiv.org/abs/1512.00567)");
@@ -84,15 +102,91 @@ public class FaceNetLabeling {
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
 		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
+		BufferedImage testImage = readBufImage(Paths.get(imageFile));
 
 		Map<String, BufferedImage> nameBufferedImageMap = readBufferedImages(Paths.get(imageDir));
 		Map<String, float[]> embeddings = Maps.newHashMap();
 
+		tensorflowGraph = new Graph();
+		tensorflowGraph.importGraphDef(graphDef);
+
+		embeddings.putAll(loadEmbeddings());
+
 		for (String name : nameBufferedImageMap.keySet()) {
-			embeddings.put(name, computeEmbeddings(graphDef, nameBufferedImageMap.get(name)));
+			float[] embeddingsArray = computeEmbeddings(nameBufferedImageMap.get(name));
+			embeddings.put(name, embeddingsArray);
 		}
 
-		BufferedImage testImage = readBufImage(Paths.get(imageFile));
+		//float[][] trainingData = new float[embeddings.size()][128];
+
+		/*Mat trainingFeaturesDataMat = new Mat(embeddings.size(), 128, opencv_core.CV_32FC1);
+		//Vector<Integer> trainingLabels = new Vector<>(embeddings.size());
+
+		Mat trainingLabelsDataMat = new Mat(embeddings.size(), 1, opencv_core.CV_32F);
+
+		FloatBuffer buffer = trainingLabelsDataMat.createBuffer();
+*/
+
+
+		Mat classes = new Mat();
+		Mat trainingData = new Mat();
+
+		Mat trainingImages = new Mat();
+		Vector<Integer> trainingLabels = new Vector<Integer>();
+
+		final int[] i = { 0 };
+
+		embeddings.keySet().forEach(label -> {
+			Mat featuresArrayMat = new Mat(embeddings.get(label));
+			featuresArrayMat = featuresArrayMat.reshape(0, 1);
+
+			trainingImages.push_back(featuresArrayMat);
+			trainingLabels.add(label.hashCode());
+
+			System.out.println(label + " -> " + label.hashCode());
+
+			i[0]++;
+		});
+
+		trainingImages.copyTo(trainingData);
+		trainingData.convertTo(trainingData, CV_32FC1);
+
+		int labelss[] = new int[trainingLabels.size()];
+		for(int ii=0;ii < trainingLabels.size();++ii)
+			labelss[ii] = trainingLabels.get(ii).intValue();
+		new Mat(labelss).copyTo(classes);
+
+		CvTermCriteria cvTermCriteria =
+			new CvTermCriteria(opencv_core.CV_TERMCRIT_ITER, 100, 0.0001);
+
+		SVM svmClassifier = SVM.create();
+		svmClassifier.setType(SVM.C_SVC);
+		svmClassifier.setKernel(SVM.RBF);
+		svmClassifier.setTermCriteria(cvTermCriteria.asTermCriteria());
+
+		opencv_ml.TrainData trainData =
+			new opencv_ml.TrainData(trainingData);
+
+		System.out.println("h " + trainingData.size().height() + " - w " + trainingData.size().width());
+		System.out.println("h " + classes.size().height() + " - w " + classes.size().width());
+
+		svmClassifier.train(trainingData, opencv_ml.ROW_SAMPLE, classes);
+
+		/*svmClassifier.trainAuto(trainData, 10,
+			SVM.getDefaultGrid(SVM.C),
+			SVM.getDefaultGrid(SVM.GAMMA),
+			SVM.getDefaultGrid(SVM.P),
+			SVM.getDefaultGrid(SVM.NU),
+			SVM.getDefaultGrid(SVM.COEF),
+			SVM.getDefaultGrid(SVM.DEGREE),
+			true);*/
+
+		opencv_core.CvFileStorage fsTo = opencv_core.CvFileStorage
+			.open("C:/etc/mlstack/output/svm.xml", opencv_core.CvMemStorage.create(), CV_STORAGE_WRITE);
+		opencv_core.FileStorage fsto2=new opencv_core.FileStorage(fsTo);
+		svmClassifier.write(fsto2);
+
+
 
 		EuclideanDistance distance = new EuclideanDistance();
 
@@ -112,17 +206,28 @@ public class FaceNetLabeling {
 			.compute(toDoubleArray(embeddings.get("mahmoud_hachem_test")),
 				toDoubleArray(embeddings.get("ali_mohammad")));
 */
-		double[] testFloatVector = toDoubleArray(computeEmbeddings(graphDef, testImage));
+		double[] testFloatVector = toDoubleArray(computeEmbeddings(testImage));
 		Map<Double, String> resultsVector = Maps.newHashMap();
+
+		float predict = svmClassifier.predict(new Mat(computeEmbeddings(testImage)).reshape(0, 1));
+		System.out.println("SVM: prediction " + predict);
 
 		embeddings.keySet().forEach(label -> {
 			double d = distance.compute(toDoubleArray(embeddings.get(label)), testFloatVector);
 			resultsVector.put(d, label);
 		});
 
+		List<Double> collect = resultsVector.keySet().stream().sorted().collect(Collectors.toList());
+		collect.stream().forEach(aDouble -> {
+			System.out
+				.println(resultsVector.get(aDouble) + " with confidence " + Math.round((1 - aDouble) * 100) + "%");
+		});
+		System.out.println();
 		Double aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder()).get();
-		System.out.println(resultsVector.get(aDouble));
+		System.out.println(resultsVector.get(aDouble) + " with confidence " + Math.round((1 - aDouble) * 100) + "%");
 
+		// FIXME
+		//saveEmbeddings(embeddings);
 /*
 		System.out.println("Ali to Ali Test: " + testAliDistance);
 		System.out.println("Mahmoud to Ali Test: " + testMahmoudDistance);
@@ -137,6 +242,44 @@ public class FaceNetLabeling {
 			System.out.println(String.format("BEST MATCH: %s (%.2f%% likely)", labels.get(bestLabelIdx),
 				labelProbabilities[bestLabelIdx] * 100f));
 		}*/
+
+		tensorflowGraph.close();
+	}
+
+	private static void saveEmbeddings(Map<String, float[]> embeddings) throws FileNotFoundException {
+		PrintWriter printWriter = new PrintWriter(new File("C:/etc/mlstack/output/embeddings/emb.csv"));
+		for (String s : embeddings.keySet()) {
+			printWriter.printf("%s,%s\n", s, Arrays.toString(embeddings.get(s)).replace("[", "").replace("]", ""));
+		}
+		printWriter.close();
+	}
+
+	public static Map<String, float[]> loadEmbeddings() throws FileNotFoundException {
+		BufferedReader reader =
+			new BufferedReader(new FileReader(new File("C:/etc/mlstack/output/embeddings/emb.csv")));
+		return reader.lines().map(line -> {
+			String[] ee = line.split(",");
+
+			Holder h = new Holder();
+			h.name = ee[0];
+			float[] vector = new float[128];
+
+			for (int i = 1; i < 129; i++) {
+				vector[i - 1] = Float.valueOf(ee[i]);
+			}
+
+			h.embeddings = vector;
+			return h;
+		}).collect(Collectors.toMap(o -> o.name, o -> o.embeddings));
+	}
+
+	public static void writeDat(String filename, double[] x, double[] y, int xprecision, int yprecision)
+		throws IOException {
+		assert x.length == y.length;
+		PrintWriter out = new PrintWriter(filename);
+		for (int i = 0; i < x.length; i++)
+			out.printf("%." + xprecision + "g\t%." + yprecision + "g\n", x[i], y[i]);
+		out.close();
 	}
 
 	public static double[] toDoubleArray(float[] e) {
@@ -174,14 +317,40 @@ public class FaceNetLabeling {
 		}
 	}
 
-	public static float[] computeEmbeddings(byte[] graphDef, BufferedImage bufferedImage) {
+	public static float[] computeEmbeddings(BufferedImage bufferedImage) {
+		try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImage))) {
+			try (Session s = new Session(tensorflowGraph)) {
+				float[] embeddings = new float[128];;
+					Stopwatch stopwatch = Stopwatch.createStarted();
+					Tensor<Float> result =
+						s.runner()
+							.feed("input:0", image)
+							.feed("phase_train:0", Tensors.create(false))
+							.fetch("embeddings:0").run().get(0)
+							.expect(Float.class);
+					result.writeTo(FloatBuffer.wrap(embeddings));
+
+
+					System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
+				return embeddings;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+	}
+
+	/*public static float[] computeEmbeddings(byte[] graphDef, BufferedImage bufferedImage) {
 		try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImage)); Graph g = new Graph()) {
 			g.importGraphDef(graphDef);
 			try (Session s = new Session(g)) {
 				Stopwatch stopwatch = Stopwatch.createStarted();
 				Tensor<Float> result =
-					s.runner().feed("input:0", image).feed("phase_train:0", Tensors.create(false)).fetch("embeddings:0")
-						.run().get(0).expect(Float.class);
+					s.runner()
+						.feed("input:0", image)
+						.feed("phase_train:0", Tensors.create(false))
+						.fetch("embeddings:0").run().get(0)
+						.expect(Float.class);
 
 				float[] embeddings = new float[128];
 				result.writeTo(FloatBuffer.wrap(embeddings));
@@ -192,7 +361,7 @@ public class FaceNetLabeling {
 			}
 			return null;
 		}
-	}
+	}*/
 
 	private static float[] executeInceptionGraph(byte[] graphDef, Tensor<?> image) {
 		try (Graph g = new Graph()) {
@@ -269,6 +438,7 @@ public class FaceNetLabeling {
 	static class Holder {
 		String name;
 		BufferedImage image;
+		float[] embeddings;
 	}
 
 	private static BufferedImage readBufImage(Path imagePath) throws IOException {
@@ -371,7 +541,7 @@ public class FaceNetLabeling {
 		int height = 0, width = 0, depth = 3;
 		//reads a jpeg image from a specified file path and writes it to a specified array
 		//final image array for output of fireworks
-		float image[][][][] = new float[1][160][160][3];
+		float image[][][][] = new float[1][bi.getWidth()][bi.getHeight()][3];
 
 		int imageCount = 0;
 		width = bi.getWidth();
