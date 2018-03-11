@@ -27,9 +27,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -112,10 +110,10 @@ public class FaceNetLabeling {
 
 		embeddings.putAll(loadEmbeddings());
 
-		for (String name : nameBufferedImageMap.keySet()) {
+		/*for (String name : nameBufferedImageMap.keySet()) {
 			float[] embeddingsArray = computeEmbeddings(nameBufferedImageMap.get(name));
 			embeddings.put(name, embeddingsArray);
-		}
+		}*/
 
 		//float[][] trainingData = new float[embeddings.size()][128];
 
@@ -157,11 +155,11 @@ public class FaceNetLabeling {
 		new Mat(labelss).copyTo(classes);
 
 		CvTermCriteria cvTermCriteria =
-			new CvTermCriteria(opencv_core.CV_TERMCRIT_ITER, 100, 0.0001);
+			new CvTermCriteria(opencv_core.CV_TERMCRIT_ITER, 1000, 0.000001);
 
 		SVM svmClassifier = SVM.create();
 		svmClassifier.setType(SVM.C_SVC);
-		svmClassifier.setKernel(SVM.RBF);
+		svmClassifier.setKernel(SVM.LINEAR);
 		svmClassifier.setTermCriteria(cvTermCriteria.asTermCriteria());
 
 		opencv_ml.TrainData trainData =
@@ -186,8 +184,6 @@ public class FaceNetLabeling {
 		opencv_core.FileStorage fsto2=new opencv_core.FileStorage(fsTo);
 		svmClassifier.write(fsto2);
 
-
-
 		EuclideanDistance distance = new EuclideanDistance();
 
 		/*double testAliDistance = distance
@@ -209,8 +205,11 @@ public class FaceNetLabeling {
 		double[] testFloatVector = toDoubleArray(computeEmbeddings(testImage));
 		Map<Double, String> resultsVector = Maps.newHashMap();
 
-		float predict = svmClassifier.predict(new Mat(computeEmbeddings(testImage)).reshape(0, 1));
-		System.out.println("SVM: prediction " + predict);
+		Mat reshapedMat = new Mat(computeEmbeddings(testImage)).reshape(0, 1);
+		Stopwatch predictionStopwatch = Stopwatch.createStarted();
+		float predict = svmClassifier.predict(reshapedMat, classes, opencv_ml.StatModel.RAW_OUTPUT);
+		System.out.println("SVM: prediction " + predict + " completed in "
+			+ predictionStopwatch.elapsed(TimeUnit.MILLISECONDS)  + "ms");
 
 		embeddings.keySet().forEach(label -> {
 			double d = distance.compute(toDoubleArray(embeddings.get(label)), testFloatVector);

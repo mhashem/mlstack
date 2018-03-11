@@ -13,6 +13,9 @@ import java.util.Optional;
 
 import javax.annotation.PreDestroy;
 
+import co.rxstack.ml.tensorflow.config.InceptionConfig;
+import co.rxstack.ml.tensorflow.utils.GraphUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +45,8 @@ public class InceptionService {
 		Preconditions.checkNotNull(inceptionConfig.getGraphPath());
 		Preconditions.checkNotNull(inceptionConfig.getLabelsPath());
 
+		this.inceptionConfig = inceptionConfig;
+
 		Path graphPath = Paths.get(inceptionConfig.getGraphPath());
 		Path labelsPath = Paths.get(inceptionConfig.getLabelsPath());
 
@@ -56,7 +61,7 @@ public class InceptionService {
 		}
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		byte[] graphDef = readAllBytes(graphPath);
+		byte[] graphDef = GraphUtils.readAllBytes(graphPath);
 
 		if (graphDef != null) {
 			graph = new Graph();
@@ -114,16 +119,6 @@ public class InceptionService {
 	@PreDestroy
 	public void cleanUp() {
 		graph.close();
-	}
-
-	private byte[] readAllBytes(Path path) {
-		try {
-			return Files.readAllBytes(path);
-		} catch (IOException e) {
-			log.error("Failed to read [{}]", path);
-			log.error(e.getMessage(), e);
-		}
-		return null;
 	}
 
 	private List<String> readAllLines(Path path) {

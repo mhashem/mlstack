@@ -4,12 +4,13 @@ import java.awt.image.BufferedImage;
 
 public interface IFaceNetService {
 
-	void train();
-
 	/**
+	 * Performs computations for obtaining a feature vector
+	 * using FaceNet neural network
+	 *
 	 * @param bufferedImage {@link BufferedImage}
 	 * @return float array of 128 feature space vector
 	 */
-	float[] computeEmbeddingsVector(BufferedImage bufferedImage);
+	float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage);
 	
 }

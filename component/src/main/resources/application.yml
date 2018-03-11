@@ -94,10 +94,12 @@ model:
   storage:
     path: "C:/etc/mlstack/models"
 
-
 tensor:
   graph:
-    path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
+    inception:
+        path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
+    facenet:
+        path: "C:/Users/mahmoud/Documents/datascience/models/Facenet-20170511-185253/20170511-185253.pb"
   labels:
     path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
 
