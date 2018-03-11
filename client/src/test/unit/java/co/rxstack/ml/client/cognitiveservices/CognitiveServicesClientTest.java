@@ -1,10 +1,5 @@
 package co.rxstack.ml.client.cognitiveservices;
 
-import java.net.URI;
-
-import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
-
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

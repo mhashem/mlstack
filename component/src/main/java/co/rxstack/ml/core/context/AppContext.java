@@ -33,12 +33,18 @@ import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
+import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.cognitiveservices.config.CognitiveServicesConfig;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
+import co.rxstack.ml.tensorflow.FaceNetService;
+import co.rxstack.ml.tensorflow.IFaceNetService;
+import co.rxstack.ml.tensorflow.InceptionService;
+import co.rxstack.ml.tensorflow.config.FaceNetConfig;
+import co.rxstack.ml.tensorflow.config.InceptionConfig;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -96,6 +102,15 @@ public class AppContext {
 	@Value("${face.standard.height}")
 	private int standardHeight;
 
+	@Value("${tensor.graph.inception.path}")
+	private String graphPath;
+	@Value("${tensor.labels.path}")
+	private String labelsPath;
+	@Value("${tensor.graph.facenet.path}")
+	private String faceNetGraphPath;
+
+	@Value("${preprocesser.host}")
+	private String preprocessorHost;
 
 	@Qualifier("stackClientRestTemplate")
 	@Bean
@@ -170,9 +185,10 @@ public class AppContext {
 	@Bean
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
-		IFaceRecognitionService faceRecognitionService, IIdentityService identityService) {
+		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
+		InceptionService inceptionService, PreprocessorClient preprocessorClient) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
-			cognitiveService);
+			cognitiveService, inceptionService, preprocessorClient);
 	}
 
 	@Qualifier("haarCascadeFile")
@@ -256,7 +272,45 @@ public class AppContext {
 		config.setThreshold(cognitiveServicesProperties.getThreshold());
 		return config;
 	}
-	
-	
-	
+
+	@Bean
+	public InceptionConfig inceptionConfig() {
+		InceptionConfig inceptionConfig = new InceptionConfig();
+		inceptionConfig.setGraphPath(graphPath);
+		inceptionConfig.setLabelsPath(labelsPath);
+		return inceptionConfig;
+	}
+
+	@Bean
+	public FaceNetConfig faceNetConfig() {
+		FaceNetConfig faceNetConfig = new FaceNetConfig();
+		faceNetConfig.setFaceNetGraphPath(faceNetGraphPath);
+		return faceNetConfig;
+	}
+
+	@Bean
+	public InceptionService inceptionService(InceptionConfig inceptionConfig) {
+		try {
+			return new InceptionService(inceptionConfig);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Bean
+	public IFaceNetService faceNetService(FaceNetConfig faceNetConfig) {
+		try {
+			return new FaceNetService(faceNetConfig);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Bean
+	public PreprocessorClient preprocessorClient() {
+		return new PreprocessorClient(preprocessorHost);
+	}
+
 }

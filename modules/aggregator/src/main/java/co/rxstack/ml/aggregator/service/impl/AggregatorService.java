@@ -24,18 +24,23 @@ import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
 import co.rxstack.ml.aggregator.service.IIdentityService;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
 import co.rxstack.ml.common.model.AggregateFaceIdentification;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.Constants;
+import co.rxstack.ml.common.model.FaceBox;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
+import co.rxstack.ml.tensorflow.InceptionService;
+import co.rxstack.ml.tensorflow.TensorFlowResult;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,23 +60,58 @@ public class AggregatorService {
 	private IFaceExtractorService faceExtractorService;
 	private IFaceRecognitionService faceRecognitionService;
 
+	private InceptionService inceptionService;
+	private PreprocessorClient preprocessorClient;
+
 	@Autowired
 	public AggregatorService(IIdentityService identityService, IFaceExtractorService faceExtractorService,
 		IFaceRecognitionService faceRecognitionService,
-		IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService) {
+		IRekognitionService rekognitionService, ICognitiveService cognitiveService, InceptionService inceptionService,
+		PreprocessorClient preprocessorClient) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
 		Preconditions.checkNotNull(faceRecognitionService);
 		Preconditions.checkNotNull(rekognitionService);
 		Preconditions.checkNotNull(cognitiveService);
+		Preconditions.checkNotNull(inceptionService);
 
 		this.identityService = identityService;
 		this.cognitiveService = cognitiveService;
 		this.awsRekognitionService = rekognitionService;
 		this.faceExtractorService = faceExtractorService;
 		this.faceRecognitionService = faceRecognitionService;
+		this.inceptionService = inceptionService;
+		this.preprocessorClient = preprocessorClient;
+	}
+
+	// using Tensorflow
+	public List<TensorFlowResult> recognize(byte[] imageBytes) {
+		log.info("recognizing image with {} bytes using {}", imageBytes.length);
+		final List<TensorFlowResult> tfResutls = Lists.newArrayList();
+		try {
+			BufferedImage bufferedImage = bytesToBufferedImage(imageBytes);
+			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
+			faceBoxes.forEach(faceBox -> {
+				BufferedImage faceImage = bufferedImage
+					.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
+						(faceBox.getBottom() - faceBox.getTop()));
+				try {
+					Optional<byte[]> alignedImageByteArray =
+						preprocessorClient.align(bufferedImageToByteArray(faceImage));
+					if (alignedImageByteArray.isPresent()) {
+						Optional<TensorFlowResult> tensorFlowResult =
+							inceptionService.predictBest(alignedImageByteArray.get());
+						tensorFlowResult.ifPresent(tfResutls::add);
+					}
+				} catch (IOException e) {
+					log.error(e.getMessage(), e);
+				}
+			});
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return tfResutls;
 	}
 
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
@@ -243,5 +283,17 @@ public class AggregatorService {
 		WritableRaster raster = bi.copyData(null);
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
+
+	private BufferedImage bytesToBufferedImage(byte[] imageBytes) throws IOException {
+		InputStream inStream = new ByteArrayInputStream(imageBytes);
+		return ImageIO.read(inStream);
+	}
+
+	private byte[] bufferedImageToByteArray(BufferedImage image) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ImageIO.write(image, "jpg", baos);
+		return baos.toByteArray();
+	}
+
 
 }

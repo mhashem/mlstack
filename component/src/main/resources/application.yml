@@ -21,7 +21,7 @@ spring:
     hibernate:
       ddl-auto: update
   jackson:
-    serialization: {indent_output: true}
+    serialization: {INDENT_OUTPUT: true, WRITE_DATES_AS_TIMESTAMPS: false}
 
 endpoints:
   beans:
@@ -88,8 +88,20 @@ face:
     name:
       delimiter: "-"
   db:
-    path: "C:/etc/mlstack/facedb"
+    path: "C:/etc/mlstack/output/intermediate2"
 
 model:
   storage:
     path: "C:/etc/mlstack/models"
+
+tensor:
+  graph:
+    inception:
+        path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
+    facenet:
+        path: "C:/Users/mahmoud/Documents/datascience/models/Facenet-20170511-185253/20170511-185253.pb"
+  labels:
+    path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
+
+preprocesser:
+  host: "http://127.0.0.1:5000"
