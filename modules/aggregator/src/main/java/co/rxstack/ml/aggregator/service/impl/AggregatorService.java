@@ -88,7 +88,7 @@ public class AggregatorService {
 	// using Tensorflow
 	public List<TensorFlowResult> recognize(byte[] imageBytes) {
 		log.info("recognizing image with {} bytes using {}", imageBytes.length);
-		final List<TensorFlowResult> tfResutls = Lists.newArrayList();
+		final List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
 		try {
 			BufferedImage bufferedImage = bytesToBufferedImage(imageBytes);
 			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
@@ -102,7 +102,10 @@ public class AggregatorService {
 					if (alignedImageByteArray.isPresent()) {
 						Optional<TensorFlowResult> tensorFlowResult =
 							inceptionService.predictBest(alignedImageByteArray.get());
-						tensorFlowResult.ifPresent(tfResutls::add);
+						tensorFlowResult.ifPresent(tfResult -> {
+							tfResult.setFaceBox(faceBox);
+							tensorFlowResults.add(tfResult);
+						});
 					}
 				} catch (IOException e) {
 					log.error(e.getMessage(), e);
@@ -111,7 +114,7 @@ public class AggregatorService {
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
-		return tfResutls;
+		return tensorFlowResults;
 	}
 
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
