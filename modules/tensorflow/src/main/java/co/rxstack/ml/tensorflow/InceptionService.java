@@ -2,6 +2,7 @@ package co.rxstack.ml.tensorflow;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -14,8 +15,8 @@ import java.util.Optional;
 import javax.annotation.PreDestroy;
 
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
+import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +41,7 @@ public class InceptionService {
 	private InceptionConfig inceptionConfig;
 
 	@Autowired
-	public InceptionService(InceptionConfig inceptionConfig) throws Exception {
+	public InceptionService(InceptionConfig inceptionConfig) throws GraphLoadingException, FileNotFoundException {
 		Preconditions.checkNotNull(inceptionConfig);
 		Preconditions.checkNotNull(inceptionConfig.getGraphPath());
 		Preconditions.checkNotNull(inceptionConfig.getLabelsPath());
@@ -50,14 +51,14 @@ public class InceptionService {
 		Path graphPath = Paths.get(inceptionConfig.getGraphPath());
 		Path labelsPath = Paths.get(inceptionConfig.getLabelsPath());
 
-		if (!Files.exists(graphPath)) {
+		if (!graphPath.toFile().exists()) {
 			log.warn("No ProtoBuffer graph found at {}", graphPath.toAbsolutePath());
-			throw new Exception("No ProtoBuffer graph found at " + graphPath.toAbsolutePath());
+			throw new GraphLoadingException(graphPath.toAbsolutePath().toString());
 		}
 
-		if (!Files.exists(labelsPath)) {
+		if (!labelsPath.toFile().exists()) {
 			log.error("No Labels file found at ", labelsPath.toAbsolutePath());
-			throw new Exception("No Labels file found at " + labelsPath.toAbsolutePath());
+			throw new FileNotFoundException("No Labels file found at " + labelsPath.toAbsolutePath());
 		}
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
@@ -93,7 +94,7 @@ public class InceptionService {
 	}
 
 	private float[] executeInceptionGraph(Tensor<String> image) {
-		log.info("executing inception graph {}", image.toString());
+		log.info("executing inception graph {}", image);
 		try (Session session = new Session(graph)) {
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			Tensor<Float> result =

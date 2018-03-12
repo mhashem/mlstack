@@ -5,7 +5,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
@@ -13,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PreDestroy;
 
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
+import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
@@ -42,9 +41,9 @@ public class FaceNetService implements IFaceNetService {
 
 		Path faceNetGraphPath = Paths.get(faceNetConfig.getFaceNetGraphPath());
 
-		if (!Files.exists(faceNetGraphPath)) {
+		if (!faceNetGraphPath.toFile().exists()) {
 			log.warn("No ProtoBuffer graph found at {}", faceNetGraphPath.toAbsolutePath());
-			throw new Exception("No ProtoBuffer graph found at " + faceNetGraphPath.toAbsolutePath());
+			throw new GraphLoadingException(faceNetGraphPath.toAbsolutePath().toString());
 		}
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
