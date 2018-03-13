@@ -8,7 +8,8 @@ import static org.bytedeco.javacpp.opencv_imgproc.cvResize;
 import static org.bytedeco.javacpp.opencv_objdetect.CV_HAAR_DO_CANNY_PRUNING;
 import static org.bytedeco.javacpp.opencv_objdetect.cvHaarDetectObjects;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;

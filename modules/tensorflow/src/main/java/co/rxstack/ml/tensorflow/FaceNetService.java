@@ -35,7 +35,7 @@ public class FaceNetService implements IFaceNetService {
 	private FaceNetConfig faceNetConfig;
 
 	@Autowired
-	public FaceNetService(FaceNetConfig faceNetConfig) throws Exception {
+	public FaceNetService(FaceNetConfig faceNetConfig) throws GraphLoadingException {
 		Preconditions.checkNotNull(faceNetConfig);
 		this.faceNetConfig = faceNetConfig;
 
@@ -62,21 +62,23 @@ public class FaceNetService implements IFaceNetService {
 	@Override
 	public float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
 		log.info("Computing embeddings feature vector");
-		try (Tensor<Float> image = Tensors.create(imageToMultiDimensionalArray(bufferedImage))) {
+		try (Tensor<Float> image = Tensors.create(imageTo4DArray(bufferedImage))) {
 			float[] embeddings = new float[128];
-				Stopwatch stopwatch = Stopwatch.createStarted();
+			Stopwatch stopwatch = Stopwatch.createStarted();
 			Tensor<Float> result = session.runner()
-						.feed("input:0", image)
-						.feed("phase_train:0", Tensors.create(false))
-						.fetch("embeddings:0").run().get(0)
-						.expect(Float.class);
-				result.writeTo(FloatBuffer.wrap(embeddings));
+				.feed("input:0", image)
+				.feed("phase_train:0", Tensors.create(false))
+				.fetch("embeddings:0")
+				.run()
+				.get(0)
+				.expect(Float.class);
+			result.writeTo(FloatBuffer.wrap(embeddings));
 			log.info("Embeddings computation completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 				return embeddings;
 			} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			}
-			return null;
+		return new float[] {};
 	}
 
 	@PreDestroy
@@ -86,9 +88,11 @@ public class FaceNetService implements IFaceNetService {
 		faceNetTensorGraph.close();
 	}
 
-	private float[][][][] imageToMultiDimensionalArray(BufferedImage bi) {
-		int height = bi.getHeight(), width = bi.getWidth(), depth = 3;
-		float image[][][][] = new float[1][width][height][depth];
+	private float[][][][] imageTo4DArray(BufferedImage bi) {
+		int height = bi.getHeight();
+		int width = bi.getWidth();
+		int depth = 3;
+		float[][][][] image = new float[1][width][height][depth];
 		for (int i = 0; i < width; ++i) {
 			for (int j = 0; j < height; ++j) {
 				int rgb = bi.getRGB(i, j);

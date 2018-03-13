@@ -149,7 +149,7 @@ public class FaceNetLabeling {
 		trainingImages.copyTo(trainingData);
 		trainingData.convertTo(trainingData, CV_32FC1);
 
-		int labelss[] = new int[trainingLabels.size()];
+		int[] labelss = new int[trainingLabels.size()];
 		for(int ii=0;ii < trainingLabels.size();++ii)
 			labelss[ii] = trainingLabels.get(ii).intValue();
 		new Mat(labelss).copyTo(classes);

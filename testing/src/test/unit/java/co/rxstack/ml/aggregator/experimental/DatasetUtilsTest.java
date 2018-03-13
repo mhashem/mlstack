@@ -1,18 +1,16 @@
 package co.rxstack.ml.aggregator.experimental;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import co.rxstack.ml.aggregator.DatasetUtils;
+import co.rxstack.ml.aggregator.utils.DataSetUtils;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.util.FileSystemUtils;
 
 public class DatasetUtilsTest {
 
@@ -30,7 +28,7 @@ public class DatasetUtilsTest {
 		// in case code is moved would fail
 		Path facedbPath = Paths.get("C:\\etc\\mlstack\\facedb");
 		if (facedbPath.toFile().exists()) {
-			List<PersonBundle> personBundleList = DatasetUtils.loadPersonBundleList(facedbPath, "-");
+			List<PersonBundle> personBundleList = DataSetUtils.loadPersonBundleList(facedbPath, "-");
 			Assert.assertTrue(!personBundleList.isEmpty());
 
 /*			PersonBundle personBundle = personBundleList.get(0);

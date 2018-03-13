@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator;
+package co.rxstack.ml.aggregator.utils;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -16,16 +17,34 @@ import co.rxstack.ml.aggregator.model.Person;
 import co.rxstack.ml.aggregator.model.PersonBundle;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 
-public class DatasetUtils {
+public class DataSetUtils {
 
-	private static final Logger logger = getLogger(DatasetUtils.class);
+	private static final Logger logger = getLogger(DataSetUtils.class);
 
-	private DatasetUtils() {
+	private DataSetUtils() {
 
+	}
+	
+	public Map<Integer, List<Path>> loadFaceIdImagePathsMap(Path dir) throws IOException {
+		Map<Integer, List<Path>> faceIdImagePathsMap = Maps.newHashMap();
+		try (Stream<Path> pathStream = Files.list(dir)) {
+			pathStream.filter(isDirectory).forEach(path -> {
+				String fileIdentifier = path.getFileName().toString();
+				try (Stream<Path> imagePathStream = Files.list(path)) {
+					List<Path> imagesPath =
+						imagePathStream.filter(isFile).filter(extensionPredicate).collect(Collectors.toList());
+					faceIdImagePathsMap.put(Integer.valueOf(fileIdentifier), imagesPath);
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			});
+		}
+		return faceIdImagePathsMap;
 	}
 
 	/**

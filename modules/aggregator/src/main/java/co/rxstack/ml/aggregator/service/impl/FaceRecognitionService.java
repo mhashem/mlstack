@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.aggregator.DatasetUtils;
+import co.rxstack.ml.aggregator.utils.DataSetUtils;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.exception.ModelNotLoadedException;
 import co.rxstack.ml.aggregator.model.PersonBundle;
@@ -109,7 +109,7 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 	public void trainModel(Path dataSetPath) {
 		try {
 			List<PersonBundle> personBundles =
-				DatasetUtils.loadPersonBundleList(dataSetPath, faceDBConfig.getFaceDirectoryNameDelimiter());
+				DataSetUtils.loadPersonBundleList(dataSetPath, faceDBConfig.getFaceDirectoryNameDelimiter());
 			trainModel(personBundles);
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
@@ -180,9 +180,9 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 				logger.info("mat obj: {}", imagesMatVector.get(i).total());
 			}
 
-			logger.info("training face recognizer started");
+			logger.info("Training face recognizer started");
 			faceRecognizer.train(imagesMatVector, labels);
-			logger.info("training face recognizer finished successfully in {} ms",
+			logger.info("Training face recognizer finished successfully in {} ms",
 				stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
 			File modelStorageDir = Paths.get(faceDBConfig.getModelStoragePath()).toFile();
@@ -197,6 +197,9 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 			logger.info("saving trained model {} to {}", modelName, faceDBConfig.getModelStoragePath());
 			faceRecognizer.save(cvStorage);
 			cvStorage.release();
+			
+			imagesMatVector.close();
+			labels.clone();
 
 			loadModel();
 		} catch (Exception e) {
@@ -217,6 +220,8 @@ public class FaceRecognitionService implements IFaceRecognitionService {
 
 	@Override
 	public List<PotentialFace> predict(BufferedImage faceImage, List<PotentialFace> potentialFaces) {
+		
+		// todo implement faceRecognizer.update(...)
 		
 		if (!isModelLoaded.get()) {
 			throw new ModelNotLoadedException("Cannot predict class! model was not loaded successfully");
