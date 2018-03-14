@@ -1,4 +1,4 @@
-package co.rxstack.ml.tensorflow;
+package co.rxstack.ml.tensorflow.service;
 
 import java.awt.image.BufferedImage;
 

@@ -35,7 +35,7 @@ import co.rxstack.ml.common.model.FaceBox;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
-import co.rxstack.ml.tensorflow.InceptionService;
+import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
 
 import com.google.common.base.Preconditions;

@@ -1,4 +1,4 @@
-package co.rxstack.ml.tensorflow;
+package co.rxstack.ml.tensorflow.service.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import javax.annotation.PreDestroy;
 
+import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;

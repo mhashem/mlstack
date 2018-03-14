@@ -40,9 +40,9 @@ import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
-import co.rxstack.ml.tensorflow.FaceNetService;
-import co.rxstack.ml.tensorflow.IFaceNetService;
-import co.rxstack.ml.tensorflow.InceptionService;
+import co.rxstack.ml.tensorflow.service.impl.FaceNetService;
+import co.rxstack.ml.tensorflow.service.IFaceNetService;
+import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
 

@@ -1,4 +1,4 @@
-package co.rxstack.ml.tensorflow;
+package co.rxstack.ml.tensorflow.service.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -13,6 +13,7 @@ import javax.annotation.PreDestroy;
 
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
+import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
