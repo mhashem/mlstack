@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ClassifierService implements IClassifierService {
+public class ClassifierService implements IClassifierService<SVM> {
 
 	private static final Logger log = LoggerFactory.getLogger(ClassifierService.class);
 
@@ -43,29 +43,32 @@ public class ClassifierService implements IClassifierService {
 	}
 
 	@Override
+	public SVM getClassifier() {
+
+		if (classifier.isNull()) {
+			log.info("No loaded classifier found, initializing new classifier!");
+			classifier = SVM.create();
+		}
+
+		try (CvTermCriteria cvTermCriteria = new CvTermCriteria(CV_TERMCRIT_ITER, 1000, 0.0001)) {
+			classifier.setType(SVM.C_SVC);
+			classifier.setKernel(SVM.LINEAR);
+			classifier.setTermCriteria(cvTermCriteria.asTermCriteria());
+		}
+
+		return classifier;
+	}
+
+	@Override
 	public void load() {
 		log.info("Loading Classifier at {}", classifierConfig.getClassifierPath());
 		try {
+			// TODO load most recent!
 			classifier = SVM.load(classifierConfig.getClassifierPath());
 			classifierLoaded.set(true);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
-	}
-
-	@Override
-	public void save() {
-		log.info("Saving Classifier at {}", classifierConfig.getClassifierPath());
-		String fileName = classifierConfig.getClassifierNamePrefix() +
-			LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + ".xml";
-		String savingDestination = classifierConfig.getClassifierPath() + File.separator + fileName;
-		CvFileStorage cvFileStorage = CvFileStorage.open(savingDestination,
-			CvMemStorage.create(), CV_STORAGE_WRITE);
-		FileStorage fileStorage = new FileStorage(cvFileStorage);
-		classifier.write(fileStorage);
-		cvFileStorage.release();
-		fileStorage.release();
-		log.info("Saved successfully at {}", savingDestination);
 	}
 
 	@Override
@@ -91,28 +94,28 @@ public class ClassifierService implements IClassifierService {
 				labelsArrayMat.copyTo(classes);
 			}
 
-			CvTermCriteria cvTermCriteria =
-				new CvTermCriteria(CV_TERMCRIT_ITER, 1000, 0.000001);
-			
-			if (classifier.isNull()) {
-				log.info("No loaded classifier found, initializing new classifier!");
-				classifier = SVM.create();
-			}
-			
-			classifier.setType(SVM.C_SVC);
-			classifier.setKernel(SVM.LINEAR);
-			classifier.setTermCriteria(cvTermCriteria.asTermCriteria());
-
-			boolean isTrained = classifier.train(trainingData, ROW_SAMPLE, classes);
+			boolean isTrained = getClassifier().train(trainingData, ROW_SAMPLE, classes);
 			if (isTrained) {
 				log.info("SVM classifier was trained successfully");
 				save();
 			} else {
 				log.warn("Failed to train SVM classifier!");
 			}
-			
-			cvTermCriteria.close();
 		}
+	}
+
+	@Override
+	public void save() {
+		log.info("Saving Classifier at {}", classifierConfig.getClassifierPath());
+		String fileName = classifierConfig.getClassifierNamePrefix() 
+			+ LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + ".xml";
+		String savingDestination = classifierConfig.getClassifierPath() + File.separator + fileName;
+		CvFileStorage cvFileStorage = CvFileStorage.open(savingDestination, CvMemStorage.create(), CV_STORAGE_WRITE);
+		FileStorage fileStorage = new FileStorage(cvFileStorage);
+		classifier.write(fileStorage);
+		cvFileStorage.release();
+		fileStorage.release();
+		log.info("Saved successfully at {}", savingDestination);
 	}
 
 	@PreDestroy
