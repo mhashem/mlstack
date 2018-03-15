@@ -15,8 +15,8 @@ limitations under the License.
 
 package co.rxstack.ml.tensorflow.experimental;
 
+import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
-import static org.bytedeco.javacpp.opencv_core.CV_STORAGE_WRITE;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -51,8 +51,8 @@ import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.CvTermCriteria;
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.TermCriteria;
 import org.bytedeco.javacpp.opencv_ml;
-import org.bytedeco.javacpp.opencv_ml.SVM;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
@@ -154,9 +154,12 @@ public class FaceNetLabeling {
 			labelss[ii] = trainingLabels.get(ii).intValue();
 		new Mat(labelss).copyTo(classes);
 
+/*
 		CvTermCriteria cvTermCriteria =
 			new CvTermCriteria(opencv_core.CV_TERMCRIT_ITER, 1000, 0.000001);
+*/
 
+/*
 		SVM svmClassifier = SVM.create();
 		svmClassifier.setType(SVM.C_SVC);
 		svmClassifier.setKernel(SVM.LINEAR);
@@ -169,6 +172,7 @@ public class FaceNetLabeling {
 		System.out.println("h " + classes.size().height() + " - w " + classes.size().width());
 
 		svmClassifier.train(trainingData, opencv_ml.ROW_SAMPLE, classes);
+*/
 
 		/*svmClassifier.trainAuto(trainData, 10,
 			SVM.getDefaultGrid(SVM.C),
@@ -179,10 +183,36 @@ public class FaceNetLabeling {
 			SVM.getDefaultGrid(SVM.DEGREE),
 			true);*/
 
+/*
 		opencv_core.CvFileStorage fsTo = opencv_core.CvFileStorage
 			.open("C:/etc/mlstack/output/svm.xml", opencv_core.CvMemStorage.create(), CV_STORAGE_WRITE);
 		opencv_core.FileStorage fsto2=new opencv_core.FileStorage(fsTo);
 		svmClassifier.write(fsto2);
+*/
+
+
+		CvMat layerSizes = new CvMat(new Mat(4, 1, CV_32FC1));
+		layerSizes.put(0, 0, 128);
+		layerSizes.put(0, 1, labelss.length * 8);
+		layerSizes.put(0, 2, labelss.length * 4);
+		layerSizes.put(0, 3, 1);
+
+
+		Mat layers = new Mat(4, 1, CV_32FC1);
+		layers.row(0).put(new Scalar(128)); // input
+		layers.row(1).put(new Scalar(labelss.length * 8)); // hidden
+		layers.row(2).put(new Scalar(labelss.length * 4)); // hidden
+		layers.row(3).put(new Scalar(labelss.length)); // output
+
+		opencv_ml.ANN_MLP ann_mlp = opencv_ml.ANN_MLP.create();
+		ann_mlp.setLayerSizes(new Mat(layerSizes));
+		ann_mlp.setBackpropWeightScale(0.1);
+		ann_mlp.setBackpropMomentumScale(0.1);
+		ann_mlp.setActivationFunction(opencv_ml.ANN_MLP.SIGMOID_SYM, 1, 1);
+		ann_mlp.setTermCriteria(new TermCriteria(TermCriteria.MAX_ITER + TermCriteria.EPS, 300, 0.0));
+		ann_mlp.setTrainMethod(opencv_ml.ANN_MLP.BACKPROP);
+
+		ann_mlp.train(trainingData, opencv_ml.ROW_SAMPLE, classes); // maybe use floatValue() for labelss!
 
 		EuclideanDistance distance = new EuclideanDistance();
 
@@ -207,8 +237,8 @@ public class FaceNetLabeling {
 
 		Mat reshapedMat = new Mat(computeEmbeddings(testImage)).reshape(0, 1);
 		Stopwatch predictionStopwatch = Stopwatch.createStarted();
-		float predict = svmClassifier.predict(reshapedMat, classes, opencv_ml.StatModel.RAW_OUTPUT);
-		System.out.println("SVM: prediction " + predict + " completed in "
+		float predict = ann_mlp.predict(reshapedMat, classes, opencv_ml.StatModel.RAW_OUTPUT);
+		System.out.println("Classifier: prediction " + predict + " completed in "
 			+ predictionStopwatch.elapsed(TimeUnit.MILLISECONDS)  + "ms");
 
 		embeddings.keySet().forEach(label -> {
