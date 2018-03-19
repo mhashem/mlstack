@@ -1,6 +1,9 @@
 package co.rxstack.ml.aggregator.service.impl;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -35,12 +38,12 @@ import co.rxstack.ml.common.model.FaceBox;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
-import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
-
+import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,9 +68,8 @@ public class AggregatorService {
 
 	@Autowired
 	public AggregatorService(IIdentityService identityService, IFaceExtractorService faceExtractorService,
-		IFaceRecognitionService faceRecognitionService,
-		IRekognitionService rekognitionService, ICognitiveService cognitiveService, InceptionService inceptionService,
-		PreprocessorClient preprocessorClient) {
+		IFaceRecognitionService faceRecognitionService, IRekognitionService rekognitionService,
+		ICognitiveService cognitiveService, InceptionService inceptionService, PreprocessorClient preprocessorClient) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
@@ -87,7 +89,8 @@ public class AggregatorService {
 
 	// using Tensorflow
 	public List<TensorFlowResult> recognize(byte[] imageBytes) {
-		log.info("recognizing image with {} bytes using {}", imageBytes.length);
+		log.info("recognizing image with {} using {}", FileUtils.byteCountToDisplaySize(imageBytes.length),
+			"Tensorflow Inception");
 		final List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
 		try {
 			BufferedImage bufferedImage = bytesToBufferedImage(imageBytes);
@@ -149,7 +152,6 @@ public class AggregatorService {
 		log.info("identify called with image {} bytes", imageBytes.length);
 		AggregateFaceIdentification faceIdentification = new AggregateFaceIdentification();
 		try {
-
 			String contentType = (String) bundleMap.get(Constants.CONTENT_TYPE);
 
 			// build BufferedImage!
@@ -167,7 +169,7 @@ public class AggregatorService {
 			byte[] bytes = baos.toByteArray();
 
 			CompletableFuture<List<Candidate>> awsCompletableFuture = CompletableFuture.supplyAsync(() -> {
-					log.info("AWS Rekognition ---> async searching faces by image");
+				log.info("AWS Rekognition ---> async searching faces by image");
 				try {
 					return awsRekognitionService.searchFacesByImage(bytes);
 				} catch (Exception e) {
@@ -181,7 +183,7 @@ public class AggregatorService {
 					log.info("Cognitive ---> async searching faces by image");
 					try {
 						return cognitiveService.identifyFace(bytes);
-					} catch (Exception e){
+					} catch (Exception e) {
 						log.error(e.getMessage(), e);
 						return Optional.empty();
 					}
@@ -264,8 +266,8 @@ public class AggregatorService {
 				faceDbId = String.valueOf(identityOptional.get().getId());
 			}
 
-			Candidate candidate = new Candidate(personId, pFace.getConfidence(),
-				FaceRectangle.from(pFace.getBox()), Recognizer.OPEN_CV);
+			Candidate candidate =
+				new Candidate(personId, pFace.getConfidence(), FaceRectangle.from(pFace.getBox()), Recognizer.OPEN_CV);
 			candidate.setDbPersonId(faceDbId);
 			return candidate;
 		}).collect(Collectors.toList());
@@ -297,6 +299,5 @@ public class AggregatorService {
 		ImageIO.write(image, "jpg", baos);
 		return baos.toByteArray();
 	}
-
 
 }
