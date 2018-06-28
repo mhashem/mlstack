@@ -7,16 +7,24 @@ import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import javax.annotation.PreDestroy;
 
+import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Maps;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +71,7 @@ public class FaceNetService implements IFaceNetService {
 	@Override
 	public float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
 		log.info("Computing embeddings feature vector");
-		try (Tensor<Float> image = Tensors.create(imageTo4DArray(bufferedImage))) {
+		try (Tensor<Float> image = Tensors.create(imageTo4DTensor(bufferedImage))) {
 			float[] embeddings = new float[128];
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			Tensor<Float> result = session.runner()
@@ -82,6 +90,39 @@ public class FaceNetService implements IFaceNetService {
 		return new float[] {};
 	}
 
+	@Override
+	public Optional<TensorFlowResult> computeDistance(float[] vector) {
+		return computeDistance(vector, DEFAULT_THRESHOLD);
+	}
+
+	@Override
+	public Optional<TensorFlowResult> computeDistance(float[] vector, double threshold) {
+
+		Map<String, float[]> embeddings = Maps.newHashMap();
+
+		// load vectors
+
+		// todo find solution for vector loading
+
+		Map<Double, String> resultsVector = Maps.newHashMap();
+
+		EuclideanDistance euclideanDistance = new EuclideanDistance();
+
+		embeddings.keySet().forEach(label -> {
+			double d = euclideanDistance.compute(toDoubleArray(embeddings.get(label)), toDoubleArray(vector));
+			resultsVector.put(d, label);
+		});
+
+		Optional<Double> aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder());
+
+		if (aDouble.isPresent()) {
+			TensorFlowResult result =
+				new TensorFlowResult(resultsVector.get(aDouble.get()), Math.round((1 - aDouble.get()) * 100));
+			return Optional.of(result);
+		}
+		return Optional.empty();
+	}
+
 	@PreDestroy
 	public void onDestroy() {
 		log.info("PreDestroy() fired, releasing Tensorflow Session, and Graph");
@@ -89,7 +130,11 @@ public class FaceNetService implements IFaceNetService {
 		faceNetTensorGraph.close();
 	}
 
-	private float[][][][] imageTo4DArray(BufferedImage bi) {
+	private double[] toDoubleArray(float[] e) {
+		return IntStream.range(0, e.length).mapToDouble(value -> e[value]).toArray();
+	}
+
+	private float[][][][] imageTo4DTensor(BufferedImage bi) {
 		int height = bi.getHeight();
 		int width = bi.getWidth();
 		int depth = 3;

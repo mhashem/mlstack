@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+import co.rxstack.ml.aggregator.config.ClassifierConfig;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.dao.FaceDao;
 import co.rxstack.ml.aggregator.dao.IdentityDao;
@@ -40,11 +41,11 @@ import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
-import co.rxstack.ml.tensorflow.service.impl.FaceNetService;
-import co.rxstack.ml.tensorflow.service.IFaceNetService;
-import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
+import co.rxstack.ml.tensorflow.service.IFaceNetService;
+import co.rxstack.ml.tensorflow.service.impl.FaceNetService;
+import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -111,6 +112,11 @@ public class AppContext {
 
 	@Value("${preprocesser.host}")
 	private String preprocessorHost;
+
+	@Value("${classifier.path}")
+	private String classifierPath;
+	@Value("${classifier.name.prefix}")
+	private String classifierNamePrefix;
 
 	@Qualifier("stackClientRestTemplate")
 	@Bean
@@ -186,9 +192,9 @@ public class AppContext {
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
 		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
-		InceptionService inceptionService, PreprocessorClient preprocessorClient) {
+		InceptionService inceptionService, PreprocessorClient preprocessorClient, IFaceNetService faceNetService) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
-			cognitiveService, inceptionService, preprocessorClient);
+			cognitiveService, inceptionService, preprocessorClient, faceNetService);
 	}
 
 	@Qualifier("haarCascadeFile")
@@ -307,6 +313,19 @@ public class AppContext {
 			throw new RuntimeException(e);
 		}
 	}
+
+	@Bean
+	public ClassifierConfig classifierConfig() {
+		ClassifierConfig classifierConfig = new ClassifierConfig();
+		classifierConfig.setClassifierPath(classifierPath);
+		classifierConfig.setClassifierNamePrefix(classifierNamePrefix);
+		return classifierConfig;
+	}
+
+	/*@Bean
+	public IClassifierService classifierService(ClassifierConfig classifierConfig) {
+		return new ClassifierService(classifierConfig);
+	}*/
 
 	@Bean
 	public PreprocessorClient preprocessorClient() {

@@ -30,7 +30,7 @@ public class IdentityController {
 	}
 
 	@PostMapping("/api/v1/identity")
-	public ResponseEntity saveIdentity(@RequestBody Identity identity){
+	public ResponseEntity saveIdentity(@RequestBody Identity identity) {
 		log.info("intercepted {}", identity);
 		Identity savedIdentity = identityService.save(identity);
 		return ResponseEntity.ok(savedIdentity);

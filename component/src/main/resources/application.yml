@@ -105,3 +105,12 @@ tensor:
 
 preprocesser:
   host: "http://127.0.0.1:5000"
+
+classifier:
+  path: "C:/etc/mlstack/output"
+  name:
+    prefix: "svm"
+
+logging:
+  file: 'C:/etc/mlstack/mlstack.log'
+

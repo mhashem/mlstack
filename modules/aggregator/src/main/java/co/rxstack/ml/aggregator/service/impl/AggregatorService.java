@@ -1,9 +1,6 @@
 package co.rxstack.ml.aggregator.service.impl;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -39,7 +36,9 @@ import co.rxstack.ml.common.model.FaceIdentificationResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
+import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.service.impl.InceptionService;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -66,10 +65,15 @@ public class AggregatorService {
 	private InceptionService inceptionService;
 	private PreprocessorClient preprocessorClient;
 
+	private FaceClassifier faceClassifier;
+
+	private IFaceNetService faceNetService;
+
 	@Autowired
 	public AggregatorService(IIdentityService identityService, IFaceExtractorService faceExtractorService,
 		IFaceRecognitionService faceRecognitionService, IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService, InceptionService inceptionService, PreprocessorClient preprocessorClient) {
+		ICognitiveService cognitiveService, InceptionService inceptionService, PreprocessorClient preprocessorClient,
+		IFaceNetService faceNetService) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
@@ -85,20 +89,22 @@ public class AggregatorService {
 		this.faceRecognitionService = faceRecognitionService;
 		this.inceptionService = inceptionService;
 		this.preprocessorClient = preprocessorClient;
+
+		this.faceClassifier = faceClassifier;
+
+		this.faceNetService = faceNetService;
 	}
 
 	// using Tensorflow
 	public List<TensorFlowResult> recognize(byte[] imageBytes) {
-		log.info("recognizing image with {} using {}", FileUtils.byteCountToDisplaySize(imageBytes.length),
-			"Tensorflow Inception");
+		log.info("recognizing image with {} using tensorflow Inception",
+			FileUtils.byteCountToDisplaySize(imageBytes.length));
 		final List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
 		try {
 			BufferedImage bufferedImage = bytesToBufferedImage(imageBytes);
 			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
 			faceBoxes.forEach(faceBox -> {
-				BufferedImage faceImage = bufferedImage
-					.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
-						(faceBox.getBottom() - faceBox.getTop()));
+				BufferedImage faceImage = subImage(bufferedImage, faceBox);
 				try {
 					Optional<byte[]> alignedImageByteArray =
 						preprocessorClient.align(bufferedImageToByteArray(faceImage));
@@ -117,6 +123,53 @@ public class AggregatorService {
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
+		return tensorFlowResults;
+	}
+
+	public List<TensorFlowResult> faceNetRecognize(byte[] imageBytes) throws IOException {
+		List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
+
+		log.info("make an original image copy");
+		BufferedImage originalImage = bytesToBufferedImage(imageBytes);
+
+		log.info("detecting faces in the image");
+		final List<FaceBox> detectedFaces = preprocessorClient.detectFaces(imageBytes);
+
+		log.info("detected {}", detectedFaces.size());
+		log.info("aligning each detected image ");
+		detectedFaces.forEach(faceBox -> {
+			BufferedImage faceImage = subImage(originalImage, faceBox);
+			// align
+			try {
+				Optional<byte[]> alignedImageBytesOptional =
+					preprocessorClient.align(bufferedImageToByteArray(faceImage));
+
+				if (alignedImageBytesOptional.isPresent()) {
+					log.info("image is aligned successfully");
+					float[] featuresVector = faceNetService
+						.computeEmbeddingsFeaturesVector(
+							bytesToBufferedImage(alignedImageBytesOptional.get()));
+
+					log.info("features vector computed successfully");
+
+					Optional<TensorFlowResult> tfResultOptional =
+						faceNetService.computeDistance(featuresVector);
+					// found some identity
+
+					if (tfResultOptional.isPresent()) {
+						TensorFlowResult tensorFlowResult = tfResultOptional.get();
+						tensorFlowResult.setFaceBox(faceBox);
+
+						// todo match with database identity
+
+						tensorFlowResults.add(tensorFlowResult);
+					}
+				}
+			} catch (IOException e) {
+				log.error("failed to align image");
+				log.error(e.getMessage(), e);
+			}
+		});
 		return tensorFlowResults;
 	}
 
@@ -298,6 +351,11 @@ public class AggregatorService {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageIO.write(image, "jpg", baos);
 		return baos.toByteArray();
+	}
+
+	private BufferedImage subImage(BufferedImage image, FaceBox faceBox) {
+		return image.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
+			(faceBox.getBottom() - faceBox.getTop()));
 	}
 
 }

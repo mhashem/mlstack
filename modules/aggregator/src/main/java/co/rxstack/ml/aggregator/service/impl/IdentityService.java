@@ -67,7 +67,7 @@ public class IdentityService implements IIdentityService {
 
 		identityMap.keySet().retainAll(idSet);
 
-		log.info("Refresh complete, found {} faces in db", faceList.size());
+		log.info("Refresh completed, found {} faces in db", faceList.size());
 	}
 
 	@Override

@@ -74,6 +74,7 @@ public class PreprocessorClient implements IPreprocessorClient {
 	 */
 	@Override
 	public List<FaceBox> detectFaces(byte[] imageBytes) {
+		log.info("Calling preprocessor service to detect faces in image with size {} bytes", imageBytes.length);
 		File tempFile = null;
 		try {
 			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");

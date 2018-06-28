@@ -89,9 +89,9 @@ public class FaceController {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(targetImage);
 		try {
-			AggregateFaceIdentification faceIdentification = aggregatorService.identify(targetImage.getBytes(),
-				ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
-			// ImmutableMap.of("recognitions", faceIdentification.getCandidates())
+			AggregateFaceIdentification faceIdentification =
+				aggregatorService.identify(targetImage.getBytes(),
+					ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
 			return ResponseEntity.ok(faceIdentification);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
@@ -109,6 +109,21 @@ public class FaceController {
 		Preconditions.checkNotNull(image);
 		try {
 			return ResponseEntity.ok(aggregatorService.recognize(image.getBytes()));
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return ResponseEntity.badRequest().build();
+	}
+
+	@PostMapping("/api/v3/faces/recognition")
+	public ResponseEntity recognize3(
+		@RequestParam("image")
+			MultipartFile image, HttpServletRequest request) throws IOException {
+		log.info("Intercepted request for image recognition (v3) from {}", request.getRemoteAddr());
+
+		Preconditions.checkNotNull(image);
+		try {
+			return ResponseEntity.ok(aggregatorService.faceNetRecognize(image.getBytes()));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}

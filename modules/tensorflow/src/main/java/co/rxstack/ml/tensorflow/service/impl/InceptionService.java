@@ -18,6 +18,7 @@ import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -85,8 +86,9 @@ public class InceptionService {
 		log.info("Predicting best result for image with {} bytes", imageBytes.length);
 		try(Tensor<String> image = Tensors.create(imageBytes)) {
 			float[] labelProbabilities = executeInceptionGraph(image);
-			int bestLabelIdx = maxIndex(labelProbabilities);			
-			TensorFlowResult result = new TensorFlowResult(labels.get(bestLabelIdx), Math.round(labelProbabilities[bestLabelIdx] * 100f));
+			int bestLabelIdx = maxIndex(labelProbabilities);
+			TensorFlowResult result =
+				new TensorFlowResult(labels.get(bestLabelIdx), Math.round(labelProbabilities[bestLabelIdx] * 100f));
 			return Optional.of(result);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
