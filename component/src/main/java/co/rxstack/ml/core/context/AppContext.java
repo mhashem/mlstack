@@ -28,8 +28,6 @@ import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
-import co.rxstack.ml.client.IStackClient;
-import co.rxstack.ml.client.StackClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
@@ -61,7 +59,6 @@ import org.opencv.objdetect.CascadeClassifier;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -125,11 +122,6 @@ public class AppContext {
 		restTemplate.setInterceptors(ImmutableList
 			.of(new AuthRequestInterceptor(clientEndpoint, clientEndpointUsername, clientEndpointPassword)));
 		return restTemplate;
-	}
-
-	@Bean
-	public IStackClient stackClient(RestTemplate stackClientRestTemplate, DiscoveryClient discoveryClient) {
-		return new StackClient(stackClientRestTemplate, discoveryClient, clientServiceName);
 	}
 
 	@Bean

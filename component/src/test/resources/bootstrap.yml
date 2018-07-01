@@ -6,7 +6,3 @@ spring:
       enabled: false
     discovery:
       enabled: false
-    consul:
-      enabled: false
-      config:
-        enabled: false # this way we disable consul in testing environments

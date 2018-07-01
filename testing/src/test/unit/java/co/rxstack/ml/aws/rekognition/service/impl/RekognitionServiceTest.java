@@ -2,6 +2,7 @@ package co.rxstack.ml.aws.rekognition.service.impl;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -23,9 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Strict.class)
 public class RekognitionServiceTest {
 
 	@Mock
@@ -42,7 +43,6 @@ public class RekognitionServiceTest {
 
 	@Test
 	public void testIndexFacesEmptyResult() {
-		when(rekognitionClient.indexFace(anyString(), any())).thenReturn(Optional.empty());
 		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces(new byte[] {}, ImmutableMap.of());
 		Assert.assertTrue(faceIndexingResults.isEmpty());
 	}
@@ -66,7 +66,9 @@ public class RekognitionServiceTest {
 
 		IndexFacesResult facesResult = new IndexFacesResult();
 		facesResult.setFaceRecords(Collections.singletonList(faceRecord));
-		when(rekognitionClient.indexFace(anyString(), any())).thenReturn(Optional.of(facesResult));
+
+		when((awsConfig.getCollectionId())).thenReturn("test-collection");
+		when(rekognitionClient.indexFace(any(), any())).thenReturn(Optional.of(facesResult));
 		List<FaceIndexingResult> faceIndexingResults = rekognitionService.indexFaces(new byte[] {}, ImmutableMap.of());
 		Assert.assertEquals(1, faceIndexingResults.size());
 	}

@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ public class CognitiveServicesClientTest {
 		Assert.assertFalse(result);
 	}
 
+	@Ignore
 	@Test
 	public void testGetPersonGroup() {
 		boolean result = cognitiveServicesClient.createPersonGroup(validPersonGroupId, "test-group");
@@ -75,7 +77,8 @@ public class CognitiveServicesClientTest {
 		Assert.assertEquals("test-group", personGroupOptional.get().getName());
 		Assert.assertEquals(validPersonGroupId, personGroupOptional.get().getPersonGroupId());
 	}
-	
+
+	@Ignore
 	@Test
 	public void testDetectFace() throws URISyntaxException, FileNotFoundException {
 		try {
@@ -126,7 +129,8 @@ public class CognitiveServicesClientTest {
 			cognitiveServicesClient.createPerson(validPersonGroupId, "Foo", "29,10");
 		Assert.assertTrue(fooIdOptional.isPresent());
 	}
-	
+
+	@Ignore
 	@Test
 	public void testGetPerson() {
 		cognitiveServicesClient.createPersonGroup(validPersonGroupId, "foo-test-group");
@@ -157,6 +161,7 @@ public class CognitiveServicesClientTest {
 		});
 	}
 
+	@Ignore
 	@Test
 	public void testDoCompleteCycle() throws IOException, InterruptedException {
 		// 1 create person group

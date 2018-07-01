@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,7 +25,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class Face {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "faceIdSequenceGenerator")
+	@SequenceGenerator(name = "faceIdSequenceGenerator")
 	private int id;
 
 	@Column(name = "aws_face_id")

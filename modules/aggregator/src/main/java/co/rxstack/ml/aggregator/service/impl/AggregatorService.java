@@ -65,8 +65,6 @@ public class AggregatorService {
 	private InceptionService inceptionService;
 	private PreprocessorClient preprocessorClient;
 
-	private FaceClassifier faceClassifier;
-
 	private IFaceNetService faceNetService;
 
 	@Autowired
@@ -89,8 +87,6 @@ public class AggregatorService {
 		this.faceRecognitionService = faceRecognitionService;
 		this.inceptionService = inceptionService;
 		this.preprocessorClient = preprocessorClient;
-
-		this.faceClassifier = faceClassifier;
 
 		this.faceNetService = faceNetService;
 	}

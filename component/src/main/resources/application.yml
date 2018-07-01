@@ -1,9 +1,19 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /mlstack
+
 spring:
+  application:
+    name: mlstack-service
   datasource:
     url: jdbc:postgresql://localhost:5432/mlstack
     username: ${database_username}
     password: ${database_password}
     driver-class-name: org.postgresql.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      connection-timeout: 60000
 #  jpa:
 #    database-platform: io.github.jhipster.domain.util.FixedPostgreSQL82Dialect
 #    database: POSTGRESQL
@@ -13,27 +23,27 @@ spring:
 #      hibernate.cache.use_second_level_cache: false
 #      hibernate.cache.use_query_cache: false
 #      hibernate.generate_statistics: true
-  cloud:
-    consul:
-      discovery:
-        enabled: true
+
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
   jackson:
     serialization: {INDENT_OUTPUT: true, WRITE_DATES_AS_TIMESTAMPS: false}
 
-endpoints:
-  beans:
-    id: springbeans
-    sensitive: false
-    enabled: true
-
-
-
-management:
-  security:
-    enabled: false
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
 
 #
 # Microsoft Cognitive Services
@@ -45,7 +55,6 @@ cognitive:
   person-group-name: "employee_collection"
   threshold: 0.5
   max-candidates: 2
-
 
 #
 # AWS Rekognition Services
@@ -113,4 +122,3 @@ classifier:
 
 logging:
   file: 'C:/etc/mlstack/mlstack.log'
-

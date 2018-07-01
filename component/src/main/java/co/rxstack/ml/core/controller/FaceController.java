@@ -63,8 +63,6 @@ public class FaceController {
 
 		Preconditions.checkNotNull(identityId);
 		Preconditions.checkNotNull(faceImage);
-		// todo use something like phash to compute the hash of the image (media hash)
-		// log.info("image hash: {}", Hashing.sha256().hashBytes(bytes).toString());
 
 		try {
 			byte[] bytes = faceImage.getBytes();
