@@ -46,13 +46,13 @@ public class IndexingJob extends UntypedActor {
 	}
 
 	@Override
-	public void onReceive(Object message) throws Throwable {
-		log.info("IndexingJob fired with message {}", message);
+	public void onReceive(Object message) {
+		log.info("IndexingJob started with message {}", message);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		List<Ticket> tickets = indexingQueue.getTickets();
 		indexingQueue.clear();
 		if (tickets.isEmpty()) {
-			log.info("no tickets found in indexing queue");
+			log.info("found 0 indexing tickets in queue, no action needed");
 			return;
 		}
 		log.info("found {} tickets in indexing queue", tickets.size());
@@ -72,6 +72,9 @@ public class IndexingJob extends UntypedActor {
 					identity = new Identity();
 					identity.setName(ticket.getPersonName());
 					identity = identityService.save(identity);
+					// fixme: Bug - save may fail if cache in identity service haven't completed
+					// fixme: and thus duplicate key will fail the operation, however the DAO used
+					// fixme: seems to be safe as it runs save or update -- should check only
 				} else {
 					identity= identityOptional.get();
 				}

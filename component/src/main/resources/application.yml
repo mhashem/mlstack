@@ -3,17 +3,20 @@ server:
   servlet:
     context-path: /mlstack
 
+version: @project.version@
+
 spring:
   application:
     name: mlstack
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/mlstack
+    url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       connection-timeout: 60000
+
 #  jpa:
 #    database-platform: io.github.jhipster.domain.util.FixedPostgreSQL82Dialect
 #    database: POSTGRESQL
@@ -42,7 +45,7 @@ eureka:
     hostname: localhost
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+      defaultZone: ${EUREKA_URL}
     fetch-registry: true
     register-with-eureka: true
     enabled: true

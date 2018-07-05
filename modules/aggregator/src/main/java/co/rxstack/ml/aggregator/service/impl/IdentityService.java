@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import co.rxstack.ml.aggregator.dao.FaceDao;
@@ -26,6 +27,8 @@ public class IdentityService implements IIdentityService {
 
 	private static final Logger log = LoggerFactory.getLogger(IdentityService.class);
 
+	private AtomicBoolean isRunning = new AtomicBoolean(false);
+
 	private FaceDao faceDao;
 	private IdentityDao identityDao;
 
@@ -40,34 +43,6 @@ public class IdentityService implements IIdentityService {
 		this.faceDao = faceDao;
 		this.identityDao = identityDao;
 		refreshCache();
-	}
-
-	@Scheduled(fixedRate = 60000, initialDelay = 10000)
-	private void refreshCache() {
-		log.info("Refreshing identity cache");
-		List<Face> faceList = faceDao.findAll();
-		faceList.forEach(face -> {
-			int faceId = face.getId();
-			Optional.ofNullable(face.getAwsFaceId()).ifPresent(awsFaceId -> awsFaceIdMap.put(awsFaceId, faceId));
-
-			Optional.ofNullable(face.getCognitivePersonId())
-				.ifPresent(cognitivePersonId -> cognitivePersonIdMap.put(cognitivePersonId, faceId));
-
-			faceIdentityMap.put(faceId, face.getIdentity());
-		});
-
-		identityFaceListMap.putAll(
-			faceList.stream().collect(Collectors.groupingBy(o -> o.getIdentity().getId(), Collectors.toList())));
-
-		Set<Integer> idSet = Sets.newHashSet();
-		identityDao.findAll().forEach(identity -> {
-			idSet.add(identity.getId());
-			identityMap.put(identity.getId(), identity);
-		});
-
-		identityMap.keySet().retainAll(idSet);
-
-		log.info("Refresh completed, found {} faces in db", faceList.size());
 	}
 
 	@Override
@@ -108,6 +83,40 @@ public class IdentityService implements IIdentityService {
 	@Override
 	public Identity save(Identity identity) {
 		return identityDao.save(identity);
+	}
+
+	@Scheduled(fixedRate = 60000, initialDelay = 10000)
+	private void refreshCache() {
+		log.info("Refreshing Identities cache");
+		if (!isRunning.getAndSet(true)) {
+			log.info("Found no running lock will proceed");
+			List<Face> faceList = faceDao.findAll();
+			faceList.forEach(face -> {
+				int faceId = face.getId();
+				Optional.ofNullable(face.getAwsFaceId()).ifPresent(awsFaceId -> awsFaceIdMap.put(awsFaceId, faceId));
+
+				Optional.ofNullable(face.getCognitivePersonId())
+					.ifPresent(cognitivePersonId -> cognitivePersonIdMap.put(cognitivePersonId, faceId));
+
+				faceIdentityMap.put(faceId, face.getIdentity());
+			});
+
+			identityFaceListMap.putAll(
+				faceList.stream().collect(Collectors.groupingBy(o -> o.getIdentity().getId(), Collectors.toList())));
+
+			Set<Integer> idSet = Sets.newHashSet();
+			identityDao.findAll().forEach(identity -> {
+				idSet.add(identity.getId());
+				identityMap.put(identity.getId(), identity);
+			});
+
+			identityMap.keySet().retainAll(idSet);
+
+			log.info("Identities internal cache refresh completed, found {} faces in db", faceList.size());
+			isRunning.compareAndSet(true, false);
+			log.info("Identities refresh lock removed");
+		}
+
 	}
 
 	/*private Map<String, Face> getFacesMap() {
