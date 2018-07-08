@@ -38,20 +38,20 @@ import org.tensorflow.Tensors;
 import org.tensorflow.types.UInt8;
 
 /**
- * Sample use of the TensorFlow Java API to label images using a pre-trained model.
+ * Sample use of the TensorFlow Java API to label images using a pre-trained models.
  */
 @SuppressWarnings("ALL")
 public class LabelImage {
 	private static void printUsage(PrintStream s) {
 		final String url = "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip";
-		s.println("Java program that uses a pre-trained Inception model (http://arxiv.org/abs/1512.00567)");
+		s.println("Java program that uses a pre-trained Inception models (http://arxiv.org/abs/1512.00567)");
 		s.println("to label JPEG images.");
 		s.println("TensorFlow version: " + TensorFlow.version());
 		s.println();
-		s.println("Usage: label_image <model dir> <image file>");
+		s.println("Usage: label_image <models dir> <image file>");
 		s.println();
 		s.println("Where:");
-		s.println("<model dir> is a directory containing the unzipped contents of the inception model");
+		s.println("<models dir> is a directory containing the unzipped contents of the inception models");
 		s.println("            (from " + url + ")");
 		s.println("<image file> is the path to a JPEG image file");
 	}
@@ -87,10 +87,10 @@ public class LabelImage {
 	private static Tensor<String> constructAndExecuteGraphToNormalizeImage(byte[] imageBytes) {
 		try (Graph g = new Graph()) {
 			GraphBuilder b = new GraphBuilder(g);
-			// Some constants specific to the pre-trained model at:
+			// Some constants specific to the pre-trained models at:
 			// https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
 			//
-			// - The model was trained with images scaled to 224x224 pixels.
+			// - The models was trained with images scaled to 224x224 pixels.
 			// - The colors, represented as R, G, B in 1-byte each were converted to
 			//   float using (value - Mean)/Scale.
 			final int H = 224;
@@ -136,7 +136,7 @@ public class LabelImage {
 
 				if (result.numDimensions() != 2 || rshape[0] != 1) {
 					throw new RuntimeException(String.format(
-						"Expected model to produce a [1 N] shaped tensor where N is the number of labels, instead it produced one with shape %s",
+						"Expected models to produce a [1 N] shaped tensor where N is the number of labels, instead it produced one with shape %s",
 						Arrays.toString(rshape)));
 				}
 				int nlabels = (int) rshape[1];

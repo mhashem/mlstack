@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,30 +52,25 @@ public class FaceController {
 		return ResponseEntity.ok(ImmutableMap.of("faces", identityService.findFaceListByIdentityId(identityId)));
 	}
 
-	@PostMapping("/api/v1/faces/{identityId}/index")
+	@PostMapping("/api/v1/faces/{personId}/index")
 	public ResponseEntity indexFace(
-		@PathVariable("identityId")
-			String identityId,
-		@RequestParam("personName")
-			String personName,
-		@RequestParam("faceImage")
-			MultipartFile faceImage) {
+		@PathVariable("personId")
+			String personId,
+		@RequestBody byte[] faceImage) {
 		log.info("Intercepted: index face request");
 
-		Preconditions.checkNotNull(identityId);
 		Preconditions.checkNotNull(faceImage);
 
 		try {
-			byte[] bytes = faceImage.getBytes();
 			Ticket ticket = new Ticket(UUID.randomUUID().toString());
 			ticket.setType(Ticket.Type.INDEXING);
-			ticket.setPersonId(identityId);
-			ticket.setImageBytes(bytes);
-			ticket.setPersonName(personName);
+			ticket.setPersonId(personId);
+			ticket.setImageBytes(faceImage);
+			ticket.setPersonName(personId);
 
 			indexingQueue.push(ticket);
 			return ResponseEntity.accepted().body(ImmutableMap.of("ticket", ticket.getId()));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
 		}
