@@ -13,6 +13,7 @@ public class Ticket {
 	private String personName;
 	private byte[] imageBytes;
 	private Type type;
+	private String imageName;
 
 	public Ticket(String id) {
 		this.id = id;
@@ -52,6 +53,14 @@ public class Ticket {
 
 	public void setPersonName(String personName) {
 		this.personName = personName;
+	}
+
+	public String getImageName() {
+		return imageName;
+	}
+
+	public void setImageName(String imageName) {
+		this.imageName = imageName;
 	}
 
 	@Override

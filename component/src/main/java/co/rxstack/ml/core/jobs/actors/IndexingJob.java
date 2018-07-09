@@ -2,6 +2,7 @@ package co.rxstack.ml.core.jobs.actors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -10,6 +11,8 @@ import co.rxstack.ml.aggregator.dao.FaceDao;
 import co.rxstack.ml.aggregator.model.db.Face;
 import co.rxstack.ml.aggregator.model.db.Identity;
 import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.aggregator.service.IStorageService;
+import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Constants;
@@ -35,14 +38,16 @@ public class IndexingJob extends UntypedActor {
 	private IndexingQueue indexingQueue;
 	private AggregatorService aggregatorService;
 	private IIdentityService identityService;
+	private IStorageService storageService;
 
 	@Autowired
 	public IndexingJob(FaceDao faceDao, IIdentityService identityService, AggregatorService aggregatorService,
-		IndexingQueue indexingQueue) {
+		IndexingQueue indexingQueue, IStorageService storageService) {
 		this.aggregatorService = aggregatorService;
 		this.indexingQueue = indexingQueue;
 		this.faceDao = faceDao;
 		this.identityService = identityService;
+		this.storageService = storageService;
 	}
 
 	@Override
@@ -57,34 +62,45 @@ public class IndexingJob extends UntypedActor {
 		}
 		log.info("found {} tickets in indexing queue", tickets.size());
 		for (Ticket ticket : tickets) {
-			Optional<AggregateFaceIndexingResult> faceIndexingResultOptional = aggregatorService
-				.indexFaces(ticket.getImageBytes(), ImmutableMap
-					.of(Constants.PERSON_ID, ticket.getPersonId(), Constants.PERSON_NAME, ticket.getPersonName()))
-				.stream().findAny();
-			if (faceIndexingResultOptional.isPresent()) {
-				log.info("Indexing result {}", faceIndexingResultOptional.get());
-				AggregateFaceIndexingResult faceIndexingResult = faceIndexingResultOptional.get();
 
-				Identity identity = null;
-				Optional<Identity> identityOptional =
-					identityService.findIdentityById(Integer.parseInt(ticket.getPersonId()));
-				if (!identityOptional.isPresent()) {
-					identity = new Identity();
-					identity.setName(ticket.getPersonName());
-					identity = identityService.save(identity);
-					// fixme: Bug - save may fail if cache in identity service haven't completed
-					// fixme: and thus duplicate key will fail the operation, however the DAO used
-					// fixme: seems to be safe as it runs save or update -- should check only
-				} else {
-					identity= identityOptional.get();
+			try {
+				byte[] imageBytes = storageService
+					.readBytes(ticket.getImageName(), ticket.getPersonId(), StorageStrategy.Strategy.DISK);
+
+				ImmutableMap<String, String> bundleMap = ImmutableMap.of(
+					Constants.PERSON_ID, ticket.getPersonId(),
+					Constants.PERSON_NAME, ticket.getPersonName());
+
+				Optional<AggregateFaceIndexingResult> faceIndexingResultOptional =
+					aggregatorService.indexFaces(imageBytes, bundleMap).stream().findAny();
+
+				if (faceIndexingResultOptional.isPresent()) {
+					log.info("Indexing result {}", faceIndexingResultOptional.get());
+					AggregateFaceIndexingResult faceIndexingResult = faceIndexingResultOptional.get();
+
+					Identity identity = null;
+					Optional<Identity> identityOptional =
+						identityService.findIdentityById(Integer.parseInt(ticket.getPersonId()));
+					if (!identityOptional.isPresent()) {
+						identity = new Identity();
+						identity.setName(ticket.getPersonName());
+						identity = identityService.save(identity);
+						// fixme: Bug - save may fail if cache in identity service haven't completed
+						// fixme: and thus duplicate key will fail the operation, however the DAO used
+						// fixme: seems to be safe as it runs save or update -- should check only
+					} else {
+						identity= identityOptional.get();
+					}
+
+					Face face = new Face();
+					face.setIdentity(identity);
+					face.setAwsFaceId(faceIndexingResult.awsFaceId);
+					face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
+					faceDao.save(face);
+					log.info("face {} saved successfully", face);
 				}
-
-				Face face = new Face();
-				face.setIdentity(identity);
-				face.setAwsFaceId(faceIndexingResult.awsFaceId);
-				face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
-				faceDao.save(face);
-				log.info("face {} saved successfully", face);
+			} catch (IOException e) {
+				log.error(e.getMessage(), e);
 			}
 		}
 		log.info("IndexingJob completed in {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
