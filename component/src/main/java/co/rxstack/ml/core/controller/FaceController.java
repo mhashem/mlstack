@@ -1,11 +1,12 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import co.rxstack.ml.aggregator.model.db.Face;
 import co.rxstack.ml.aggregator.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
@@ -56,7 +57,11 @@ public class FaceController {
 
 	@GetMapping("/api/v1/faces/{identityId}")
 	public ResponseEntity getFacesForIdentity(@PathVariable("identityId") int identityId) {
-		return ResponseEntity.ok(ImmutableMap.of("faces", identityService.findFaceListByIdentityId(identityId)));
+		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
+		if (faceList == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(faceList);
 	}
 
 	@CrossOrigin(origins = "http://localhost:9000")
