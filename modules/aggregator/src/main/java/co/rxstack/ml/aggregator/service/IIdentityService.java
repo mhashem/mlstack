@@ -16,7 +16,7 @@ public interface IIdentityService {
 
 	Optional<Identity> findIdentityByFaceId(int faceId);
 
-	Optional<Identity> findIdentityById(int id);
+	Optional<Identity> findById(int id);
 
 	List<Face> findFaceListByIdentityId(int identityId);
 

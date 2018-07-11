@@ -65,14 +65,17 @@ public class IdentityService implements IIdentityService {
 		return Optional.ofNullable(faceIdentityMap.get(faceId));
 	}
 
+	/**
+	 * Returns an Optional of Identity searched by id, in case not found in internal cache
+	 * the method fallback to dao.
+	 *
+	 * @param id int
+	 * @return Optional<Identity>
+	 */
 	@Override
-	public Optional<Identity> findIdentityById(int id) {
-		Optional<Identity> identityOptional =
-			identityMap.values().stream().filter(identity -> identity.getId() == id).findFirst();
-		if (identityOptional.isPresent()) {
-			return identityOptional;
-		}
-		return identityDao.findById(id);
+	public Optional<Identity> findById(int id) {
+		Optional<Identity> identityOptional = Optional.ofNullable(identityMap.get(id));
+		return identityOptional.isPresent() ? identityOptional : identityDao.findById(id);
 	}
 
 	@Override

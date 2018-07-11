@@ -39,7 +39,7 @@ public class IdentityController {
 	@GetMapping("/api/v1/identity/{id}")
 	public ResponseEntity getIdentity(@PathVariable("id") int id, HttpServletRequest request) {
 		log.info("intercepted {} from {}", id, request.getRemoteAddr());
-		Optional<Identity> identityOptional = identityService.findIdentityById(id);
+		Optional<Identity> identityOptional = identityService.findById(id);
 		if (identityOptional.isPresent()) {
 			return ResponseEntity.ok(identityOptional.get());
 		}

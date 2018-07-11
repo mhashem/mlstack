@@ -308,7 +308,7 @@ public class AggregatorService {
 			String faceDbId = "";
 			String personId = String.valueOf(pFace.getLabel());
 
-			Optional<Identity> identityOptional = identityService.findIdentityById(pFace.getLabel());
+			Optional<Identity> identityOptional = identityService.findById(pFace.getLabel());
 			if (!identityOptional.isPresent()) {
 				log.warn("no corresponding identity id found in database: {}", personId);
 			} else {

@@ -80,9 +80,10 @@ public class IndexingJob extends UntypedActor {
 
 					Identity identity = null;
 					Optional<Identity> identityOptional =
-						identityService.findIdentityById(Integer.parseInt(ticket.getPersonId()));
+						identityService.findById(Integer.parseInt(ticket.getPersonId()));
 					if (!identityOptional.isPresent()) {
 						identity = new Identity();
+						identity.setId(Integer.parseInt(ticket.getPersonId()));
 						identity.setName(ticket.getPersonName());
 						identity = identityService.save(identity);
 						// fixme: Bug - save may fail if cache in identity service haven't completed
@@ -94,6 +95,7 @@ public class IndexingJob extends UntypedActor {
 
 					Face face = new Face();
 					face.setIdentity(identity);
+					face.setImage(ticket.getImageName());
 					face.setAwsFaceId(faceIndexingResult.awsFaceId);
 					face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
 					faceDao.save(face);

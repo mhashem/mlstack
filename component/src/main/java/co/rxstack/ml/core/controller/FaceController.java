@@ -64,6 +64,8 @@ public class FaceController {
 	public ResponseEntity indexFace(
 		@PathVariable("personId")
 			String personId,
+		@RequestParam("personName")
+			String personName,
 		@RequestParam("faceImage") MultipartFile faceImage, HttpServletRequest request) {
 		log.info("Intercepted: index face request");
 
@@ -82,7 +84,7 @@ public class FaceController {
 				Ticket ticket = new Ticket(UUID.randomUUID().toString());
 				ticket.setType(Ticket.Type.INDEXING);
 				ticket.setPersonId(personId);
-				ticket.setPersonName(personId);
+				ticket.setPersonName(personName);
 				ticket.setImageName(imageName);
 				indexingQueue.push(ticket);
 				return ResponseEntity.accepted().body(ImmutableMap.of("ticket", ticket.getId()));
