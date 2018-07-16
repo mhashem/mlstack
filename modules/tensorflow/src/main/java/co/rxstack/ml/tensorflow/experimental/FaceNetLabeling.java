@@ -95,11 +95,11 @@ public class FaceNetLabeling {
 		String imageFile = args[1];
 		String imageDir = args[2];
 
-		String graphFile = "20170511-185253.pb";
+		String graphFile = "20180402-114759.pb";
 		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
-		List<String> labels = readAllLinesOrExit(Paths.get(modelDir, labelsFile));
+		List<String> labels = readAllLinesOrExit(Paths.get("C:\\Users\\mahmoud\\Documents\\datascience\\models\\Facenet-20170511-185253", labelsFile));
 		BufferedImage testImage = readBufImage(Paths.get(imageFile));
 
 		Map<String, BufferedImage> nameBufferedImageMap = readBufferedImages(Paths.get(imageDir));
@@ -191,6 +191,7 @@ public class FaceNetLabeling {
 */
 
 
+/*
 		CvMat layerSizes = new CvMat(new Mat(4, 1, CV_32FC1));
 		layerSizes.put(0, 0, 128);
 		layerSizes.put(0, 1, labelss.length * 8);
@@ -213,6 +214,7 @@ public class FaceNetLabeling {
 		ann_mlp.setTrainMethod(opencv_ml.ANN_MLP.BACKPROP);
 
 		ann_mlp.train(trainingData, opencv_ml.ROW_SAMPLE, classes); // maybe use floatValue() for labelss!
+*/
 
 		EuclideanDistance distance = new EuclideanDistance();
 
@@ -237,9 +239,11 @@ public class FaceNetLabeling {
 
 		Mat reshapedMat = new Mat(computeEmbeddings(testImage)).reshape(0, 1);
 		Stopwatch predictionStopwatch = Stopwatch.createStarted();
+/*
 		float predict = ann_mlp.predict(reshapedMat, classes, opencv_ml.StatModel.RAW_OUTPUT);
 		System.out.println("Classifier: prediction " + predict + " completed in "
 			+ predictionStopwatch.elapsed(TimeUnit.MILLISECONDS)  + "ms");
+*/
 
 		embeddings.keySet().forEach(label -> {
 			double d = distance.compute(toDoubleArray(embeddings.get(label)), testFloatVector);
@@ -249,11 +253,11 @@ public class FaceNetLabeling {
 		List<Double> collect = resultsVector.keySet().stream().sorted().collect(Collectors.toList());
 		collect.stream().forEach(aDouble -> {
 			System.out
-				.println(resultsVector.get(aDouble) + " with confidence " + Math.round((1 - aDouble) * 100) + "%");
+				.println(resultsVector.get(aDouble) + " with confidence " + aDouble + " rounded -> " + Math.round((1 - aDouble) * 100) + "%");
 		});
 		System.out.println();
 		Double aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder()).get();
-		System.out.println(resultsVector.get(aDouble) + " with confidence " + Math.round((1 - aDouble) * 100) + "%");
+		System.out.println(resultsVector.get(aDouble) + " with confidence " + aDouble + " rounded -> " + Math.round((1 - aDouble) * 100) + "%");
 
 		// FIXME
 		//saveEmbeddings(embeddings);
@@ -347,6 +351,17 @@ public class FaceNetLabeling {
 	}
 
 	public static float[] computeEmbeddings(BufferedImage bufferedImage) {
+
+		System.out.println(tensorflowGraph.operation("image_batch").type());
+
+		Tensor<?> tensor = Tensor.create(bufferedImage);
+		System.out.println(tensor.dataType());
+
+		Iterator<Operation> operations = tensorflowGraph.operations();
+		while (operations.hasNext()) {
+			System.out.println(operations.next().name());
+		}
+
 		try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImage))) {
 			try (Session s = new Session(tensorflowGraph)) {
 				float[] embeddings = new float[128];;

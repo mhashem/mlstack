@@ -1,6 +1,8 @@
 package co.rxstack.ml.tensorflow.service;
 
 import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
+import java.util.Map;
 import java.util.Optional;
 
 import co.rxstack.ml.tensorflow.TensorFlowResult;
@@ -8,6 +10,10 @@ import co.rxstack.ml.tensorflow.TensorFlowResult;
 public interface IFaceNetService {
 
 	double DEFAULT_THRESHOLD = 50d;
+
+	void saveEmbeddings(Map<String, float[]> embeddings) throws FileNotFoundException;
+
+	void loadEmbeddingsVector() throws FileNotFoundException;
 
 	/**
 	 * Performs computations for obtaining a feature vector

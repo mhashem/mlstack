@@ -108,12 +108,13 @@ model:
   storage:
     path: "C:/etc/mlstack/models"
 
-tensor:
+tensorflow:
   graph:
     inception:
         path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
     facenet:
-        path: "C:/Users/mahmoud/Documents/datascience/models/Facenet-20170511-185253/20170511-185253.pb"
+        path: "C:/etc/mlstack/models/tensorflow/facenet/20170511-185253/20170511-185253.pb"
+        embeddings: "C:/etc/mlstack/models/tensorflow/facenet/embeddings/embeddings.csv"
   labels:
     path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
 

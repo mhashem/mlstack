@@ -100,9 +100,15 @@ public class InceptionService {
 		log.info("executing inception graph {}", image);
 		try (Session session = new Session(graph)) {
 			Stopwatch stopwatch = Stopwatch.createStarted();
-			Tensor<Float> result =
-				session.runner().feed("DecodeJpeg/contents:0", image).fetch("final_result:0").run().get(0)
-					.expect(Float.class);
+
+			Tensor<Float> result = session
+				.runner()
+				.feed("DecodeJpeg/contents:0", image)
+				.fetch("final_result:0")
+				.run()
+				.get(0)
+				.expect(Float.class);
+
 			log.info("Tensor execution completed in {}ms", stopwatch.elapsed(MILLISECONDS));
 			final long[] rshape = result.shape();
 			log.info("rshape {}", Arrays.toString(rshape));

@@ -100,12 +100,14 @@ public class AppContext {
 	@Value("${face.standard.height}")
 	private int standardHeight;
 
-	@Value("${tensor.graph.inception.path}")
-	private String graphPath;
-	@Value("${tensor.labels.path}")
+	@Value("${tensorflow.labels.path}")
 	private String labelsPath;
-	@Value("${tensor.graph.facenet.path}")
+	@Value("${tensorflow.graph.inception.path}")
+	private String graphPath;
+	@Value("${tensorflow.graph.facenet.path}")
 	private String faceNetGraphPath;
+	@Value("${tensorflow.graph.facenet.embeddings}")
+	private String faceNetEmbeddingsFilePath;
 
 	@Value("${preprocesser.host}")
 	private String preprocessorHost;
@@ -283,6 +285,7 @@ public class AppContext {
 	public FaceNetConfig faceNetConfig() {
 		FaceNetConfig faceNetConfig = new FaceNetConfig();
 		faceNetConfig.setFaceNetGraphPath(faceNetGraphPath);
+		faceNetConfig.setEmbeddingsFilePath(faceNetEmbeddingsFilePath);
 		return faceNetConfig;
 	}
 
