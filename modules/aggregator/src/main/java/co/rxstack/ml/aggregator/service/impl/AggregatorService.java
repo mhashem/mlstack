@@ -146,7 +146,11 @@ public class AggregatorService {
 						.computeEmbeddingsFeaturesVector(
 							bytesToBufferedImage(alignedImageBytesOptional.get()));
 
-					log.info("features vector computed successfully");
+					if (featuresVector.length == 128) {
+						log.info("features vector computed successfully");
+					} else {
+						log.info("features vector doesn't match size 128, size {}", featuresVector.length);
+					}
 
 					Optional<TensorFlowResult> tfResultOptional =
 						faceNetService.computeDistance(featuresVector);
@@ -350,8 +354,9 @@ public class AggregatorService {
 	}
 
 	private BufferedImage subImage(BufferedImage image, FaceBox faceBox) {
-		return image.getSubimage(faceBox.getLeft(), faceBox.getTop(), (faceBox.getRight() - faceBox.getLeft()),
-			(faceBox.getBottom() - faceBox.getTop()));
+		int x = (faceBox.getLeft() <= 0) ? 0 : faceBox.getLeft(); // x, in case left edge out of raster
+		int y = (faceBox.getTop() <= 0) ? 0 : faceBox.getTop();
+		return image.getSubimage(x, y, (faceBox.getRight() - x), (faceBox.getBottom() - y));
 	}
 
 }

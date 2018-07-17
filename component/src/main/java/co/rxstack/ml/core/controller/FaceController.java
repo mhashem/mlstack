@@ -104,14 +104,14 @@ public class FaceController {
 
 	@PostMapping("/api/v1/faces/recognition")
 	public ResponseEntity searchSimilar(
-		@RequestParam("targetImage")
-			MultipartFile targetImage, HttpServletRequest request) {
+		@RequestParam("image")
+			MultipartFile image, HttpServletRequest request) {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
-		Preconditions.checkNotNull(targetImage);
+		Preconditions.checkNotNull(image);
 		try {
 			AggregateFaceIdentification faceIdentification =
-				aggregatorService.identify(targetImage.getBytes(),
-					ImmutableMap.of(Constants.CONTENT_TYPE, targetImage.getContentType()));
+				aggregatorService.identify(image.getBytes(),
+					ImmutableMap.of(Constants.CONTENT_TYPE, image.getContentType()));
 			return ResponseEntity.ok(faceIdentification);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);

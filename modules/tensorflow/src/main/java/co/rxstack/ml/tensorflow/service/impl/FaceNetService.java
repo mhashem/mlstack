@@ -133,11 +133,6 @@ public class FaceNetService implements IFaceNetService {
 	public float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
 		log.info("Computing embeddings feature vector");
 
-		Iterator<Operation> operations = faceNetTensorGraph.operations();
-		while (operations.hasNext()) {
-			log.info(operations.next().name());
-		}
-
 		try (Tensor<Float> image = Tensors.create(imageTo4DTensor(bufferedImage))) {
 			float[] embeddings = new float[128];
 			Stopwatch stopwatch = Stopwatch.createStarted();
@@ -148,7 +143,14 @@ public class FaceNetService implements IFaceNetService {
 				.run()
 				.get(0)
 				.expect(Float.class);
+
+			log.info("---> type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(), result.shape(),
+				result.numDimensions(), result.numElements());
+
 			result.writeTo(FloatBuffer.wrap(embeddings));
+
+			log.info("bytes: {}", Arrays.toString(embeddings));
+
 			log.info("Embeddings computation completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 				return embeddings;
 			} catch (Exception e) {
@@ -216,6 +218,9 @@ public class FaceNetService implements IFaceNetService {
 				image[0][i][j][2] = color.getBlue();
 			}
 		}
+		log.info("image: {}", Arrays.deepToString(image));
+		log.info("size: {}", image[0].length);
 		return image;
 	}
+
 }

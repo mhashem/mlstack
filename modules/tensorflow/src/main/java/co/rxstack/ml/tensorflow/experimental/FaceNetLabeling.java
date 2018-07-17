@@ -15,7 +15,6 @@ limitations under the License.
 
 package co.rxstack.ml.tensorflow.experimental;
 
-import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
 
 import java.awt.*;
@@ -48,11 +47,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
-import org.bytedeco.javacpp.opencv_core;
-import org.bytedeco.javacpp.opencv_core.CvTermCriteria;
 import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_core.TermCriteria;
-import org.bytedeco.javacpp.opencv_ml;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
@@ -95,7 +90,7 @@ public class FaceNetLabeling {
 		String imageFile = args[1];
 		String imageDir = args[2];
 
-		String graphFile = "20180402-114759.pb";
+		String graphFile = "20170511-185253.pb";
 		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
@@ -352,11 +347,6 @@ public class FaceNetLabeling {
 
 	public static float[] computeEmbeddings(BufferedImage bufferedImage) {
 
-		System.out.println(tensorflowGraph.operation("image_batch").type());
-
-		Tensor<?> tensor = Tensor.create(bufferedImage);
-		System.out.println(tensor.dataType());
-
 		Iterator<Operation> operations = tensorflowGraph.operations();
 		while (operations.hasNext()) {
 			System.out.println(operations.next().name());
@@ -372,8 +362,11 @@ public class FaceNetLabeling {
 							.feed("phase_train:0", Tensors.create(false))
 							.fetch("embeddings:0").run().get(0)
 							.expect(Float.class);
-					result.writeTo(FloatBuffer.wrap(embeddings));
 
+					System.out.println("----------> " + Arrays.toString(result.shape()));
+					System.out.println("-----------> " + result.dataType().name());
+
+					result.writeTo(FloatBuffer.wrap(embeddings));
 
 					System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
 				return embeddings;
@@ -600,6 +593,9 @@ public class FaceNetLabeling {
 				image[imageCount][i][j][2] = color.getBlue();
 			}
 		}
+
+		System.out.println("image: " + Arrays.deepToString(image));
+		System.out.println("size: " + image[0].length);
 
 		return image;
 	}

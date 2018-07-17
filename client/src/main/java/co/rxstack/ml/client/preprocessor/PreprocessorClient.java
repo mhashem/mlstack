@@ -50,6 +50,7 @@ public class PreprocessorClient implements IPreprocessorClient {
 			FileUtils.writeByteArrayToFile(tempFile, imageBytes);
 			HttpResponse<InputStream> response = Unirest.post(serviceUri + "/api/v1/faces/alignment")
 				.header("accept", "application/json")
+				.queryString("cropDim", 160)
 				.field("image", tempFile)
 				.asObject(InputStream.class);
 
