@@ -14,12 +14,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.PreDestroy;
@@ -39,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tensorflow.Graph;
-import org.tensorflow.Operation;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
@@ -49,11 +47,13 @@ public class FaceNetService implements IFaceNetService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceNetService.class);
 
+	private static final String EMBEDDINGS_FILE_K_V_DELIMITER = ","; // be careful must be a comma
+	
 	private Session session;
 	private Graph faceNetTensorGraph;
 	private FaceNetConfig faceNetConfig;
 
-	private Map<String, float[]> embeddings = Maps.newHashMap();
+	private ConcurrentHashMap<String, float[]> embeddings = new ConcurrentHashMap<>();
 
 	@Autowired
 	public FaceNetService(FaceNetConfig faceNetConfig) throws GraphLoadingException, FileNotFoundException {
@@ -68,14 +68,15 @@ public class FaceNetService implements IFaceNetService {
 		}
 
 		CompletableFuture.runAsync(() -> {
+			log.info("Loading FaceNet TF graph asynchronously");
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			byte[] graphDef = GraphUtils.readAllBytes(faceNetGraphPath);
 			if (graphDef != null) {
 				faceNetTensorGraph = new Graph();
 				faceNetTensorGraph.importGraphDef(graphDef);
-				log.info("FaceNet tensorflow graph loaded successfully in {}ms", stopwatch.elapsed(MILLISECONDS));
+				log.info("FaceNet TF graph loaded successfully in {}ms", stopwatch.elapsed(MILLISECONDS));
 			} else {
-				log.warn("Failed to load FaceNet tensorflow graph!");
+				log.warn("Failed to load FaceNet TF graph!");
 			}
 			session = new Session(faceNetTensorGraph);
 		});
@@ -88,10 +89,9 @@ public class FaceNetService implements IFaceNetService {
 		log.info("Saving a total of {} embeddings to disk at {}", embeddings.size(),
 			faceNetConfig.getEmbeddingsFilePath());
 		PrintWriter printWriter = new PrintWriter(new File(faceNetConfig.getEmbeddingsFilePath()));
-		for (String s : embeddings.keySet()) {
-			printWriter.printf("%s,%s\n", s, Arrays.toString(embeddings.get(s))
-				.replace("[", "").replace("]", ""));
-		}
+		embeddings.keySet().forEach(s -> 
+			printWriter.printf("%s%s%s%n", s, EMBEDDINGS_FILE_K_V_DELIMITER, Arrays.toString(embeddings.get(s))
+				.replace("[", "").replace("]", "")));
 		printWriter.close();
 	}
 
@@ -103,19 +103,16 @@ public class FaceNetService implements IFaceNetService {
 				File embeddingsFile = new File(faceNetConfig.getEmbeddingsFilePath());
 				if (embeddingsFile.isFile() && embeddingsFile.exists()) {
 					BufferedReader reader = new BufferedReader(new FileReader(embeddingsFile));
-					embeddings = reader.lines().map(line -> {
-						Holder h = new Holder();
-						String[] ee = line.split(",");
-						h.name = ee[0];
+					reader.lines().forEach(line -> {
+						String[] ee = line.split(EMBEDDINGS_FILE_K_V_DELIMITER);
 						float[] vector = new float[128];
 						for (int i = 1; i < 129; i++) {
 							vector[i - 1] = Float.valueOf(ee[i]);
 						}
-						h.embeddings = vector;
-						return h;
-					}).collect(Collectors.toMap(o -> o.name, o -> o.embeddings));
+						embeddings.put(ee[0], vector);
+					});
 				} else {
-					log.warn("no existing embeddings file found for loading!");
+					log.warn("No existing embeddings file found for loading!");
 				}
 			} catch (FileNotFoundException e) {
 				log.error(e.getMessage(), e);
@@ -123,18 +120,13 @@ public class FaceNetService implements IFaceNetService {
 			}
 		});
 	}
-
-	private class Holder {
-		private String name;
-		private float[] embeddings;
-	}
-
+	
 	@Override
 	public float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
 		log.info("Computing embeddings feature vector");
 
 		try (Tensor<Float> image = Tensors.create(imageTo4DTensor(bufferedImage))) {
-			float[] embeddings = new float[128];
+			float[] embeddingsArray = new float[128];
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			Tensor<Float> result = session.runner()
 				.feed("input:0", image)
@@ -147,12 +139,12 @@ public class FaceNetService implements IFaceNetService {
 			log.info("---> type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(), result.shape(),
 				result.numDimensions(), result.numElements());
 
-			result.writeTo(FloatBuffer.wrap(embeddings));
+			result.writeTo(FloatBuffer.wrap(embeddingsArray));
 
-			log.info("bytes: {}", Arrays.toString(embeddings));
+			log.info("bytes: {}", Arrays.toString(embeddingsArray));
 
 			log.info("Embeddings computation completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
-				return embeddings;
+				return embeddingsArray;
 			} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			}
@@ -218,8 +210,8 @@ public class FaceNetService implements IFaceNetService {
 				image[0][i][j][2] = color.getBlue();
 			}
 		}
-		log.info("image: {}", Arrays.deepToString(image));
-		log.info("size: {}", image[0].length);
+		log.debug("Converted image bytes array: {}", Arrays.deepToString(image));
+		log.debug("Converted image byte array size: {}", image[0].length);
 		return image;
 	}
 
