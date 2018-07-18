@@ -29,7 +29,6 @@ import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
@@ -49,14 +48,15 @@ public class FaceNetService implements IFaceNetService {
 	private static final Logger log = LoggerFactory.getLogger(FaceNetService.class);
 
 	private static final String EMBEDDINGS_FILE_K_V_DELIMITER = ","; // be careful must be a comma
-	
+
+	private static final EuclideanDistance EUCLIDEAN_DISTANCE = new EuclideanDistance();
+
 	private Session session;
 	private Graph faceNetTensorGraph;
+	private IFaceService faceService;
 	private FaceNetConfig faceNetConfig;
 
-	private IFaceService faceService;
-
-	private ConcurrentHashMap<String, float[]> embeddings = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Integer, float[]> embeddings = new ConcurrentHashMap<>();
 
 	@Autowired
 	public FaceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
@@ -119,7 +119,7 @@ public class FaceNetService implements IFaceNetService {
 						for (int i = 1; i < 129; i++) {
 							vector[i - 1] = Float.valueOf(ee[i]);
 						}
-						embeddings.put(ee[0], vector);
+						embeddings.put(Integer.valueOf(ee[0]), vector);
 					});
 				} else {
 					log.warn("No existing embeddings file found for loading!");
@@ -146,7 +146,7 @@ public class FaceNetService implements IFaceNetService {
 				.get(0)
 				.expect(Float.class);
 
-			log.debug("tensorflow result type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(),
+			log.debug("TF result type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(),
 				result.shape(),
 				result.numDimensions(), result.numElements());
 
@@ -168,16 +168,15 @@ public class FaceNetService implements IFaceNetService {
 	@Override
 	public Optional<TensorFlowResult> computeDistance(float[] vector, double threshold) {
 
-		Map<Double, String> resultsVector = Maps.newHashMap();
-
+		Map<Double, Integer> resultsVector = Maps.newHashMap();
+		
 		if (vector.length == 128) {
 			double[] vectorAsDoubleArray = toDoubleArray(vector);
-			EuclideanDistance euclideanDistance = new EuclideanDistance();
 
 			embeddings.keySet().forEach(label -> {
 				float[] embVector = embeddings.get(label);
 				if (embVector.length == 128) {
-					double d = euclideanDistance.compute(toDoubleArray(embVector), vectorAsDoubleArray);
+					double d = EUCLIDEAN_DISTANCE.compute(toDoubleArray(embVector), vectorAsDoubleArray);
 					resultsVector.put(d, label);
 				}
 			});
@@ -196,7 +195,7 @@ public class FaceNetService implements IFaceNetService {
 
 	@PreDestroy
 	public void onDestroy() {
-		log.info("PreDestroy() fired, releasing Tensorflow Session, and Graph");
+		log.info("PreDestroy() fired, releasing TF Session, and Graph");
 		session.close();
 		faceNetTensorGraph.close();
 	}

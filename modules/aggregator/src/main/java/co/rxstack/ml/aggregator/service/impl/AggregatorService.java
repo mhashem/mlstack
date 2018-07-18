@@ -170,9 +170,12 @@ public class AggregatorService {
 					if (tfResultOptional.isPresent()) {
 						TensorFlowResult tensorFlowResult = tfResultOptional.get();
 						tensorFlowResult.setFaceBox(faceBox);
-
-						// todo match with database identity
-
+						
+						log.info("Matching database Identity for the detected face");
+						Optional<Identity> identityOptional =
+							identityService.findIdentityByFaceId(tensorFlowResult.getFaceId());
+						identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
+						
 						tensorFlowResults.add(tensorFlowResult);
 					}
 				}

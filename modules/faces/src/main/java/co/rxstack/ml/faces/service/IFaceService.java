@@ -9,6 +9,6 @@ public interface IFaceService {
 
 	List<Face> findByIdentityId(int identityId);
 
-	Map<String, float[]> findAllEmbeddings();
+	Map<Integer, float[]> findAllEmbeddings();
 
 }

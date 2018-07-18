@@ -7,13 +7,27 @@ import com.google.common.base.MoreObjects;
 
 public class TensorFlowResult implements Serializable {
 
+	private int faceId;
 	private String label;
 	private double confidence;
 	private FaceBox faceBox;
 
+	public TensorFlowResult(int faceId, double confidence) {
+		this.faceId = faceId;
+		this.confidence = confidence;
+	}
+	
 	public TensorFlowResult(String label, double confidence) {
 		this.label = label;
 		this.confidence = confidence;
+	}
+
+	public int getFaceId() {
+		return faceId;
+	}
+
+	public void setFaceId(int faceId) {
+		this.faceId = faceId;
 	}
 
 	public String getLabel() {
@@ -42,7 +56,7 @@ public class TensorFlowResult implements Serializable {
 
 	@Override
 	public String toString() {
-		return MoreObjects.toStringHelper(TensorFlowResult.class.getSimpleName()).add("label", label)
+		return MoreObjects.toStringHelper(TensorFlowResult.class.getSimpleName()).add("faceId", faceId).add("label", label)
 			.add("confidence", confidence).add("faceBox", faceBox).toString();
 	}
 }
