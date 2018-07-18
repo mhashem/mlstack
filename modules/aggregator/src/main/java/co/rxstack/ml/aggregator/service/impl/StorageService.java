@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class StorageService implements IStorageService {
 
+	public static final String TEMPORARY_FOLDER = "preprocessed";
+
 	private static final Logger log = LoggerFactory.getLogger(StorageService.class);
 
 	private FaceDBConfig faceDBConfig;
@@ -31,13 +33,17 @@ public class StorageService implements IStorageService {
 	}
 
 	@Override
-	public boolean saveFile(String fileName, String folder, byte[] fileBytes,
-		StorageStrategy.Strategy strategy) {
+	public boolean saveTemporary(String filename, byte[] fileBytes, StorageStrategy.Strategy strategy) {
+		return saveFile(filename, TEMPORARY_FOLDER, fileBytes, strategy);
+	}
+
+	@Override
+	public boolean saveFile(String filename, String folder, byte[] fileBytes, StorageStrategy.Strategy strategy) {
 		switch (strategy) {
 		case DISK:
-			return this.saveToDisk(fileName, folder, fileBytes);
+			return this.saveToDisk(filename, folder, fileBytes);
 		case S3_BUCKET:
-			cloudStorageService.uploadImage(fileName, new ByteArrayInputStream(fileBytes), ImmutableMap.of());
+			cloudStorageService.uploadImage(filename, new ByteArrayInputStream(fileBytes), ImmutableMap.of());
 			return true;
 		}
 		throw new IllegalArgumentException("No persisting strategy specified!");

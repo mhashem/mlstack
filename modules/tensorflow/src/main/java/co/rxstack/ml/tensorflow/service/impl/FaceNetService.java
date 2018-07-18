@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 
 import javax.annotation.PreDestroy;
 
+import co.rxstack.ml.faces.service.IFaceService;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
@@ -53,12 +54,16 @@ public class FaceNetService implements IFaceNetService {
 	private Graph faceNetTensorGraph;
 	private FaceNetConfig faceNetConfig;
 
+	private IFaceService faceService;
+
 	private ConcurrentHashMap<String, float[]> embeddings = new ConcurrentHashMap<>();
 
 	@Autowired
-	public FaceNetService(FaceNetConfig faceNetConfig) throws GraphLoadingException, FileNotFoundException {
+	public FaceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
 		Preconditions.checkNotNull(faceNetConfig);
+		Preconditions.checkNotNull(faceService);
 		this.faceNetConfig = faceNetConfig;
+		this.faceService = faceService;
 
 		Path faceNetGraphPath = Paths.get(faceNetConfig.getFaceNetGraphPath());
 
@@ -79,9 +84,8 @@ public class FaceNetService implements IFaceNetService {
 				log.warn("Failed to load FaceNet TF graph!");
 			}
 			session = new Session(faceNetTensorGraph);
+			loadEmbeddingsVector();
 		});
-
-		loadEmbeddingsVector();
 	}
 
 	@Override
@@ -97,6 +101,12 @@ public class FaceNetService implements IFaceNetService {
 
 	@Override
 	public void loadEmbeddingsVector() {
+		log.info("Loading embeddings vectors from DB");
+		this.embeddings.putAll(faceService.findAllEmbeddings());
+	}
+
+	@Override
+	public void loadEmbeddingsVectorFromFile() {
 		log.info("Loading embeddings file to memory");
 		CompletableFuture.runAsync(() -> {
 			try {
@@ -136,12 +146,11 @@ public class FaceNetService implements IFaceNetService {
 				.get(0)
 				.expect(Float.class);
 
-			log.info("---> type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(), result.shape(),
+			log.debug("tensorflow result type: {}, shape: {}, dim: {}, elements: {}", result.dataType().name(),
+				result.shape(),
 				result.numDimensions(), result.numElements());
 
 			result.writeTo(FloatBuffer.wrap(embeddingsArray));
-
-			log.info("bytes: {}", Arrays.toString(embeddingsArray));
 
 			log.info("Embeddings computation completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
 				return embeddingsArray;
@@ -210,8 +219,6 @@ public class FaceNetService implements IFaceNetService {
 				image[0][i][j][2] = color.getBlue();
 			}
 		}
-		log.debug("Converted image bytes array: {}", Arrays.deepToString(image));
-		log.debug("Converted image byte array size: {}", image[0].length);
 		return image;
 	}
 

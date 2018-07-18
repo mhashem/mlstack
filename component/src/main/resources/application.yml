@@ -102,7 +102,7 @@ face:
     name:
       delimiter: "-"
   db:
-    path: "C:/etc/mlstack/output/intermediate2"
+    path: "C:/etc/mlstack/facedb"
 
 model:
   storage:

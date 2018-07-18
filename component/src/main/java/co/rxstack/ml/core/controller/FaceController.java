@@ -6,8 +6,8 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import co.rxstack.ml.aggregator.model.db.Face;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.model.Face;
+import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
@@ -23,11 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,7 +62,7 @@ public class FaceController {
 		return ResponseEntity.ok(faceList);
 	}
 
-	@CrossOrigin(origins = "http://localhost:9000")
+	//@CrossOrigin(origins = "http://localhost:9000")
 	@PostMapping("/api/v1/faces/{personId}/index")
 	public ResponseEntity indexFace(
 		@PathVariable("personId")
@@ -82,7 +80,7 @@ public class FaceController {
 			String imageName = UUID.randomUUID().toString() + "." + faceImage.getContentType()
 				.substring(faceImage.getContentType().indexOf('/') + 1);
 
-			boolean isSaved = storageService.saveFile(imageName, personId,
+			boolean isSaved = storageService.saveTemporary(imageName,
 				faceImage.getBytes(), StorageStrategy.Strategy.DISK);
 
 			if (isSaved) {

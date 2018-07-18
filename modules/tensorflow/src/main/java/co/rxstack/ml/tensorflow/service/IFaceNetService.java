@@ -13,7 +13,9 @@ public interface IFaceNetService {
 
 	void saveEmbeddings(Map<String, float[]> embeddings) throws FileNotFoundException;
 
-	void loadEmbeddingsVector() throws FileNotFoundException;
+	void loadEmbeddingsVector();
+
+	void loadEmbeddingsVectorFromFile() throws FileNotFoundException;
 
 	/**
 	 * Performs computations for obtaining a feature vector

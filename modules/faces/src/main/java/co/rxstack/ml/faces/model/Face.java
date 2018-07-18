@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.model.db;
+package co.rxstack.ml.faces.model;
 
 import java.time.Instant;
 
@@ -16,6 +16,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.MoreObjects;
 
 @Entity(name = "Face")
 @Table(name = "face", indexes = {
@@ -34,6 +35,9 @@ public class Face {
 
 	@Column(name = "cognitive_person_id")
 	private String cognitivePersonId;
+
+	@Column(name = "embeddings_vector")
+	private float[] embeddingsVector;
 
 	@Column(name = "image")
 	private String image;
@@ -73,6 +77,14 @@ public class Face {
 		this.cognitivePersonId = cognitivePersonId;
 	}
 
+	public float[] getEmbeddingsVector() {
+		return embeddingsVector;
+	}
+
+	public void setEmbeddingsVector(float[] embeddingsVector) {
+		this.embeddingsVector = embeddingsVector;
+	}
+
 	public Instant getCreateDate() {
 		return createDate;
 	}
@@ -105,5 +117,18 @@ public class Face {
 
 	public void setImage(String image) {
 		this.image = image;
+	}
+
+	@Override
+	public String toString() {
+		return MoreObjects.toStringHelper(Face.class)
+			.add("id", id)
+			.add("aws_face_id", awsFaceId)
+			.add("cognitive_person_id", cognitivePersonId)
+			.add("identity", identity)
+			.add("image", image)
+			.add("embeddings_vector (size)", embeddingsVector.length)
+			.add("create_date", createDate)
+			.add("modify_date", modifyDate).toString();
 	}
 }

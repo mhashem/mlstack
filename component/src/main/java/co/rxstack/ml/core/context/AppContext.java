@@ -12,16 +12,17 @@ import java.nio.file.StandardCopyOption;
 
 import co.rxstack.ml.aggregator.config.ClassifierConfig;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
-import co.rxstack.ml.aggregator.dao.FaceDao;
-import co.rxstack.ml.aggregator.dao.IdentityDao;
+import co.rxstack.ml.faces.dao.FaceDao;
+import co.rxstack.ml.faces.dao.IdentityDao;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.service.IFaceService;
+import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
 import co.rxstack.ml.aggregator.service.impl.FaceRecognitionService;
-import co.rxstack.ml.aggregator.service.impl.IdentityService;
+import co.rxstack.ml.faces.service.impl.IdentityService;
 import co.rxstack.ml.aggregator.service.impl.StorageService;
 import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
@@ -186,9 +187,10 @@ public class AppContext {
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
 		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
-		InceptionService inceptionService, PreprocessorClient preprocessorClient, IFaceNetService faceNetService) {
+		InceptionService inceptionService, PreprocessorClient preprocessorClient,
+		IFaceNetService faceNetService, IStorageService storageService) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
-			cognitiveService, inceptionService, preprocessorClient, faceNetService);
+			cognitiveService, inceptionService, preprocessorClient, faceNetService, storageService);
 	}
 
 	@Qualifier("haarCascadeFile")
@@ -300,9 +302,9 @@ public class AppContext {
 	}
 
 	@Bean
-	public IFaceNetService faceNetService(FaceNetConfig faceNetConfig) {
+	public IFaceNetService faceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) {
 		try {
-			return new FaceNetService(faceNetConfig);
+			return new FaceNetService(faceService, faceNetConfig);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);

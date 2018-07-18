@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.model.db;
+package co.rxstack.ml.faces.model;
 
 import java.time.Instant;
 import java.util.Set;

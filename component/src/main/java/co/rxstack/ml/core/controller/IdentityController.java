@@ -4,8 +4,8 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
-import co.rxstack.ml.aggregator.model.db.Identity;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.model.Identity;
+import co.rxstack.ml.faces.service.IIdentityService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

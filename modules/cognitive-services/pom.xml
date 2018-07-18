@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>co.rxstack.ml</groupId>
 			<artifactId>api</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 	

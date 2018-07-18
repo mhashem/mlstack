@@ -16,6 +16,7 @@
 		<module>aws-rekognition</module>
 		<module>aggregator</module>
 		<module>tensorflow</module>
+		<module>faces</module>
 	</modules>
 
 	<dependencies>

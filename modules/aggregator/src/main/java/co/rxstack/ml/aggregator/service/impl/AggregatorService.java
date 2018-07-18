@@ -17,11 +17,13 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import co.rxstack.ml.faces.model.Identity;
 import co.rxstack.ml.aggregator.model.PotentialFace;
-import co.rxstack.ml.aggregator.model.db.Identity;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.service.IIdentityService;
+import co.rxstack.ml.aggregator.service.IStorageService;
+import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.client.preprocessor.PreprocessorClient;
@@ -67,11 +69,18 @@ public class AggregatorService {
 
 	private IFaceNetService faceNetService;
 
+	private IStorageService storageService;
+
 	@Autowired
-	public AggregatorService(IIdentityService identityService, IFaceExtractorService faceExtractorService,
-		IFaceRecognitionService faceRecognitionService, IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService, InceptionService inceptionService, PreprocessorClient preprocessorClient,
-		IFaceNetService faceNetService) {
+	public AggregatorService(
+		IIdentityService identityService,
+		IFaceExtractorService faceExtractorService,
+		IFaceRecognitionService faceRecognitionService,
+		IRekognitionService rekognitionService,
+		ICognitiveService cognitiveService,
+		InceptionService inceptionService,
+		PreprocessorClient preprocessorClient,
+		IFaceNetService faceNetService, IStorageService storageService) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
@@ -79,6 +88,8 @@ public class AggregatorService {
 		Preconditions.checkNotNull(rekognitionService);
 		Preconditions.checkNotNull(cognitiveService);
 		Preconditions.checkNotNull(inceptionService);
+		Preconditions.checkNotNull(faceNetService);
+		Preconditions.checkNotNull(storageService);
 
 		this.identityService = identityService;
 		this.cognitiveService = cognitiveService;
@@ -87,8 +98,8 @@ public class AggregatorService {
 		this.faceRecognitionService = faceRecognitionService;
 		this.inceptionService = inceptionService;
 		this.preprocessorClient = preprocessorClient;
-
 		this.faceNetService = faceNetService;
+		this.storageService = storageService;
 	}
 
 	// using Tensorflow
@@ -176,6 +187,48 @@ public class AggregatorService {
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
 		log.info("indexFaces called with image {} bytes and bundleMap {}", imageBytes.length, bundleMap);
 
+		AggregateFaceIndexingResult result = new AggregateFaceIndexingResult();
+
+		try {
+			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
+			if (faceBoxes.isEmpty()) {
+				log.warn("No face detected in provided image, processing cancelled");
+				return ImmutableList.of();
+			}
+
+			if (faceBoxes.size() > 1) {
+				log.warn("***********************************************************************************");
+				log.warn("Detected multiple faces at indexing step, process will not proceed, ignoring result");
+				log.warn("***********************************************************************************");
+				return  ImmutableList.of();
+			}
+
+			BufferedImage originalImage = bytesToBufferedImage(imageBytes);
+			BufferedImage faceImage = subImage(originalImage, faceBoxes.get(0));
+			byte[] faceImageBytes = bufferedImageToByteArray(faceImage);
+			Optional<byte[]> alignedFaceImageOptional = preprocessorClient.align(faceImageBytes);
+
+			alignedFaceImageOptional.ifPresent(alignedFaceImageBytes -> {
+				try {
+					BufferedImage alignedFaceImage = bytesToBufferedImage(alignedFaceImageBytes);
+					float[] embeddingsVector = faceNetService.computeEmbeddingsFeaturesVector(alignedFaceImage);
+					// TODO check if size can be a configuration
+					if (embeddingsVector.length == 128) {
+						log.debug("Assigned embeddings vector successfully");
+						result.embeddingsVector = embeddingsVector;
+					}
+				} catch (IOException e) {
+					log.error(e.getMessage(), e);
+				}
+
+				storageService.saveFile(bundleMap.get(Constants.IMAGE_NAME),
+					bundleMap.get(Constants.PERSON_NAME), alignedFaceImageBytes, StorageStrategy.Strategy.DISK);
+			});
+
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+
 		CompletableFuture<Optional<FaceIndexingResult>> awsCompletableFuture =
 			CompletableFuture.supplyAsync(() -> awsRekognitionService.indexFace(imageBytes, bundleMap));
 		CompletableFuture<Optional<CognitiveIndexingResult>> cognitiveCompletableFuture =
@@ -185,7 +238,6 @@ public class AggregatorService {
 			CompletableFuture.allOf(awsCompletableFuture, cognitiveCompletableFuture).get();
 
 			if (awsCompletableFuture.isDone() && cognitiveCompletableFuture.isDone()) {
-				AggregateFaceIndexingResult result = new AggregateFaceIndexingResult();
 				Optional<CognitiveIndexingResult> cognitiveIndexingResult = cognitiveCompletableFuture.get();
 				Optional<FaceIndexingResult> faceIndexingResult = awsCompletableFuture.get();
 				faceIndexingResult

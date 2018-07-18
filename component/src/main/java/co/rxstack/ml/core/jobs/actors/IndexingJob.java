@@ -7,13 +7,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import co.rxstack.ml.aggregator.dao.FaceDao;
-import co.rxstack.ml.aggregator.model.db.Face;
-import co.rxstack.ml.aggregator.model.db.Identity;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.dao.FaceDao;
+import co.rxstack.ml.faces.model.Face;
+import co.rxstack.ml.faces.model.Identity;
+import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
+import co.rxstack.ml.aggregator.service.impl.StorageService;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;
@@ -65,11 +66,13 @@ public class IndexingJob extends UntypedActor {
 
 			try {
 				byte[] imageBytes = storageService
-					.readBytes(ticket.getImageName(), ticket.getPersonId(), StorageStrategy.Strategy.DISK);
+					.readBytes(ticket.getImageName(), StorageService.TEMPORARY_FOLDER,
+						StorageStrategy.Strategy.DISK);
 
 				ImmutableMap<String, String> bundleMap = ImmutableMap.of(
 					Constants.PERSON_ID, ticket.getPersonId(),
-					Constants.PERSON_NAME, ticket.getPersonName());
+					Constants.PERSON_NAME, ticket.getPersonName(),
+					Constants.IMAGE_NAME, ticket.getImageName());
 
 				Optional<AggregateFaceIndexingResult> faceIndexingResultOptional =
 					aggregatorService.indexFaces(imageBytes, bundleMap).stream().findAny();
@@ -98,6 +101,7 @@ public class IndexingJob extends UntypedActor {
 					face.setImage(ticket.getImageName());
 					face.setAwsFaceId(faceIndexingResult.awsFaceId);
 					face.setCognitivePersonId(faceIndexingResult.cognitivePersonId);
+					face.setEmbeddingsVector(faceIndexingResult.embeddingsVector);
 					faceDao.save(face);
 					log.info("face {} saved successfully", face);
 				}

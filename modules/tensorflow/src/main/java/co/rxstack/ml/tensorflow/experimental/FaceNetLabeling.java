@@ -90,7 +90,7 @@ public class FaceNetLabeling {
 		String imageFile = args[1];
 		String imageDir = args[2];
 
-		String graphFile = "20170511-185253.pb";
+		String graphFile = "20170511-185253.pb";//"20180402-114759.pb";
 		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
@@ -105,10 +105,10 @@ public class FaceNetLabeling {
 
 		embeddings.putAll(loadEmbeddings());
 
-		/*for (String name : nameBufferedImageMap.keySet()) {
+		for (String name : nameBufferedImageMap.keySet()) {
 			float[] embeddingsArray = computeEmbeddings(nameBufferedImageMap.get(name));
 			embeddings.put(name, embeddingsArray);
-		}*/
+		}
 
 		//float[][] trainingData = new float[embeddings.size()][128];
 
@@ -213,7 +213,7 @@ public class FaceNetLabeling {
 
 		EuclideanDistance distance = new EuclideanDistance();
 
-		/*double testAliDistance = distance
+		double testAliDistance = distance
 			.compute(toDoubleArray(embeddings.get("ali_mohammad_test")),
 				toDoubleArray(embeddings.get("ali_mohammad")));
 
@@ -228,7 +228,7 @@ public class FaceNetLabeling {
 		double testAliMamoudDistance = distance
 			.compute(toDoubleArray(embeddings.get("mahmoud_hachem_test")),
 				toDoubleArray(embeddings.get("ali_mohammad")));
-*/
+
 		double[] testFloatVector = toDoubleArray(computeEmbeddings(testImage));
 		Map<Double, String> resultsVector = Maps.newHashMap();
 
@@ -255,13 +255,12 @@ public class FaceNetLabeling {
 		System.out.println(resultsVector.get(aDouble) + " with confidence " + aDouble + " rounded -> " + Math.round((1 - aDouble) * 100) + "%");
 
 		// FIXME
-		//saveEmbeddings(embeddings);
-/*
+		saveEmbeddings(embeddings);
+
 		System.out.println("Ali to Ali Test: " + testAliDistance);
 		System.out.println("Mahmoud to Ali Test: " + testMahmoudDistance);
 		System.out.println("Mahmoud to Mahmoud Test: " + testMahmoudMahmoudDistance);
 		System.out.println("Ali to Mahmoud Test: " + testAliMamoudDistance);
-*/
 
 
 		/*try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImages.get(0)))) {
@@ -275,7 +274,7 @@ public class FaceNetLabeling {
 	}
 
 	private static void saveEmbeddings(Map<String, float[]> embeddings) throws FileNotFoundException {
-		PrintWriter printWriter = new PrintWriter(new File("C:/etc/mlstack/output/embeddings/emb.csv"));
+		PrintWriter printWriter = new PrintWriter(new File("C:/etc/mlstack/output/embeddings/emb2.csv"));
 		for (String s : embeddings.keySet()) {
 			printWriter.printf("%s,%s\n", s, Arrays.toString(embeddings.get(s)).replace("[", "").replace("]", ""));
 		}
@@ -347,14 +346,14 @@ public class FaceNetLabeling {
 
 	public static float[] computeEmbeddings(BufferedImage bufferedImage) {
 
-		Iterator<Operation> operations = tensorflowGraph.operations();
+		/*Iterator<Operation> operations = tensorflowGraph.operations();
 		while (operations.hasNext()) {
 			System.out.println(operations.next().name());
-		}
+		}*/
 
 		try (Tensor<Float> image = Tensors.create(imageToMultiArray(bufferedImage))) {
 			try (Session s = new Session(tensorflowGraph)) {
-				float[] embeddings = new float[128];;
+				float[] embeddings = new float[512];;
 					Stopwatch stopwatch = Stopwatch.createStarted();
 					Tensor<Float> result =
 						s.runner()
@@ -367,6 +366,7 @@ public class FaceNetLabeling {
 					System.out.println("-----------> " + result.dataType().name());
 
 					result.writeTo(FloatBuffer.wrap(embeddings));
+					System.out.println(Arrays.toString(embeddings));
 
 					System.out.println("Execution completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms");
 				return embeddings;
@@ -594,7 +594,7 @@ public class FaceNetLabeling {
 			}
 		}
 
-		System.out.println("image: " + Arrays.deepToString(image));
+		//System.out.println("image: " + Arrays.deepToString(image));
 		System.out.println("size: " + image[0].length);
 
 		return image;

@@ -1,10 +1,10 @@
-package co.rxstack.ml.aggregator.service;
+package co.rxstack.ml.faces.service;
 
 import java.util.List;
 import java.util.Optional;
 
-import co.rxstack.ml.aggregator.model.db.Face;
-import co.rxstack.ml.aggregator.model.db.Identity;
+import co.rxstack.ml.faces.model.Face;
+import co.rxstack.ml.faces.model.Identity;
 
 public interface IIdentityService {
 

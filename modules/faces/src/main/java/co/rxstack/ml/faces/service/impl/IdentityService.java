@@ -1,4 +1,4 @@
-package co.rxstack.ml.aggregator.service.impl;
+package co.rxstack.ml.faces.service.impl;
 
 import java.util.List;
 import java.util.Map;
@@ -7,11 +7,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import co.rxstack.ml.aggregator.dao.FaceDao;
-import co.rxstack.ml.aggregator.dao.IdentityDao;
-import co.rxstack.ml.aggregator.model.db.Face;
-import co.rxstack.ml.aggregator.model.db.Identity;
-import co.rxstack.ml.aggregator.service.IIdentityService;
+import co.rxstack.ml.faces.dao.FaceDao;
+import co.rxstack.ml.faces.dao.IdentityDao;
+import co.rxstack.ml.faces.model.Face;
+import co.rxstack.ml.faces.model.Identity;
+import co.rxstack.ml.faces.service.IIdentityService;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
