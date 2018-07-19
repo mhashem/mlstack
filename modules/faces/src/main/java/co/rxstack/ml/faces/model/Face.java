@@ -37,7 +37,7 @@ public class Face {
 	private String cognitivePersonId;
 
 	@Column(name = "embeddings_vector")
-	private float[] embeddingsVector;
+	private double[] embeddingsVector;
 
 	@Column(name = "image")
 	private String image;
@@ -77,11 +77,11 @@ public class Face {
 		this.cognitivePersonId = cognitivePersonId;
 	}
 
-	public float[] getEmbeddingsVector() {
+	public double[] getEmbeddingsVector() {
 		return embeddingsVector;
 	}
 
-	public void setEmbeddingsVector(float[] embeddingsVector) {
+	public void setEmbeddingsVector(double[] embeddingsVector) {
 		this.embeddingsVector = embeddingsVector;
 	}
 

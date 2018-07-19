@@ -44,7 +44,10 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -62,7 +65,7 @@ import org.tensorflow.types.UInt8;
  * Sample use of the TensorFlow Java API to label images using a pre-trained model.
  */
 @SuppressWarnings("ALL")
-public class FaceNetLabeling {
+public class FaceNetLabeling2 {
 
 
 	private static Graph tensorflowGraph;
@@ -91,10 +94,9 @@ public class FaceNetLabeling {
 		String imageDir = args[2];
 
 		String graphFile = "20180402-114759.pb"; // "20170511-185253.pb";
-		String labelsFile = "imagenet_comp_graph_label_strings.txt";
 
 		byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, graphFile));
-		List<String> labels = readAllLinesOrExit(Paths.get("C:\\Users\\mahmoud\\Documents\\datascience\\models\\Facenet-20170511-185253", labelsFile));
+
 		BufferedImage testImage = readBufImage(Paths.get(imageFile));
 
 		Map<String, BufferedImage> nameBufferedImageMap = readBufferedImages(Paths.get(imageDir));
@@ -103,23 +105,11 @@ public class FaceNetLabeling {
 		tensorflowGraph = new Graph();
 		tensorflowGraph.importGraphDef(graphDef);
 
-		//embeddings.putAll(loadEmbeddings());
 
 		for (String name : nameBufferedImageMap.keySet()) {
 			float[] embeddingsArray = computeEmbeddings(nameBufferedImageMap.get(name));
 			embeddings.put(name, embeddingsArray);
 		}
-
-		//float[][] trainingData = new float[embeddings.size()][128];
-
-		/*Mat trainingFeaturesDataMat = new Mat(embeddings.size(), 128, opencv_core.CV_32FC1);
-		//Vector<Integer> trainingLabels = new Vector<>(embeddings.size());
-
-		Mat trainingLabelsDataMat = new Mat(embeddings.size(), 1, opencv_core.CV_32F);
-
-		FloatBuffer buffer = trainingLabelsDataMat.createBuffer();
-*/
-
 
 		Mat classes = new Mat();
 		Mat trainingData = new Mat();
@@ -480,6 +470,17 @@ public class FaceNetLabeling {
 
 	private static BufferedImage readBufImage(Path imagePath) throws IOException {
 		return ImageIO.read(imagePath.toFile());
+	}
+
+	private static ListMultimap<String, BufferedImage> readFaces(Path dir) {
+
+		// todo implement on the road to use 512
+
+		/*Arrays.stream(dir.toFile().listFiles()).map(file -> {
+
+		});*/
+
+		return ArrayListMultimap.create();
 	}
 
 	private static Map<String, BufferedImage> readBufferedImages(Path dir) {

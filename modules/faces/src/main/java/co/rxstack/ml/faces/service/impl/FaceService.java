@@ -26,7 +26,7 @@ public class FaceService implements IFaceService {
 	}
 
 	@Override
-	public Map<Integer, float[]> findAllEmbeddings() {
+	public Map<Integer, double[]> findAllEmbeddings() {
 		return faceDao.findAll().stream()
 			.collect(Collectors.toMap(Face::getId, Face::getEmbeddingsVector));
 	}

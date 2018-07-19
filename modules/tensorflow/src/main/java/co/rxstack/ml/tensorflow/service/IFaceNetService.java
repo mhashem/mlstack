@@ -24,9 +24,9 @@ public interface IFaceNetService {
 	 * @param bufferedImage {@link BufferedImage}
 	 * @return float array of 128 feature space vector
 	 */
-	float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage);
+	double[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage);
 
-	Optional<TensorFlowResult> computeDistance(float[] vector);
+	Optional<TensorFlowResult> computeDistance(double[] vector);
 
-	Optional<TensorFlowResult> computeDistance(float[] vector, double threshold);
+	Optional<TensorFlowResult> computeDistance(double[] vector, double threshold);
 }

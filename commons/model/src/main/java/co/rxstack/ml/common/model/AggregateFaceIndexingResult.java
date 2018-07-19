@@ -4,6 +4,6 @@ public class AggregateFaceIndexingResult {
 	
 	public String awsFaceId;
 	public String cognitivePersonId;
-	public float[] embeddingsVector;
+	public double[] embeddingsVector;
 	
 }

@@ -29,6 +29,7 @@ import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.utils.GraphUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
@@ -56,7 +57,7 @@ public class FaceNetService implements IFaceNetService {
 	private IFaceService faceService;
 	private FaceNetConfig faceNetConfig;
 
-	private ConcurrentHashMap<Integer, float[]> embeddings = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Integer, double[]> embeddings = new ConcurrentHashMap<>();
 
 	@Autowired
 	public FaceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
@@ -115,7 +116,7 @@ public class FaceNetService implements IFaceNetService {
 					BufferedReader reader = new BufferedReader(new FileReader(embeddingsFile));
 					reader.lines().forEach(line -> {
 						String[] ee = line.split(EMBEDDINGS_FILE_K_V_DELIMITER);
-						float[] vector = new float[128];
+						double[] vector = new double[128];
 						for (int i = 1; i < 129; i++) {
 							vector[i - 1] = Float.valueOf(ee[i]);
 						}
@@ -132,7 +133,7 @@ public class FaceNetService implements IFaceNetService {
 	}
 	
 	@Override
-	public float[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
+	public double[] computeEmbeddingsFeaturesVector(BufferedImage bufferedImage) {
 		log.info("Computing embeddings feature vector");
 
 		try (Tensor<Float> image = Tensors.create(imageTo4DTensor(bufferedImage))) {
@@ -153,30 +154,37 @@ public class FaceNetService implements IFaceNetService {
 			result.writeTo(FloatBuffer.wrap(embeddingsArray));
 
 			log.info("Embeddings computation completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
-				return embeddingsArray;
+				return toDoubleArray(embeddingsArray);
 			} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			}
-		return new float[] {};
+		return new double[] {};
 	}
 
 	@Override
-	public Optional<TensorFlowResult> computeDistance(float[] vector) {
+	public Optional<TensorFlowResult> computeDistance(double[] vector) {
 		return computeDistance(vector, DEFAULT_THRESHOLD);
 	}
 
 	@Override
-	public Optional<TensorFlowResult> computeDistance(float[] vector, double threshold) {
+	public Optional<TensorFlowResult> computeDistance(double[] vector, double threshold) {
 
+		// TODO implement some technique to retrieve latest vectors
+		loadEmbeddingsVector();
+
+		log.info("Computing distance with available vectors");
 		Map<Double, Integer> resultsVector = Maps.newHashMap();
 		
 		if (vector.length == 128) {
-			double[] vectorAsDoubleArray = toDoubleArray(vector);
+			log.debug("Vector length is 128 as supposed!");
+			//double[] vectorAsDoubleArray = toDoubleArray(vector);
+
+			log.debug("Current Embeddings vectors: {} ", embeddings.size());
 
 			embeddings.keySet().forEach(label -> {
-				float[] embVector = embeddings.get(label);
+				double[] embVector = embeddings.get(label);
 				if (embVector.length == 128) {
-					double d = EUCLIDEAN_DISTANCE.compute(toDoubleArray(embVector), vectorAsDoubleArray);
+					double d = EUCLIDEAN_DISTANCE.compute(embVector, vector);
 					resultsVector.put(d, label);
 				}
 			});
@@ -200,7 +208,7 @@ public class FaceNetService implements IFaceNetService {
 		faceNetTensorGraph.close();
 	}
 
-	private double[] toDoubleArray(float[] e) {
+	protected double[] toDoubleArray(float[] e) {
 		return IntStream.range(0, e.length).mapToDouble(value -> e[value]).toArray();
 	}
 

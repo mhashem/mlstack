@@ -153,7 +153,7 @@ public class AggregatorService {
 
 				if (alignedImageBytesOptional.isPresent()) {
 					log.info("image is aligned successfully");
-					float[] featuresVector = faceNetService
+					double[] featuresVector = faceNetService
 						.computeEmbeddingsFeaturesVector(
 							bytesToBufferedImage(alignedImageBytesOptional.get()));
 
@@ -214,7 +214,7 @@ public class AggregatorService {
 			alignedFaceImageOptional.ifPresent(alignedFaceImageBytes -> {
 				try {
 					BufferedImage alignedFaceImage = bytesToBufferedImage(alignedFaceImageBytes);
-					float[] embeddingsVector = faceNetService.computeEmbeddingsFeaturesVector(alignedFaceImage);
+					double[] embeddingsVector = faceNetService.computeEmbeddingsFeaturesVector(alignedFaceImage);
 					// TODO check if size can be a configuration
 					if (embeddingsVector.length == 128) {
 						log.debug("Assigned embeddings vector successfully");
@@ -225,7 +225,7 @@ public class AggregatorService {
 				}
 
 				storageService.saveFile(bundleMap.get(Constants.IMAGE_NAME),
-					bundleMap.get(Constants.PERSON_NAME), alignedFaceImageBytes, StorageStrategy.Strategy.DISK);
+					bundleMap.get(Constants.PERSON_ID), alignedFaceImageBytes, StorageStrategy.Strategy.DISK);
 			});
 
 		} catch (IOException e) {
@@ -277,7 +277,9 @@ public class AggregatorService {
 			byte[] bytes = baos.toByteArray();
 
 			CompletableFuture<List<Candidate>> awsCompletableFuture = CompletableFuture.supplyAsync(() -> {
-				log.info("AWS Rekognition ---> async searching faces by image");
+				log.info("****************************************************");
+				log.info("AWS Rekognition ---> Async searching faces by image");
+				log.info("****************************************************");
 				try {
 					return awsRekognitionService.searchFacesByImage(bytes);
 				} catch (Exception e) {
@@ -288,7 +290,9 @@ public class AggregatorService {
 
 			CompletableFuture<Optional<FaceIdentificationResult>> cognitiveCompletableFuture =
 				CompletableFuture.supplyAsync(() -> {
-					log.info("Cognitive ---> async searching faces by image");
+					log.info("***********************************************");
+					log.info("Cognitive ---> Async searching faces by image");
+					log.info("***********************************************");
 					try {
 						return cognitiveService.identifyFace(bytes);
 					} catch (Exception e) {
@@ -307,7 +311,7 @@ public class AggregatorService {
 					if (identityOptional.isPresent()) {
 						candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
 					} else {
-						log.warn("no face record found for cognitive person id {}", candidate.getPersonId());
+						log.warn("No face record found for cognitive person id {}", candidate.getPersonId());
 					}
 				});
 
@@ -329,7 +333,7 @@ public class AggregatorService {
 						if (identityOptional.isPresent()) {
 							candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
 						} else {
-							log.warn("no face record found for cognitive person id {}", candidate.getPersonId());
+							log.warn("No face record found for cognitive person id {}", candidate.getPersonId());
 						}
 
 						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);

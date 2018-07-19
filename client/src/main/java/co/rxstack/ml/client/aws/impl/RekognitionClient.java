@@ -13,7 +13,6 @@ import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
-import co.rxstack.ml.common.model.SimpleFaceIdentificationResult;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
@@ -139,10 +138,10 @@ public class RekognitionClient implements IRekognitionClient {
 				BoundingBox boundingBox = faceMatch.getFace().getBoundingBox();
 				log.info("[] bounding box : {}", boundingBox.toString());
 				FaceRectangle faceRectangle = new FaceRectangle();
-				faceRectangle.setHeight(boundingBox.getHeight().intValue());
-				faceRectangle.setWidth(boundingBox.getWidth().intValue());
-				faceRectangle.setLeft(boundingBox.getLeft().intValue());
-				faceRectangle.setTop(boundingBox.getTop().intValue());
+				faceRectangle.setHeight((int) (boundingBox.getHeight() * 100));
+				faceRectangle.setWidth((int) (boundingBox.getWidth() * 100));
+				faceRectangle.setLeft((int) (boundingBox.getLeft() * 100));
+				faceRectangle.setTop((int) (boundingBox.getTop() * 100));
 
 				return new Candidate(faceMatch.getFace().getFaceId(), faceMatch.getSimilarity(),
 					faceRectangle, Recognizer.AWS_REKOGNITION);
