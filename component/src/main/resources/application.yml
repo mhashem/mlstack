@@ -56,10 +56,10 @@ eureka:
 cognitive:
   service-url: ${cognitive_service_url}
   subscription-key: ${cognitive_subscription_key}
-  person-group-id: "cognitive_3500"
-  person-group-name: "employee_collection"
-  threshold: 0.5
-  max-candidates: 2
+  person-group-id: ${cognitive_group_id}
+  person-group-name: ${cognitive_group_name}
+  threshold: ${cognitive_threshold}
+  max-candidates: ${cognitive_max_canidates}
 
 #
 # AWS Rekognition Services
@@ -96,8 +96,8 @@ client:
 
 face:
   standard:
-    width: 120
-    height: 120
+    width: 160
+    height: 160
   directory:
     name:
       delimiter: "-"
@@ -113,21 +113,17 @@ tensorflow:
     inception:
         path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
     facenet:
-        path: "C:/etc/mlstack/models/tensorflow/facenet/20170511-185253/20170511-185253.pb"
+        path: "C:/etc/mlstack/models/tensorflow/facenet/20180402-114759/20180402-114759.pb"
         embeddings: "C:/etc/mlstack/models/tensorflow/facenet/embeddings/embeddings.csv"
+        featureVectorSize: 512
   labels:
     path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
 
 preprocesser:
-  host: "http://127.0.0.1:5000"
-
-classifier:
-  path: "C:/etc/mlstack/output"
-  name:
-    prefix: "svm"
+  host: ${preprocesser.host}
 
 logging:
-  file: 'C:/etc/mlstack/mlstack.log'
+  file: ${logging_file_path}'
 
 management:
   endpoints:

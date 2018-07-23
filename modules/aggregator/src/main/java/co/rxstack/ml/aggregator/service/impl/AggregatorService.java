@@ -157,15 +157,8 @@ public class AggregatorService {
 						.computeEmbeddingsFeaturesVector(
 							bytesToBufferedImage(alignedImageBytesOptional.get()));
 
-					if (featuresVector.length == 128) {
-						log.info("features vector computed successfully");
-					} else {
-						log.info("features vector doesn't match size 128, size {}", featuresVector.length);
-					}
-
 					Optional<TensorFlowResult> tfResultOptional =
 						faceNetService.computeDistance(featuresVector);
-					// found some identity
 
 					if (tfResultOptional.isPresent()) {
 						TensorFlowResult tensorFlowResult = tfResultOptional.get();
@@ -214,12 +207,7 @@ public class AggregatorService {
 			alignedFaceImageOptional.ifPresent(alignedFaceImageBytes -> {
 				try {
 					BufferedImage alignedFaceImage = bytesToBufferedImage(alignedFaceImageBytes);
-					double[] embeddingsVector = faceNetService.computeEmbeddingsFeaturesVector(alignedFaceImage);
-					// TODO check if size can be a configuration
-					if (embeddingsVector.length == 128) {
-						log.debug("Assigned embeddings vector successfully");
-						result.embeddingsVector = embeddingsVector;
-					}
+					result.embeddingsVector = faceNetService.computeEmbeddingsFeaturesVector(alignedFaceImage);
 				} catch (IOException e) {
 					log.error(e.getMessage(), e);
 				}

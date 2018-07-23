@@ -13,5 +13,5 @@ public interface IClassifierService<T> {
 
 	void save();
 
-	float predict(float[] vector);
+	int predict(float[] vector);
 }

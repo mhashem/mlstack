@@ -7,6 +7,7 @@ public class FaceNetConfig {
 	private String faceNetGraphPath;
 	private String embeddingsFilePath;
 	private String dataSetPath;
+	private int featureVectorSize;
 
 	public String getFaceNetGraphPath() {
 		return faceNetGraphPath;
@@ -32,12 +33,21 @@ public class FaceNetConfig {
 		this.dataSetPath = dataSetPath;
 	}
 
+	public int getFeatureVectorSize() {
+		return featureVectorSize;
+	}
+
+	public void setFeatureVectorSize(int featureVectorSize) {
+		this.featureVectorSize = featureVectorSize;
+	}
+
 	@Override
 	public String toString() {
 		return MoreObjects.toStringHelper(FaceNetConfig.class)
 			.add("faceNetGraphPath", faceNetGraphPath)
 			.add("embeddingsFilePath", embeddingsFilePath)
 			.add("dataSetPath", dataSetPath)
+			.add("featureVectorSize", featureVectorSize)
 			.toString();
 	}
 }

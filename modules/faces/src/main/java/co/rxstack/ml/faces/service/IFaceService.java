@@ -5,10 +5,15 @@ import java.util.Map;
 
 import co.rxstack.ml.faces.model.Face;
 
+import com.google.common.collect.Multimap;
+
 public interface IFaceService {
+
+	List<Face> findAll();
 
 	List<Face> findByIdentityId(int identityId);
 
 	Map<Integer, double[]> findAllEmbeddings();
 
+	Multimap<Integer, double[]> findAllEmbeddingsForIdentity();
 }

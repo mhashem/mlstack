@@ -10,19 +10,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import co.rxstack.ml.aggregator.config.ClassifierConfig;
 import co.rxstack.ml.aggregator.config.FaceDBConfig;
-import co.rxstack.ml.faces.dao.FaceDao;
-import co.rxstack.ml.faces.dao.IdentityDao;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
-import co.rxstack.ml.faces.service.IFaceService;
-import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
 import co.rxstack.ml.aggregator.service.impl.FaceRecognitionService;
-import co.rxstack.ml.faces.service.impl.IdentityService;
 import co.rxstack.ml.aggregator.service.impl.StorageService;
 import co.rxstack.ml.aws.rekognition.config.AwsConfig;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
@@ -40,6 +34,11 @@ import co.rxstack.ml.cognitiveservices.service.impl.CognitiveService;
 import co.rxstack.ml.core.config.AwsProperties;
 import co.rxstack.ml.core.config.CognitiveServicesProperties;
 import co.rxstack.ml.core.factory.AuthRequestInterceptor;
+import co.rxstack.ml.faces.dao.FaceDao;
+import co.rxstack.ml.faces.dao.IdentityDao;
+import co.rxstack.ml.faces.service.IFaceService;
+import co.rxstack.ml.faces.service.IIdentityService;
+import co.rxstack.ml.faces.service.impl.IdentityService;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.config.InceptionConfig;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
@@ -109,18 +108,15 @@ public class AppContext {
 	private String faceNetGraphPath;
 	@Value("${tensorflow.graph.facenet.embeddings}")
 	private String faceNetEmbeddingsFilePath;
+	@Value("${tensorflow.graph.facenet.featureVectorSize}")
+	private int featureVectorSize;
 
 	@Value("${preprocesser.host}")
 	private String preprocessorHost;
 
-	@Value("${classifier.path}")
-	private String classifierPath;
-	@Value("${classifier.name.prefix}")
-	private String classifierNamePrefix;
-
-	@Qualifier("stackClientRestTemplate")
+	@Qualifier("dataClientRestTemplate")
 	@Bean
-	public RestTemplate stackClientRestTemplate() {
+	public RestTemplate dataClientRestTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
 		restTemplate.setInterceptors(ImmutableList
 			.of(new AuthRequestInterceptor(clientEndpoint, clientEndpointUsername, clientEndpointPassword)));
@@ -288,6 +284,7 @@ public class AppContext {
 		FaceNetConfig faceNetConfig = new FaceNetConfig();
 		faceNetConfig.setFaceNetGraphPath(faceNetGraphPath);
 		faceNetConfig.setEmbeddingsFilePath(faceNetEmbeddingsFilePath);
+		faceNetConfig.setFeatureVectorSize(featureVectorSize);
 		return faceNetConfig;
 	}
 
@@ -310,19 +307,6 @@ public class AppContext {
 			throw new RuntimeException(e);
 		}
 	}
-
-	@Bean
-	public ClassifierConfig classifierConfig() {
-		ClassifierConfig classifierConfig = new ClassifierConfig();
-		classifierConfig.setClassifierPath(classifierPath);
-		classifierConfig.setClassifierNamePrefix(classifierNamePrefix);
-		return classifierConfig;
-	}
-
-	/*@Bean
-	public IClassifierService classifierService(ClassifierConfig classifierConfig) {
-		return new ClassifierService(classifierConfig);
-	}*/
 
 	@Bean
 	public PreprocessorClient preprocessorClient() {
