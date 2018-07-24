@@ -14,6 +14,11 @@ import smile.classification.NeuralNetwork;
 import smile.classification.SVM;
 import smile.math.kernel.GaussianKernel;
 
+/**
+ * Check http://haifengl.github.io/smile/index.html
+ * Check http://haifengl.github.io/
+ * Check https://github.com/haifengl/smile
+ */
 public class SvmClassifier {
 
 	private static double gamma = 1.0;
