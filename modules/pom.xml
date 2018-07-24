@@ -17,6 +17,7 @@
 		<module>aggregator</module>
 		<module>tensorflow</module>
 		<module>faces</module>
+		<module>classifiers</module>
 	</modules>
 
 	<dependencies>
