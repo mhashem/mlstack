@@ -54,6 +54,8 @@
 		<commons-lang3.version>3.6</commons-lang3.version>
 		<eureka-core.version>1.0.4.RELEASE</eureka-core.version>
 		<spring-cloud-commons.version>2.0.0.RELEASE</spring-cloud-commons.version>
+		<rx.java.version>2.1.17</rx.java.version>
+		<eclipse-collections.version>9.1.0</eclipse-collections.version>
 	</properties>
 
 	<build>

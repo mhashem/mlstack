@@ -40,15 +40,12 @@ public class InceptionService {
 	private Graph graph;
 	private List<String> labels;
 
-	private InceptionConfig inceptionConfig;
-
 	@Autowired
 	public InceptionService(InceptionConfig inceptionConfig) throws GraphLoadingException, FileNotFoundException {
 		Preconditions.checkNotNull(inceptionConfig);
 		Preconditions.checkNotNull(inceptionConfig.getGraphPath());
 		Preconditions.checkNotNull(inceptionConfig.getLabelsPath());
 
-		this.inceptionConfig = inceptionConfig;
 
 		Path graphPath = Paths.get(inceptionConfig.getGraphPath());
 		Path labelsPath = Paths.get(inceptionConfig.getLabelsPath());

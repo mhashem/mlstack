@@ -6,8 +6,11 @@ import java.util.Map;
 import co.rxstack.ml.faces.model.Face;
 
 import com.google.common.collect.Multimap;
+import io.reactivex.Observable;
 
 public interface IFaceService {
+
+	Observable<Integer> getRefreshingFacesObservable();
 
 	List<Face> findAll();
 

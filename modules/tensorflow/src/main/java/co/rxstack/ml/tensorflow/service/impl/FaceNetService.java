@@ -36,7 +36,7 @@ import co.rxstack.ml.tensorflow.utils.GraphUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
+import org.apache.commons.math3.ml.distance.DistanceMeasure;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +52,7 @@ public class FaceNetService implements IFaceNetService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceNetService.class);
 	private static final String EMBEDDINGS_FILE_K_V_DELIMITER = ","; // be careful must be a comma
-	private static final EuclideanDistance EUCLIDEAN_DISTANCE = new EuclideanDistance();
+	private static final DistanceMeasure DISTANCE_MEASURE = new EuclideanDistance();
 
 	private Session session;
 	private Graph faceNetTensorGraph;
@@ -84,7 +84,7 @@ public class FaceNetService implements IFaceNetService {
 				faceNetTensorGraph.importGraphDef(graphDef);
 				log.info("FaceNet TF graph loaded successfully in {}ms", stopwatch.elapsed(MILLISECONDS));
 			} else {
-				log.warn("Failed to load FaceNet TF graph!");
+				log.error("Failed to load FaceNet TF graph!");
 			}
 			session = new Session(faceNetTensorGraph);
 			loadEmbeddingsVector();
@@ -118,7 +118,13 @@ public class FaceNetService implements IFaceNetService {
 	@Override
 	public void loadEmbeddingsVector() {
 		log.info("Loading embeddings vectors from DB");
-		this.embeddings.putAll(faceService.findAllEmbeddings());
+
+		// TODO be careful Observables
+		faceService.getRefreshingFacesObservable()
+			.subscribe(signal -> {
+				log.info("Intercepted Faces refreshed signal");
+				this.embeddings.putAll(faceService.findAllEmbeddings());
+			});
 
 		CompletableFuture.runAsync(() -> {
 			try {
@@ -193,9 +199,6 @@ public class FaceNetService implements IFaceNetService {
 	@Override
 	public Optional<TensorFlowResult> computeDistance(double[] vector, double threshold) {
 
-		// TODO implement some technique to retrieve latest vectors
-		loadEmbeddingsVector();
-
 		log.info("Computing distance with available vectors");
 		Map<Double, Integer> resultsVector = Maps.newHashMap();
 		
@@ -207,7 +210,7 @@ public class FaceNetService implements IFaceNetService {
 			embeddings.keySet().forEach(label -> {
 				double[] embVector = embeddings.get(label);
 				if (embVector.length == faceNetConfig.getFeatureVectorSize()) {
-					double d = EUCLIDEAN_DISTANCE.compute(embVector, vector);
+					double d = DISTANCE_MEASURE.compute(embVector, vector);
 					resultsVector.put(d, label);
 				}
 			});

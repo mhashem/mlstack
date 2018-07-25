@@ -49,6 +49,11 @@
 			<artifactId>faces</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>co.rxstack.ml</groupId>
+			<artifactId>classifiers</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 
 	</dependencies>
