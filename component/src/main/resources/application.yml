@@ -114,6 +114,7 @@ tensorflow:
         path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
     facenet:
         path: "C:/etc/mlstack/models/tensorflow/facenet/20180402-114759/20180402-114759.pb"
+        #path: "C:/etc/mlstack/models/tensorflow/facenet/20170511-185253/20170511-185253.pb"
         embeddings: "C:/etc/mlstack/models/tensorflow/facenet/embeddings/embeddings.csv"
         featureVectorSize: 512
   labels:

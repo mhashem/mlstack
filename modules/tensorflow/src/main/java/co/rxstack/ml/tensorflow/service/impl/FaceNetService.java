@@ -36,8 +36,10 @@ import co.rxstack.ml.tensorflow.utils.GraphUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
+import org.eclipse.collections.impl.factory.BiMaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,9 @@ import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
+import smile.classification.NeuralNetwork;
+import smile.classification.SVM;
+import smile.math.kernel.GaussianKernel;
 
 @Component
 public class FaceNetService implements IFaceNetService {
@@ -58,6 +63,9 @@ public class FaceNetService implements IFaceNetService {
 	private Graph faceNetTensorGraph;
 	private IFaceService faceService;
 	private FaceNetConfig faceNetConfig;
+
+	private NeuralNetwork classifier;
+	private Map<Integer, Integer> labelsMap = new ConcurrentHashMap<>();
 
 	private ConcurrentHashMap<Integer, double[]> embeddings = new ConcurrentHashMap<>();
 
@@ -88,6 +96,7 @@ public class FaceNetService implements IFaceNetService {
 			}
 			session = new Session(faceNetTensorGraph);
 			loadEmbeddingsVector();
+			trainClassifier();
 		});
 	}
 
@@ -207,31 +216,106 @@ public class FaceNetService implements IFaceNetService {
 
 			log.debug("Current Embeddings vectors: {} ", embeddings.size());
 
-			embeddings.keySet().forEach(label -> {
+			/*embeddings.keySet().forEach(label -> {
 				double[] embVector = embeddings.get(label);
 				if (embVector.length == faceNetConfig.getFeatureVectorSize()) {
 					double d = DISTANCE_MEASURE.compute(embVector, vector);
 					resultsVector.put(d, label);
 				}
-			});
+			});*/
 
-			Optional<Double> aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder());
+			int label = classifier.predict(vector);
 
-			if (aDouble.isPresent()) {
+			try {
+				log.info("-----------------------------> predicted {}", label);
+				int matchedLabel = labelsMap.getOrDefault(label, -1);
+				log.info("-----------------------------> matchedId {}", matchedLabel);
+				return Optional.of(new TensorFlowResult(matchedLabel, 50));
+			} catch (Exception e) {
+				log.error(e.getMessage());
+			}
+
+
+			/*Optional<Double> aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder());*/
+
+			/*if (aDouble.isPresent()) {
 				TensorFlowResult result =
 					new TensorFlowResult(resultsVector.get(aDouble.get()), Math.round((1 - aDouble.get()) * 100));
 				return Optional.of(result);
-			}
+			}*/
 		}
 
 		return Optional.empty();
 	}
+
+	private void trainClassifier() {
+		Schedulers.computation().createWorker().schedulePeriodically(() -> {
+			try {
+				log.info("-----> Started Classifier training...");
+
+				double[][] features = embeddings.values().stream()
+					.filter(v -> v.length == faceNetConfig.getFeatureVectorSize())
+					.toArray(double[][]::new);
+				int[] labels = new int[features.length];
+
+				classifier = makeNeuralNetwork(100,
+					faceNetConfig.getFeatureVectorSize(), labels.length);
+
+				int ii = 0;
+				for (Integer key : embeddings.keySet()) {
+					try {
+						// BiMaps.mutable.empty().get;
+
+						if (embeddings.containsValue(features[ii])) {
+							labelsMap.put(ii, key);
+							labels[ii] = ii;
+							ii++;
+						}
+					} catch (ArrayIndexOutOfBoundsException e) {
+						log.error(e.getMessage());
+					}
+				}
+
+				// TODO map all same labels to same index in labels array issue
+
+/*
+				for (Integer key : embeddings.keySet()) {
+					features[index] = embeddings.get(key);
+					labels[index] = index;
+					labelsMap.put(index, key);
+					index++;
+				}
+*/
+
+				for (int i = 0; i < 15; i++) {
+					if (i % 5 == 0)
+						log.info("-----> Epoch {} running", i);
+					classifier.learn(features, labels);
+				}
+
+				log.info("-----> Ending Classifier training...");
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+			}
+		}, 60, 35, TimeUnit.SECONDS);
+	}
+
 
 	@PreDestroy
 	public void onDestroy() {
 		log.info("PreDestroy() fired, releasing TF Session, and Graph");
 		session.close();
 		faceNetTensorGraph.close();
+	}
+
+	public NeuralNetwork makeNeuralNetwork(int hiddenLayersCount, int featureCount, int labelsCount) {
+		return 	new NeuralNetwork(NeuralNetwork.ErrorFunction.CROSS_ENTROPY,
+			NeuralNetwork.ActivationFunction.SOFTMAX, featureCount,
+			hiddenLayersCount, labelsCount);
+	}
+
+	private double[] toDoubleArray(Integer[] e) {
+		return Arrays.stream(e).mapToDouble(value -> e[value]).toArray();
 	}
 
 	protected double[] toDoubleArray(float[] e) {
