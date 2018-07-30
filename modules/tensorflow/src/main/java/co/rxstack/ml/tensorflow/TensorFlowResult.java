@@ -3,6 +3,8 @@ package co.rxstack.ml.tensorflow;
 import java.io.Serializable;
 
 import co.rxstack.ml.common.model.FaceBox;
+import co.rxstack.ml.common.model.FaceRectangle;
+
 import com.google.common.base.MoreObjects;
 
 public class TensorFlowResult implements Serializable {
@@ -20,6 +22,11 @@ public class TensorFlowResult implements Serializable {
 	public TensorFlowResult(String label, double confidence) {
 		this.label = label;
 		this.confidence = confidence;
+	}
+
+	public TensorFlowResult(int faceId, String label, double confidence) {
+		this(faceId, confidence);
+		this.label = label;
 	}
 
 	public int getFaceId() {

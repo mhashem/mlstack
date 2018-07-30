@@ -50,6 +50,10 @@ public class FaceBox implements Serializable {
 		this.left = left;
 	}
 
+	public FaceRectangle mapToFaceRectangle() {
+		return new FaceRectangle(this.left, this.top, this.right, this.bottom);
+	}
+
 	@Override
 	public String toString() {
 		return "FaceBox{" + "index=" + index + ", top=" + top + ", bottom=" + bottom + ", right=" + right + ", left="

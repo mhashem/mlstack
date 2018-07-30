@@ -3,6 +3,7 @@ package co.rxstack.ml.tensorflow.service.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,7 +14,6 @@ import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,12 +21,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
 
 import co.rxstack.ml.faces.model.Face;
+import co.rxstack.ml.faces.model.Identity;
 import co.rxstack.ml.faces.service.IFaceService;
+import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.config.FaceNetConfig;
 import co.rxstack.ml.tensorflow.exception.GraphLoadingException;
@@ -35,11 +40,15 @@ import co.rxstack.ml.tensorflow.utils.GraphUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
-import org.eclipse.collections.impl.factory.BiMaps;
+import org.bytedeco.javacpp.opencv_core;
+import org.bytedeco.javacpp.opencv_ml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +57,15 @@ import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
+import smile.classification.KNN;
 import smile.classification.NeuralNetwork;
+import smile.classification.RBFNetwork;
 import smile.classification.SVM;
 import smile.math.kernel.GaussianKernel;
+import smile.math.kernel.LinearKernel;
+import smile.math.kernel.SparseLinearKernel;
+import smile.math.rbf.RadialBasisFunction;
+import smile.util.SmileUtils;
 
 @Component
 public class FaceNetService implements IFaceNetService {
@@ -62,19 +77,28 @@ public class FaceNetService implements IFaceNetService {
 	private Session session;
 	private Graph faceNetTensorGraph;
 	private IFaceService faceService;
+	private IIdentityService identityService;
 	private FaceNetConfig faceNetConfig;
 
-	private NeuralNetwork classifier;
-	private Map<Integer, Integer> labelsMap = new ConcurrentHashMap<>();
+	private KNN<double[]> classifier;
+	// private BiMap<Integer, Integer> faceIdentityBiMap = HashBiMap.create();
+	private BiMap<Integer, Integer> identityClassLabelsMap = Maps.synchronizedBiMap(HashBiMap.create());
+
+	private AtomicInteger labelsCountAtomic = new AtomicInteger(0);
 
 	private ConcurrentHashMap<Integer, double[]> embeddings = new ConcurrentHashMap<>();
 
+	//private opencv_ml.SVMSGD svmsgdClassifier;
+
 	@Autowired
-	public FaceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
+	public FaceNetService(IFaceService faceService, IIdentityService identityService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
 		Preconditions.checkNotNull(faceNetConfig);
 		Preconditions.checkNotNull(faceService);
+		Preconditions.checkNotNull(identityService);
+
 		this.faceNetConfig = faceNetConfig;
 		this.faceService = faceService;
+		this.identityService = identityService;
 
 		Path faceNetGraphPath = Paths.get(faceNetConfig.getFaceNetGraphPath());
 
@@ -128,11 +152,17 @@ public class FaceNetService implements IFaceNetService {
 	public void loadEmbeddingsVector() {
 		log.info("Loading embeddings vectors from DB");
 
+		Schedulers.computation().createWorker().schedulePeriodically(() -> {
+			log.info("Refreshing local face data");
+			// this.faceIdentityBiMap.putAll(faceService.findFaceIdentityBiMap());
+			this.embeddings.putAll(faceService.findAllFaceIdEmbeddingsMap());
+		}, 10, 15, TimeUnit.SECONDS);
+
 		// TODO be careful Observables
-		faceService.getRefreshingFacesObservable()
+		// TODO handle canceling Subscription
+		/*faceService.getRefreshingFacesObservable()
 			.subscribe(signal -> {
 				log.info("Intercepted Faces refreshed signal");
-				this.embeddings.putAll(faceService.findAllEmbeddings());
 			});
 
 		CompletableFuture.runAsync(() -> {
@@ -142,7 +172,7 @@ public class FaceNetService implements IFaceNetService {
 			} catch (FileNotFoundException e) {
 				log.error(e.getMessage(), e);
 			}
-		});
+		});*/
 	}
 
 	@Override
@@ -197,7 +227,7 @@ public class FaceNetService implements IFaceNetService {
 			} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			}
-		return new double[] {};
+		return null;
 	}
 
 	@Override
@@ -209,40 +239,39 @@ public class FaceNetService implements IFaceNetService {
 	public Optional<TensorFlowResult> computeDistance(double[] vector, double threshold) {
 
 		log.info("Computing distance with available vectors");
-		Map<Double, Integer> resultsVector = Maps.newHashMap();
-		
+
 		if (vector.length == faceNetConfig.getFeatureVectorSize()) {
-			log.debug("Vector length is {} as supposed!", faceNetConfig.getFeatureVectorSize());
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			log.info("Executing Classifier [predict] operation");
 
-			log.debug("Current Embeddings vectors: {} ", embeddings.size());
+			double[] confidences = new double[labelsCountAtomic.get()];
 
-			/*embeddings.keySet().forEach(label -> {
-				double[] embVector = embeddings.get(label);
-				if (embVector.length == faceNetConfig.getFeatureVectorSize()) {
-					double d = DISTANCE_MEASURE.compute(embVector, vector);
-					resultsVector.put(d, label);
-				}
-			});*/
+			int classLabel = classifier.predict(vector, confidences);
+			double confidence = Arrays.stream(confidences).max().orElse(0) * 100;
 
-			int label = classifier.predict(vector);
+			log.info("Confidences {}", Arrays.toString(confidences));
+
+			TensorFlowResult tensorFlowResult= null;
 
 			try {
-				log.info("-----------------------------> predicted {}", label);
-				int matchedLabel = labelsMap.getOrDefault(label, -1);
-				log.info("-----------------------------> matchedId {}", matchedLabel);
-				return Optional.of(new TensorFlowResult(matchedLabel, 50));
+				log.info("Predicted class {} in {}ms with confidence {}",
+					classLabel, stopwatch.elapsed(MILLISECONDS), confidence);
+				int matchedIdentity = identityClassLabelsMap.inverse().getOrDefault(classLabel, -1);
+				if (matchedIdentity != -1) {
+					log.info("Matched Identity Id {}", matchedIdentity);
+					tensorFlowResult = new TensorFlowResult(
+						identityService.findById(matchedIdentity)
+							.map(Identity::getName).orElse("Unknown"),
+						confidence);
+				}
+				else {
+					log.info("No matching Identity Id from DB found");
+				}
+
+				return Optional.ofNullable(tensorFlowResult);
 			} catch (Exception e) {
-				log.error(e.getMessage());
+				log.error(e.getMessage(), e);
 			}
-
-
-			/*Optional<Double> aDouble = resultsVector.keySet().stream().min(Comparator.naturalOrder());*/
-
-			/*if (aDouble.isPresent()) {
-				TensorFlowResult result =
-					new TensorFlowResult(resultsVector.get(aDouble.get()), Math.round((1 - aDouble.get()) * 100));
-				return Optional.of(result);
-			}*/
 		}
 
 		return Optional.empty();
@@ -253,51 +282,63 @@ public class FaceNetService implements IFaceNetService {
 			try {
 				log.info("-----> Started Classifier training...");
 
-				double[][] features = embeddings.values().stream()
+				Multimap<Integer, double[]> embeddingsByIdentity = faceService.findAllEmbeddingsForIdentity();
+
+				Supplier<Stream<double[]>> streamSupplier = asFilteredStream(embeddingsByIdentity);
+
+				int vectorsCount = (int) streamSupplier.get()
 					.filter(v -> v.length == faceNetConfig.getFeatureVectorSize())
-					.toArray(double[][]::new);
+					.count();
+
+				double[][] features = new double[vectorsCount][];
 				int[] labels = new int[features.length];
 
-				classifier = makeNeuralNetwork(100,
-					faceNetConfig.getFeatureVectorSize(), labels.length);
+				int index = 0;
+				int labelsIndex = 0;
 
-				int ii = 0;
-				for (Integer key : embeddings.keySet()) {
-					try {
-						// BiMaps.mutable.empty().get;
+				// fixme not very safe
+				identityClassLabelsMap.clear();
 
-						if (embeddings.containsValue(features[ii])) {
-							labelsMap.put(ii, key);
-							labels[ii] = ii;
-							ii++;
+				for (Map.Entry<Integer, double[]> entry : embeddingsByIdentity.entries()) {
+					if (entry.getValue().length == faceNetConfig.getFeatureVectorSize()) {
+						if (!identityClassLabelsMap.containsKey(entry.getKey())) {
+							identityClassLabelsMap.put(entry.getKey(), labelsIndex);
+							labelsIndex++;
 						}
-					} catch (ArrayIndexOutOfBoundsException e) {
-						log.error(e.getMessage());
+						features[index] = entry.getValue();
+						labels[index] = identityClassLabelsMap.get(entry.getKey());
+						index++;
 					}
 				}
 
-				// TODO map all same labels to same index in labels array issue
+				/* use with SVM labelsCountAtomic.set(labelsIndex);*/
 
-/*
-				for (Integer key : embeddings.keySet()) {
-					features[index] = embeddings.get(key);
-					labels[index] = index;
-					labelsMap.put(index, key);
-					index++;
-				}
-*/
+				labelsCountAtomic.set(labelsIndex);
 
-				for (int i = 0; i < 15; i++) {
+				log.info("Labels: {}", Arrays.toString(labels));
+
+				classifier = KNN.learn(features, labels, 3);
+
+				/*classifier = makeSVMClassifier(labelsCountAtomic.get());
+				classifier.learn(features, labels);
+				classifier.finish();
+				classifier.trainPlattScaling(features, labels);*/
+
+				/*classifier = makeNeuralNetwork(faceNetConfig.getFeatureVectorSize(), labelsIndex);
+				classifier.learn(features, labels);*/
+				/*for (int i = 0; i < 16; i++) {
 					if (i % 5 == 0)
 						log.info("-----> Epoch {} running", i);
 					classifier.learn(features, labels);
-				}
+				}*/
+
+				// svmsgdClassifier = svmsgd(features, labels);
 
 				log.info("-----> Ending Classifier training...");
 			} catch (Exception e) {
 				log.error(e.getMessage(), e);
 			}
-		}, 60, 35, TimeUnit.SECONDS);
+		}, 10, 120, TimeUnit.SECONDS);
 	}
 
 
@@ -308,14 +349,40 @@ public class FaceNetService implements IFaceNetService {
 		faceNetTensorGraph.close();
 	}
 
-	public NeuralNetwork makeNeuralNetwork(int hiddenLayersCount, int featureCount, int labelsCount) {
+	private NeuralNetwork makeNeuralNetwork(int featureCount, int labelsCount) {
 		return 	new NeuralNetwork(NeuralNetwork.ErrorFunction.CROSS_ENTROPY,
-			NeuralNetwork.ActivationFunction.SOFTMAX, featureCount,
-			hiddenLayersCount, labelsCount);
+			NeuralNetwork.ActivationFunction.SOFTMAX, featureCount, 100, 1000, 100, labelsCount);
+	}
+
+	private SVM<double[]> makeSVMClassifier(int k) {
+		// return new SVM<>(new GaussianKernel(1.0), 1.0, 3, SVM.Multiclass.ONE_VS_ALL);
+		return new SVM<>(new LinearKernel(), 1.0, k, SVM.Multiclass.ONE_VS_ALL);
 	}
 
 	private double[] toDoubleArray(Integer[] e) {
 		return Arrays.stream(e).mapToDouble(value -> e[value]).toArray();
+	}
+
+	protected opencv_ml.SVMSGD svmsgd(double[][] features, int[] labels) {
+
+		opencv_ml.SVMSGD svmsgd = opencv_ml.SVMSGD.create();
+		opencv_core.Mat trainingData = new opencv_core.Mat();
+		opencv_core.Mat trainingLabels = new opencv_core.Mat();
+
+		for (int i = 0; i < features.length; i++) {
+			opencv_core.Mat featuresArrayMat = new opencv_core.Mat(features[i]);
+			opencv_core.Mat labelsArrayMat = new opencv_core.Mat(labels[i]);
+
+			featuresArrayMat = featuresArrayMat.reshape(faceNetConfig.getFeatureVectorSize(), 1);
+
+			trainingData.push_back(featuresArrayMat);
+			trainingLabels.push_back(labelsArrayMat);
+		}
+
+		svmsgd.train(trainingData, opencv_ml.ROW_SAMPLE, trainingLabels);
+
+
+		return svmsgd;
 	}
 
 	protected double[] toDoubleArray(float[] e) {
@@ -337,6 +404,11 @@ public class FaceNetService implements IFaceNetService {
 			}
 		}
 		return image;
+	}
+
+	private Supplier<Stream<double[]>> asFilteredStream(Multimap<Integer, double[]> multimap) {
+		return () -> multimap.values().stream()
+			.filter(v -> v.length == faceNetConfig.getFeatureVectorSize());
 	}
 
 }

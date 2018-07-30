@@ -299,9 +299,10 @@ public class AppContext {
 	}
 
 	@Bean
-	public IFaceNetService faceNetService(IFaceService faceService, FaceNetConfig faceNetConfig) {
+	public IFaceNetService faceNetService(IFaceService faceService, FaceNetConfig faceNetConfig,
+		IIdentityService identityService) {
 		try {
-			return new FaceNetService(faceService, faceNetConfig);
+			return new FaceNetService(faceService, identityService, faceNetConfig);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);

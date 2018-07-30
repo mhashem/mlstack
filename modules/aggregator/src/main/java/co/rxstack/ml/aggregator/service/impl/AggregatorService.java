@@ -6,17 +6,21 @@ import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import co.rxstack.ml.common.model.FaceRecognitionResult;
 import co.rxstack.ml.faces.model.Identity;
 import co.rxstack.ml.aggregator.model.PotentialFace;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
@@ -133,7 +137,7 @@ public class AggregatorService {
 		return tensorFlowResults;
 	}
 
-	public List<TensorFlowResult> faceNetRecognize(byte[] imageBytes) throws IOException {
+	public List<FaceRecognitionResult> faceNetRecognize(byte[] imageBytes) throws IOException {
 		List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
 
 		log.info("make an original image copy");
@@ -146,30 +150,40 @@ public class AggregatorService {
 		log.info("aligning each detected image ");
 		detectedFaces.forEach(faceBox -> {
 			BufferedImage faceImage = subImage(originalImage, faceBox);
+
 			// align
 			try {
+
+				writeToDisk(faceImage, "subImage");
+
 				Optional<byte[]> alignedImageBytesOptional =
 					preprocessorClient.align(bufferedImageToByteArray(faceImage));
 
 				if (alignedImageBytesOptional.isPresent()) {
 					log.info("image is aligned successfully");
-					double[] featuresVector = faceNetService
-						.computeEmbeddingsFeaturesVector(
-							bytesToBufferedImage(alignedImageBytesOptional.get()));
 
-					Optional<TensorFlowResult> tfResultOptional =
-						faceNetService.computeDistance(featuresVector);
+					byte[] alignedBytes = alignedImageBytesOptional.get();
+					if (alignedBytes.length > 0) {
 
-					if (tfResultOptional.isPresent()) {
-						TensorFlowResult tensorFlowResult = tfResultOptional.get();
-						tensorFlowResult.setFaceBox(faceBox);
-						
-						log.info("Matching database Identity for the detected face");
-						Optional<Identity> identityOptional =
-							identityService.findIdentityByFaceId(tensorFlowResult.getFaceId());
-						identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
-						
-						tensorFlowResults.add(tensorFlowResult);
+						writeToDisk(bytesToBufferedImage(alignedBytes), "aligned");
+
+						double[] featuresVector = faceNetService
+							.computeEmbeddingsFeaturesVector(bytesToBufferedImage(alignedBytes));
+
+						Optional<TensorFlowResult> tfResultOptional =
+							faceNetService.computeDistance(featuresVector);
+
+						if (tfResultOptional.isPresent()) {
+							TensorFlowResult tensorFlowResult = tfResultOptional.get();
+							tensorFlowResult.setFaceBox(faceBox);
+
+							log.info("Matching database Identity for the detected face");
+							Optional<Identity> identityOptional =
+								identityService.findIdentityByFaceId(tensorFlowResult.getFaceId());
+							identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
+
+							tensorFlowResults.add(tensorFlowResult);
+						}
 					}
 				}
 			} catch (IOException e) {
@@ -177,8 +191,34 @@ public class AggregatorService {
 				log.error(e.getMessage(), e);
 			}
 		});
-		return tensorFlowResults;
+
+		List<FaceRecognitionResult> faceRecognitionResults =
+			tensorFlowResults.stream().map(mapTfResultToFaceRecognitionResult).collect(Collectors.toList());
+
+		drawDetectedFaceRectangle(originalImage, faceRecognitionResults);
+		writeToDisk(originalImage, "rectangles");
+
+		return faceRecognitionResults;
 	}
+
+	private void writeToDisk(BufferedImage image, String desc) throws IOException {
+		ImageIO.write(image, "jpg",
+			new File("C:/etc/mlstack/output/processing/" + desc + "-"+ UUID.randomUUID().toString() +  ".jpg"));
+	}
+
+	private Function<Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult = (tfResult) -> {
+		// TODO implement
+		return null;
+	};
+
+	private Function<TensorFlowResult, FaceRecognitionResult> mapTfResultToFaceRecognitionResult = (tfResult) ->
+		FaceRecognitionResult.builder()
+			.index(tfResult.getFaceBox().getIndex())
+			.label(tfResult.getLabel())
+			.confidence(tfResult.getConfidence())
+			.recognizer(Recognizer.TENSOR_FLOW_FACE_NET)
+			.faceRectangle(tfResult.getFaceBox().mapToFaceRectangle())
+			.build();
 
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
 		log.info("indexFaces called with image {} bytes and bundleMap {}", imageBytes.length, bundleMap);
@@ -201,6 +241,9 @@ public class AggregatorService {
 
 			BufferedImage originalImage = bytesToBufferedImage(imageBytes);
 			BufferedImage faceImage = subImage(originalImage, faceBoxes.get(0));
+
+
+
 			byte[] faceImageBytes = bufferedImageToByteArray(faceImage);
 			Optional<byte[]> alignedFaceImageOptional = preprocessorClient.align(faceImageBytes);
 
@@ -373,12 +416,22 @@ public class AggregatorService {
 		}).collect(Collectors.toList());
 	}
 
-	private void drawDetectedFaceRectangle(BufferedImage targetImage, Rectangle rectangle, int label) {
+	private void drawDetectedFaceRectangle(BufferedImage targetImage, List<FaceRecognitionResult> faceRecognitionResults) {
 		Graphics2D graphics = (Graphics2D) targetImage.getGraphics();
 		graphics.setColor(Color.GREEN);
-		graphics.setStroke(new BasicStroke(3));
-		graphics.drawRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-		graphics.drawString(label == 0 ? "Unknown" : "" + label, rectangle.x - 1, rectangle.y - 1);
+		graphics.setStroke(new BasicStroke(4));
+		graphics.setFont(new Font("default", Font.BOLD, 12));
+
+		faceRecognitionResults.forEach(faceRecognitionResult -> {
+			FaceRectangle faceRectangle = faceRecognitionResult.getFaceRectangle();
+			graphics.drawRect(faceRectangle.getLeft(),
+				faceRectangle.getTop(),
+				faceRectangle.getWidth() - faceRectangle.getLeft(),
+				faceRectangle.getHeight() - faceRectangle.getTop());
+			graphics.drawString(faceRecognitionResult.getLabel(),
+				faceRectangle.getLeft() - 1,
+				faceRectangle.getTop() - 1);
+		});
 		graphics.dispose();
 	}
 
@@ -401,6 +454,7 @@ public class AggregatorService {
 	}
 
 	private BufferedImage subImage(BufferedImage image, FaceBox faceBox) {
+		log.info("FaceBox {} and image [w {}:h {}]", faceBox, image.getWidth(), image.getHeight());
 		int x = (faceBox.getLeft() <= 0) ? 0 : faceBox.getLeft(); // x, in case left edge out of raster
 		int y = (faceBox.getTop() <= 0) ? 0 : faceBox.getTop();
 		return image.getSubimage(x, y, (faceBox.getRight() - x), (faceBox.getBottom() - y));

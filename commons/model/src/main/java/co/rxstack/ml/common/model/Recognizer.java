@@ -6,7 +6,8 @@ public enum Recognizer {
 	UNKNOWN("unknown"),
 	OPEN_CV("open_cv"),
 	AWS_REKOGNITION("aws_rekognition"),
-	COGNITIVE_SERVICES("cognitive_services");
+	COGNITIVE_SERVICES("cognitive_services"),
+	TENSOR_FLOW_FACE_NET("tensorflow_face_net");
 
 	private String type;
 
