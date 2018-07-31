@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -206,9 +207,14 @@ public class AggregatorService {
 			new File("C:/etc/mlstack/output/processing/" + desc + "-"+ UUID.randomUUID().toString() +  ".jpg"));
 	}
 
-	private Function<Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult = (tfResult) -> {
-		// TODO implement
-		return null;
+	private BiFunction<Integer, Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult =
+		(index, candidate) -> {
+		// TODO not complete yet!
+			return FaceRecognitionResult.builder()
+				.index(index)
+				.confidence(candidate.getConfidence())
+				.recognizer(candidate.getRecognizer())
+				.faceRectangle(candidate.getFaceRectangle()).build();
 	};
 
 	private Function<TensorFlowResult, FaceRecognitionResult> mapTfResultToFaceRecognitionResult = (tfResult) ->
@@ -241,8 +247,6 @@ public class AggregatorService {
 
 			BufferedImage originalImage = bytesToBufferedImage(imageBytes);
 			BufferedImage faceImage = subImage(originalImage, faceBoxes.get(0));
-
-
 
 			byte[] faceImageBytes = bufferedImageToByteArray(faceImage);
 			Optional<byte[]> alignedFaceImageOptional = preprocessorClient.align(faceImageBytes);

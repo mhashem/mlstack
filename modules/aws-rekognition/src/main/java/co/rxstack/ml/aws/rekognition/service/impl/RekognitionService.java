@@ -1,5 +1,7 @@
 package co.rxstack.ml.aws.rekognition.service.impl;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +77,11 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 	public List<Candidate> searchFacesByImage(byte[] imageBytes) {
 		log.info("Searching faces [collection: {}] by image with {} bytes [maxFaces: {}]", awsConfig.getCollectionId(),
 			imageBytes.length, awsConfig.getMaxFaces());
-		return rekognitionClient.searchFacesByImage(awsConfig.getCollectionId(), imageBytes, awsConfig.getMaxFaces());
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		List<Candidate> candidates =
+			rekognitionClient.searchFacesByImage(awsConfig.getCollectionId(), imageBytes, awsConfig.getMaxFaces());
+		log.info("AWS searchFacesByImage found {} , in {}ms", candidates.size(), stopwatch.elapsed(MILLISECONDS));
+		return candidates;
 	}
 
 	private Optional<FaceIndexingResult> indexFace(String collectionId, byte[] imageBytes) {
@@ -90,7 +96,7 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 		if (indexFacesResultOptional.isPresent()) {
 			IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
 			log.info("Successfully indexed {} face(s) in {} ms", indexFacesResult.getFaceRecords().size(),
-				stopwatch.elapsed(TimeUnit.MILLISECONDS));
+				stopwatch.elapsed(MILLISECONDS));
 			return indexFacesResult.getFaceRecords().stream().map(faceIndexingResultMapper)
 				.collect(Collectors.toList());
 		}
