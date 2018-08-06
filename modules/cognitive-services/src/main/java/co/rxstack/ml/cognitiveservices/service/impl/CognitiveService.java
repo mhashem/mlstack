@@ -127,7 +127,9 @@ public class CognitiveService implements ICognitiveService {
 		if (faceIdOptional.isPresent()) {
 			log.info("detected face with id {}", faceIdOptional.get());
 			return client
-				.identify(config.getPersonGroupId(), ImmutableList.of(faceIdOptional.get()), config.getMaxCandidates(),
+				.identify(config.getPersonGroupId(),
+					ImmutableList.of(faceIdOptional.get()),
+					config.getMaxCandidates(),
 					config.getThreshold());
 		}
 		return ImmutableList.of();

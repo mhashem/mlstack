@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -207,11 +208,10 @@ public class AggregatorService {
 			new File("C:/etc/mlstack/output/processing/" + desc + "-"+ UUID.randomUUID().toString() +  ".jpg"));
 	}
 
-	private BiFunction<Integer, Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult =
-		(index, candidate) -> {
+	private Function<Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult =
+		(candidate) -> {
 		// TODO not complete yet!
 			return FaceRecognitionResult.builder()
-				.index(index)
 				.confidence(candidate.getConfidence())
 				.recognizer(candidate.getRecognizer())
 				.faceRectangle(candidate.getFaceRectangle()).build();
@@ -291,9 +291,12 @@ public class AggregatorService {
 		return ImmutableList.of();
 	}
 
-	public AggregateFaceIdentification identify(byte[] imageBytes, Map<String, Object> bundleMap) {
+	public List<FaceRecognitionResult> identify(byte[] imageBytes, Map<String, Object> bundleMap) {
 		log.info("identify called with image {} bytes", imageBytes.length);
 		AggregateFaceIdentification faceIdentification = new AggregateFaceIdentification();
+
+		List<FaceRecognitionResult> faceRecognitionResults = new ArrayList<>();
+
 		try {
 			String contentType = (String) bundleMap.get(Constants.CONTENT_TYPE);
 
@@ -303,8 +306,10 @@ public class AggregatorService {
 
 			BufferedImage targetImageCopy = deepCopy(targetImage);
 
+/*
 			CompletableFuture<List<Candidate>> openCVDetectionFuture =
 				CompletableFuture.supplyAsync(() -> openCVDetection(targetImageCopy, contentType));
+*/
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(targetImage, contentType.split("/")[1], baos);
@@ -336,7 +341,10 @@ public class AggregatorService {
 					}
 				});
 
+/*
 			CompletableFuture.allOf(awsCompletableFuture, cognitiveCompletableFuture, openCVDetectionFuture).get();
+*/
+			CompletableFuture.allOf(awsCompletableFuture, cognitiveCompletableFuture).get();
 
 			if (awsCompletableFuture.isDone()) {
 				List<Candidate> awsCandidateList = awsCompletableFuture.get();
@@ -350,18 +358,19 @@ public class AggregatorService {
 					}
 				});
 
-				faceIdentification.addAll(awsCompletableFuture.get());
+				/*faceIdentification.addAll(awsCompletableFuture.get());*/
+
+				faceRecognitionResults.addAll(awsCompletableFuture.get()
+					.stream().map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList()));
 			}
 
-			if (openCVDetectionFuture.isDone()) {
+			/*if (openCVDetectionFuture.isDone()) {
 				faceIdentification.addAll(openCVDetectionFuture.get());
-			}
+			}*/
 
 			if (cognitiveCompletableFuture.isDone()) {
-
-				Optional<FaceIdentificationResult> cognitiveResult = cognitiveCompletableFuture.get();
-				if (cognitiveResult.isPresent()) {
-					FaceIdentificationResult identificationResult = cognitiveResult.get();
+				if (cognitiveCompletableFuture.get().isPresent()) {
+					FaceIdentificationResult identificationResult = cognitiveCompletableFuture.get().get();
 					identificationResult.getCandidates().forEach(candidate -> {
 						Optional<Identity> identityOptional =
 							identityService.findIdentityByCognitivePersonId(candidate.getPersonId());
@@ -371,15 +380,17 @@ public class AggregatorService {
 							log.warn("No face record found for cognitive person id {}", candidate.getPersonId());
 						}
 
+						candidate.setConfidence(candidate.getConfidence() * 100);
 						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
 					});
-					faceIdentification.addAll(identificationResult.getCandidates());
+					faceRecognitionResults.addAll(identificationResult.getCandidates()
+						.stream().map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList()));
 				}
 			}
 		} catch (IOException | InterruptedException | ExecutionException e) {
 			log.error(e.getMessage(), e);
 		}
-		return faceIdentification;
+		return faceRecognitionResults;
 	}
 
 	private List<Candidate> openCVDetection(BufferedImage targetImage, String contentType) {

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import co.rxstack.ml.common.model.FaceRecognitionResult;
 import co.rxstack.ml.faces.model.Face;
 import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
@@ -101,6 +102,7 @@ public class FaceController {
 		}
 	}
 
+	@CrossOrigin(origins = "http://localhost:9000")
 	@PostMapping("/api/v1/faces/recognition")
 	public ResponseEntity searchSimilar(
 		@RequestParam("image")
@@ -108,10 +110,10 @@ public class FaceController {
 		log.info("Intercepted request for image search from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(image);
 		try {
-			AggregateFaceIdentification faceIdentification =
-				aggregatorService.identify(image.getBytes(),
-					ImmutableMap.of(Constants.CONTENT_TYPE, image.getContentType()));
-			return ResponseEntity.ok(faceIdentification);
+
+			List<FaceRecognitionResult> faceRecognitionResults = aggregatorService
+				.identify(image.getBytes(), ImmutableMap.of(Constants.CONTENT_TYPE, image.getContentType()));
+			return ResponseEntity.ok(faceRecognitionResults);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
