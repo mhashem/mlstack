@@ -3,7 +3,6 @@ package co.rxstack.ml.tensorflow.service.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,13 +58,8 @@ import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
 import smile.classification.KNN;
 import smile.classification.NeuralNetwork;
-import smile.classification.RBFNetwork;
 import smile.classification.SVM;
-import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.LinearKernel;
-import smile.math.kernel.SparseLinearKernel;
-import smile.math.rbf.RadialBasisFunction;
-import smile.util.SmileUtils;
 
 @Component
 public class FaceNetService implements IFaceNetService {
@@ -88,7 +82,6 @@ public class FaceNetService implements IFaceNetService {
 
 	private ConcurrentHashMap<Integer, double[]> embeddings = new ConcurrentHashMap<>();
 
-	//private opencv_ml.SVMSGD svmsgdClassifier;
 
 	@Autowired
 	public FaceNetService(IFaceService faceService, IIdentityService identityService, FaceNetConfig faceNetConfig) throws GraphLoadingException {

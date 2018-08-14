@@ -55,6 +55,12 @@ public class FaceController {
 		this.storageService = storageService;
 	}
 
+	@GetMapping("/api/v4/faces")
+	public ResponseEntity test() {
+		this.aggregatorService.test();
+		return ResponseEntity.ok(ImmutableMap.of("key", "value"));
+	}
+
 	@GetMapping("/api/v1/faces/{identityId}")
 	public ResponseEntity getFacesForIdentity(@PathVariable("identityId") int identityId) {
 		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
@@ -82,6 +88,8 @@ public class FaceController {
 			String imageName = UUID.randomUUID().toString() + "." + faceImage.getContentType()
 				.substring(faceImage.getContentType().indexOf('/') + 1);
 
+			log.info("Image Content type: {}", faceImage.getContentType());
+
 			boolean isSaved = storageService.saveTemporary(imageName,
 				faceImage.getBytes(), StorageStrategy.Strategy.DISK);
 
@@ -92,6 +100,9 @@ public class FaceController {
 				ticket.setPersonName(personName);
 				ticket.setImageName(imageName);
 				indexingQueue.push(ticket);
+
+				this.aggregatorService.test();
+
 				return ResponseEntity.accepted().body(ImmutableMap.of("ticket", ticket.getId()));
 			} else {
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to save");

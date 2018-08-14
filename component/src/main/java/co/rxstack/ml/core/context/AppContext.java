@@ -62,6 +62,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -183,10 +184,11 @@ public class AppContext {
 	public AggregatorService resultAggregatorService(IRekognitionService rekognitionService,
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
 		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
-		InceptionService inceptionService, PreprocessorClient preprocessorClient,
-		IFaceNetService faceNetService, IStorageService storageService) {
+		InceptionService inceptionService, PreprocessorClient preprocessorClient, IFaceNetService faceNetService,
+		IStorageService storageService, SimpMessagingTemplate simpMessagingTemplate) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
-			cognitiveService, inceptionService, preprocessorClient, faceNetService, storageService);
+			cognitiveService, inceptionService, preprocessorClient, faceNetService, storageService,
+			simpMessagingTemplate);
 	}
 
 	@Qualifier("haarCascadeFile")

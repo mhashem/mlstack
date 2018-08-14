@@ -16,18 +16,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import co.rxstack.ml.common.model.FaceRecognitionResult;
-import co.rxstack.ml.faces.model.Identity;
 import co.rxstack.ml.aggregator.model.PotentialFace;
 import co.rxstack.ml.aggregator.service.IFaceExtractorService;
 import co.rxstack.ml.aggregator.service.IFaceRecognitionService;
-import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
@@ -41,8 +37,11 @@ import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.FaceBox;
 import co.rxstack.ml.common.model.FaceIdentificationResult;
+import co.rxstack.ml.common.model.FaceRecognitionResult;
 import co.rxstack.ml.common.model.FaceRectangle;
 import co.rxstack.ml.common.model.Recognizer;
+import co.rxstack.ml.faces.model.Identity;
+import co.rxstack.ml.faces.service.IIdentityService;
 import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.service.impl.InceptionService;
@@ -54,6 +53,8 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -77,6 +78,8 @@ public class AggregatorService {
 
 	private IStorageService storageService;
 
+	private SimpMessagingTemplate simpMessagingTemplate;
+
 	@Autowired
 	public AggregatorService(
 		IIdentityService identityService,
@@ -86,7 +89,9 @@ public class AggregatorService {
 		ICognitiveService cognitiveService,
 		InceptionService inceptionService,
 		PreprocessorClient preprocessorClient,
-		IFaceNetService faceNetService, IStorageService storageService) {
+		IFaceNetService faceNetService,
+		IStorageService storageService,
+		SimpMessagingTemplate simpMessagingTemplate) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
@@ -106,6 +111,8 @@ public class AggregatorService {
 		this.preprocessorClient = preprocessorClient;
 		this.faceNetService = faceNetService;
 		this.storageService = storageService;
+
+		this.simpMessagingTemplate = simpMessagingTemplate;
 	}
 
 	// using Tensorflow
@@ -137,6 +144,11 @@ public class AggregatorService {
 			log.error(e.getMessage(), e);
 		}
 		return tensorFlowResults;
+	}
+
+	public void test() {
+		//List<FaceBox> faceBoxes = preprocessorClient.detectFaces(applyPNGNormalization(imageBytes));
+		simpMessagingTemplate.send("/recognitions", MessageBuilder.withPayload("Welcome").build());
 	}
 
 	public List<FaceRecognitionResult> faceNetRecognize(byte[] imageBytes) throws IOException {
@@ -232,7 +244,8 @@ public class AggregatorService {
 		AggregateFaceIndexingResult result = new AggregateFaceIndexingResult();
 
 		try {
-			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(imageBytes);
+
+			List<FaceBox> faceBoxes = preprocessorClient.detectFaces(applyPNGNormalization(imageBytes));
 			if (faceBoxes.isEmpty()) {
 				log.warn("No face detected in provided image, processing cancelled");
 				return ImmutableList.of();
@@ -462,6 +475,15 @@ public class AggregatorService {
 		return ImageIO.read(inStream);
 	}
 
+	private BufferedImage toJPG(BufferedImage pngBufferedImage) {
+		BufferedImage result = new BufferedImage(
+			pngBufferedImage.getWidth(),
+			pngBufferedImage.getHeight(),
+			BufferedImage.TYPE_INT_RGB);
+		result.createGraphics().drawImage(pngBufferedImage, 0, 0, Color.WHITE, null);
+		return result;
+	}
+
 	private byte[] bufferedImageToByteArray(BufferedImage image) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageIO.write(image, "jpg", baos);
@@ -473,6 +495,10 @@ public class AggregatorService {
 		int x = (faceBox.getLeft() <= 0) ? 0 : faceBox.getLeft(); // x, in case left edge out of raster
 		int y = (faceBox.getTop() <= 0) ? 0 : faceBox.getTop();
 		return image.getSubimage(x, y, (faceBox.getRight() - x), (faceBox.getBottom() - y));
+	}
+
+	private byte[] applyPNGNormalization(byte[] imageBytes) throws IOException {
+		return bufferedImageToByteArray(toJPG(bytesToBufferedImage(imageBytes)));
 	}
 
 }
