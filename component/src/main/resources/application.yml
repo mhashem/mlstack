@@ -111,14 +111,13 @@ model:
 tensorflow:
   graph:
     inception:
-        path: "C:/Users/mahmoud/Documents/datascience/models/face_net_graph_7.pb"
+      path: "C:/etc/mlstack/models/face_net_graph_7.pb"
     facenet:
-        #path: "C:/etc/mlstack/models/tensorflow/facenet/20180402-114759/20180402-114759.pb"
-        path: "C:/etc/mlstack/models/tensorflow/facenet/20170511-185253/20170511-185253.pb"
-        embeddings: "C:/etc/mlstack/models/tensorflow/facenet/embeddings/embeddings.csv"
-        featureVectorSize: 128
+      path: "C:/etc/mlstack/models/20170511-185253.pb"
+      embeddings: "C:/etc/mlstack/models/embeddings.csv"
+      featureVectorSize: 128
   labels:
-    path: "C:/Users/mahmoud/Documents/datascience/models/retrained_labels_7.txt"
+    path: "C:/etc/mlstack/models/retrained_labels_7.txt"
 
 preprocesser:
   host: ${preprocesser.host}

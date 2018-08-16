@@ -277,6 +277,11 @@ public class FaceNetService implements IFaceNetService {
 
 				Multimap<Integer, double[]> embeddingsByIdentity = faceService.findAllEmbeddingsForIdentity();
 
+				if (embeddingsByIdentity.isEmpty()) {
+					log.info("No embeddings found in the database");
+					return;
+				}
+
 				Supplier<Stream<double[]>> streamSupplier = asFilteredStream(embeddingsByIdentity);
 
 				int vectorsCount = (int) streamSupplier.get()

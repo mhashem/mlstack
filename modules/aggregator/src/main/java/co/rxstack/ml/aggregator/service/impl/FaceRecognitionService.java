@@ -49,6 +49,7 @@ import org.bytedeco.javacv.Java2DFrameUtils;
 import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.slf4j.Logger;
 
+@Deprecated
 public class FaceRecognitionService implements IFaceRecognitionService {
 
 	private static final Logger logger = getLogger(FaceRecognitionService.class);
