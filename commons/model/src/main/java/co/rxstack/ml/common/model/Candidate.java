@@ -12,7 +12,8 @@ public class Candidate implements Comparable<Candidate> {
 	private double confidence;
 	private FaceRectangle faceRectangle;
 
-	private Recognizer recognizer = Recognizer.UNKNOWN;
+	private String label;
+	private Recognizer recognizer = Recognizer.UNDEFINED;
 
 	public Candidate() {
 		// empty constructor
@@ -63,6 +64,14 @@ public class Candidate implements Comparable<Candidate> {
 		this.faceRectangle = faceRectangle;
 	}
 
+	public String getLabel() {
+		return label;
+	}
+
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
 	public Recognizer getRecognizer() {
 		return recognizer;
 	}
@@ -106,7 +115,12 @@ public class Candidate implements Comparable<Candidate> {
 	
 	@Override
 	public String toString() {
-		return MoreObjects.toStringHelper(Candidate.class).add("personId", getPersonId())
-			.add("confidence", getConfidence()).add("faceRectangle", getFaceRectangle()).toString();
+		return MoreObjects.toStringHelper(Candidate.class)
+			.add("personId", getPersonId())
+			.add("confidence", getConfidence())
+			.add("faceRectangle", getFaceRectangle())
+			.add("label", getLabel())
+			.add("recognizer", getRecognizer().getValue())
+			.toString();
 	}
 }

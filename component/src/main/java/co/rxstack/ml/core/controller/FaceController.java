@@ -2,7 +2,6 @@ package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
-import co.rxstack.ml.common.model.Constants;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
 import co.rxstack.ml.faces.model.Face;
@@ -111,8 +109,7 @@ public class FaceController {
 		log.info("Intercepted request for image recognition from [{}]", request.getRemoteAddr());
 		Preconditions.checkNotNull(image);
 		try {
-			aggregatorService.identify(image.getBytes(),
-				ImmutableMap.of(Constants.CONTENT_TYPE, Objects.requireNonNull(image.getContentType())));
+			aggregatorService.identify(image.getBytes());
 			return ResponseEntity.accepted().build();
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
@@ -129,7 +126,7 @@ public class FaceController {
 
 		Preconditions.checkNotNull(image);
 		try {
-			return ResponseEntity.ok(aggregatorService.recognize(image.getBytes()));
+			return ResponseEntity.ok(aggregatorService.inceptionRecognize(image.getBytes()));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}

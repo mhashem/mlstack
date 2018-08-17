@@ -8,7 +8,7 @@ public class FaceRecognitionResult {
 	private String label;
 	private double confidence;
 	private FaceRectangle faceRectangle;
-	private Recognizer recognizer;
+	private String recognizer;
 
 	public int getIndex() {
 		return index;
@@ -58,11 +58,11 @@ public class FaceRecognitionResult {
 		this.faceRectangle = faceRectangle;
 	}
 
-	public Recognizer getRecognizer() {
+	public String getRecognizer() {
 		return recognizer;
 	}
 
-	public void setRecognizer(Recognizer recognizer) {
+	public void setRecognizer(String recognizer) {
 		this.recognizer = recognizer;
 	}
 
@@ -114,7 +114,7 @@ public class FaceRecognitionResult {
 			return this;
 		}
 
-		public Builder recognizer(Recognizer recognizer) {
+		public Builder recognizer(String recognizer) {
 			faceRecognitionResult.setRecognizer(recognizer);
 			return this;
 		}

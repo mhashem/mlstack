@@ -47,7 +47,7 @@
 		<httpclient.version>4.5.3</httpclient.version>
 		<postgresql.version>9.4.1212</postgresql.version>
 		<hikaricp.version>3.1.0</hikaricp.version>
-		<tensorflow.version>1.5.0</tensorflow.version>
+		<tensorflow.version>1.10.0</tensorflow.version>
 		<commons-codec.version>1.10</commons-codec.version>
 		<commons-math3.version>3.6.1</commons-math3.version>
 		<commons-io.version>2.5</commons-io.version>

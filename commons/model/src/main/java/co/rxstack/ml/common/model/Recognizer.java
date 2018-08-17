@@ -3,11 +3,11 @@ package co.rxstack.ml.common.model;
 import com.google.common.base.MoreObjects;
 
 public enum Recognizer {
-	UNKNOWN("unknown"),
-	OPEN_CV("open_cv"),
-	AWS_REKOGNITION("aws_rekognition"),
-	COGNITIVE_SERVICES("cognitive_services"),
-	TENSOR_FLOW_FACE_NET("tensorflow_face_net");
+	UNDEFINED("Undefined"),
+	OPEN_CV("OpenCV"),
+	AWS_REKOGNITION("AWS Rekognition"),
+	COGNITIVE_SERVICES("Cognitive Services"),
+	TENSORFLOW("Tensorflow");
 
 	private String type;
 
@@ -15,7 +15,7 @@ public enum Recognizer {
 		this.type = v;
 	}
 
-	public String getType() {
+	public String getValue() {
 		return type;
 	}
 

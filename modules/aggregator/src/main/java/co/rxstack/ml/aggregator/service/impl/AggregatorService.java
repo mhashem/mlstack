@@ -9,13 +9,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,7 +31,6 @@ import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
-import co.rxstack.ml.common.model.AggregateFaceIdentification;
 import co.rxstack.ml.common.model.AggregateFaceIndexingResult;
 import co.rxstack.ml.common.model.Candidate;
 import co.rxstack.ml.common.model.Constants;
@@ -47,6 +46,7 @@ import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
@@ -54,7 +54,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -64,6 +63,8 @@ import org.springframework.stereotype.Service;
 public class AggregatorService {
 
 	private static final Logger log = LoggerFactory.getLogger(FaceExtractorService.class);
+
+	private static final boolean DEBUG_WITH_WRITING_TO_DISK = false;
 
 	private IIdentityService identityService;
 	private ICognitiveService cognitiveService;
@@ -115,8 +116,7 @@ public class AggregatorService {
 		this.simpMessagingTemplate = simpMessagingTemplate;
 	}
 
-	// using Tensorflow
-	public List<TensorFlowResult> recognize(byte[] imageBytes) {
+	public List<TensorFlowResult> inceptionRecognize(byte[] imageBytes) {
 		log.info("recognizing image with {} using tensorflow Inception",
 			FileUtils.byteCountToDisplaySize(imageBytes.length));
 		final List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
@@ -150,10 +150,10 @@ public class AggregatorService {
 		List<TensorFlowResult> tensorFlowResults = Lists.newArrayList();
 
 		log.info("make an original image copy");
-		BufferedImage originalImage = bytesToBufferedImage(imageBytes);
+		BufferedImage originalImage = bytesToBufferedImage(applyPNGNormalization(imageBytes));
 
 		log.info("detecting faces in the image");
-		final List<FaceBox> detectedFaces = preprocessorClient.detectFaces(imageBytes);
+		final List<FaceBox> detectedFaces = preprocessorClient.detectFaces(bufferedImageToByteArray(originalImage));
 
 		log.info("detected {}", detectedFaces.size());
 		log.info("aligning each detected image ");
@@ -211,27 +211,11 @@ public class AggregatorService {
 	}
 
 	private void writeToDisk(BufferedImage image, String desc) throws IOException {
-		ImageIO.write(image, "jpg",
-			new File("C:/etc/mlstack/output/processing/" + desc + "-"+ UUID.randomUUID().toString() +  ".jpg"));
+		if (DEBUG_WITH_WRITING_TO_DISK) {
+			ImageIO.write(image, "jpg",
+				new File("C:/etc/mlstack/output/processing/" + desc + "-"+ UUID.randomUUID().toString() +  ".jpg"));
+		}
 	}
-
-	private Function<Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult =
-		(candidate) -> {
-		// TODO not complete yet!
-			return FaceRecognitionResult.builder()
-				.confidence(candidate.getConfidence())
-				.recognizer(candidate.getRecognizer())
-				.faceRectangle(candidate.getFaceRectangle()).build();
-	};
-
-	private Function<TensorFlowResult, FaceRecognitionResult> mapTfResultToFaceRecognitionResult = (tfResult) ->
-		FaceRecognitionResult.builder()
-			.index(tfResult.getFaceBox().getIndex())
-			.label(tfResult.getLabel())
-			.confidence(tfResult.getConfidence())
-			.recognizer(Recognizer.TENSOR_FLOW_FACE_NET)
-			.faceRectangle(tfResult.getFaceBox().mapToFaceRectangle())
-			.build();
 
 	public List<AggregateFaceIndexingResult> indexFaces(byte[] imageBytes, Map<String, String> bundleMap) {
 		log.info("indexFaces called with image {} bytes and bundleMap {}", imageBytes.length, bundleMap);
@@ -299,12 +283,57 @@ public class AggregatorService {
 		return ImmutableList.of();
 	}
 
+	public void identify(byte[] imageBytes) throws IOException {
+
+		// todo add metrics for time consumed by each operation!
+
+		BufferedImage originalImage = bytesToBufferedImage(imageBytes);
+		originalImage = resizeImageWithHint(originalImage, (int) (originalImage.getWidth() * 0.75),
+			(int) (originalImage.getHeight() * 0.75));
+
+		byte[] bytes = bufferedImageToByteArray(originalImage);
+
+		CompletableFuture.runAsync(() -> {
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			List<FaceRecognitionResult> faceRecognitionResults = runAwsRekognition(bytes);
+			log.info("AWS Rekognition completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+			if (!faceRecognitionResults.isEmpty()) {
+				log.info("Pushing AWS recognition results to JMS");
+				pushRecognitionResults(faceRecognitionResults);
+			}
+		});
+
+		CompletableFuture.runAsync(() -> {
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			List<FaceRecognitionResult> faceRecognitionResults = runCognitiveServices(bytes);
+			log.info("Cognitive service recognition completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+			if (!faceRecognitionResults.isEmpty()) {
+				log.info("Pushing Cognitive recognition results to JMS");
+				pushRecognitionResults(faceRecognitionResults);
+			}
+		});
+
+		CompletableFuture.runAsync(() -> {
+			try {
+				Stopwatch stopwatch = Stopwatch.createStarted();
+				List<FaceRecognitionResult> faceRecognitionResults = faceNetRecognize(bytes);
+				log.info("Tensorflow recognition completed in {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+				if (!faceRecognitionResults.isEmpty()) {
+					log.info("Pushing Cognitive recognition results to JMS");
+					pushRecognitionResults(faceRecognitionResults);
+				}
+			} catch (IOException e) {
+				log.error(e.getMessage(), e);
+			}
+		});
+	}
+
+	@Deprecated
 	public void identify(byte[] imageBytes, Map<String, Object> bundleMap) {
 		log.info("identify called with image {} bytes", imageBytes.length);
 
 		try {
 			String contentType = (String) bundleMap.get(Constants.CONTENT_TYPE);
-
 			// build BufferedImage!
 			InputStream inStream = new ByteArrayInputStream(imageBytes);
 			BufferedImage targetImage = ImageIO.read(inStream);
@@ -314,48 +343,55 @@ public class AggregatorService {
 
 			byte[] bytes = baos.toByteArray();
 
-			CompletableFuture.runAsync(() -> {
-				log.info("Calling AWS Rekognition Service!");
-				List<Candidate> awsCandidateList = awsRekognitionService.searchFacesByImage(bytes);
-				awsCandidateList.forEach(candidate -> {
-					Optional<Identity> identityOptional = identityService.findIdentityByAwsFaceId(candidate.getPersonId());
-					if (identityOptional.isPresent()) {
-						candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
-					} else {
-						log.warn("No face record found for aws person id {}", candidate.getPersonId());
-					}
-				});
-				log.info("Pushing recognition results to JMS");
-
-				simpMessagingTemplate.convertAndSend("/recognitions",
-					awsCandidateList.stream().map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList()));
-			});
-
-			CompletableFuture.runAsync(() -> {
-				log.info("Calling Microsoft Cognitive Service!");
-				Optional<FaceIdentificationResult> faceIdentificationResult = cognitiveService.identifyFace(bytes);
-				if (faceIdentificationResult.isPresent()) {
-					FaceIdentificationResult identificationResult = faceIdentificationResult.get();
-					identificationResult.getCandidates().forEach(candidate -> {
-						Optional<Identity> identityOptional =
-							identityService.findIdentityByCognitivePersonId(candidate.getPersonId());
-						if (identityOptional.isPresent()) {
-							candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
-						} else {
-							log.warn("No face record found for cognitive person id {}", candidate.getPersonId());
-						}
-
-						candidate.setConfidence(candidate.getConfidence() * 100);
-						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
-					});
-					simpMessagingTemplate.convertAndSend("/recognitions",
-						identificationResult.getCandidates().stream().map(mapCandidateToFaceRecognitionResult)
-							.collect(Collectors.toList()));
-				}
-			});
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
+	}
+
+	private void pushRecognitionResults(List<FaceRecognitionResult> faceRecognitionResults) {
+		simpMessagingTemplate.convertAndSend("/recognitions", faceRecognitionResults);
+	}
+
+	private List<FaceRecognitionResult> runAwsRekognition(byte[] imageBytes) {
+		log.info("Calling AWS Rekognition Service!");
+		List<Candidate> awsCandidateList = awsRekognitionService.searchFacesByImage(imageBytes);
+		return awsCandidateList.stream().filter(candidate -> {
+			Optional<Identity> identityOptional =
+				identityService.findIdentityByAwsFaceId(candidate.getPersonId());
+			if (identityOptional.isPresent()) {
+				candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
+				candidate.setLabel(identityOptional.get().getName());
+				return true;
+			} else {
+				log.warn("AWS: No face record found for aws person id {}", candidate.getPersonId());
+				return false;
+			}
+		}).map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList());
+	}
+
+	private List<FaceRecognitionResult> runCognitiveServices(byte[] imageBytes) {
+		log.info("Calling Microsoft Cognitive Service!");
+		Optional<FaceIdentificationResult> faceIdentificationResult = cognitiveService.identifyFace(imageBytes);
+		if (faceIdentificationResult.isPresent()) {
+			FaceIdentificationResult identificationResult = faceIdentificationResult.get();
+			return
+				identificationResult.getCandidates().stream().filter(candidate -> {
+					Optional<Identity> identityOptional =
+						identityService.findIdentityByCognitivePersonId(candidate.getPersonId());
+					if (identityOptional.isPresent()) {
+						candidate.setDbPersonId(String.valueOf(identityOptional.get().getId()));
+						candidate.setLabel(identityOptional.get().getName());
+						candidate.setConfidence(candidate.getConfidence() * 100);
+						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
+						return true;
+					} else {
+						log.warn("Cognitive: No face record found for cognitive person id {} with ",
+							candidate.getPersonId());
+						return false;
+					}
+				}).map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList());
+		}
+		return ImmutableList.of();
 	}
 
 	private List<Candidate> openCVDetection(BufferedImage targetImage, String contentType) {
@@ -395,6 +431,25 @@ public class AggregatorService {
 			return candidate;
 		}).collect(Collectors.toList());
 	}
+
+	private Function<Candidate, FaceRecognitionResult> mapCandidateToFaceRecognitionResult = (candidate) ->
+		FaceRecognitionResult.builder()
+			.label(candidate.getLabel())
+			//.identityId(Integer.parseInt(candidate.getDbPersonId()))
+			.confidence(candidate.getConfidence())
+			.recognizer(candidate.getRecognizer().getValue())
+			.faceRectangle(candidate.getFaceRectangle())
+			.build();
+
+	private Function<TensorFlowResult, FaceRecognitionResult> mapTfResultToFaceRecognitionResult = (tfResult) ->
+		FaceRecognitionResult.builder()
+			.index(tfResult.getFaceBox().getIndex())
+			.label(tfResult.getLabel())
+			.faceId(tfResult.getFaceId())
+			.confidence(tfResult.getConfidence())
+			.recognizer(Recognizer.TENSORFLOW.getValue())
+			.faceRectangle(tfResult.getFaceBox().mapToFaceRectangle())
+			.build();
 
 	private void drawDetectedFaceRectangle(BufferedImage targetImage, List<FaceRecognitionResult> faceRecognitionResults) {
 		Graphics2D graphics = (Graphics2D) targetImage.getGraphics();
@@ -451,6 +506,21 @@ public class AggregatorService {
 
 	private byte[] applyPNGNormalization(byte[] imageBytes) throws IOException {
 		return bufferedImageToByteArray(toJPG(bytesToBufferedImage(imageBytes)));
+	}
+
+	private static BufferedImage resizeImageWithHint(BufferedImage originalImage, int width, int height){
+		BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = resizedImage.createGraphics();
+		g.drawImage(originalImage, 0, 0, width, height, null);
+		g.dispose();
+		g.setComposite(AlphaComposite.Src);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+			RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(RenderingHints.KEY_RENDERING,
+			RenderingHints.VALUE_RENDER_QUALITY);
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_ON);
+		return resizedImage;
 	}
 
 }
