@@ -56,7 +56,6 @@ import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
-import smile.classification.KNN;
 import smile.classification.NeuralNetwork;
 import smile.classification.SVM;
 import smile.math.kernel.LinearKernel;
@@ -74,7 +73,7 @@ public class FaceNetService implements IFaceNetService {
 	private IIdentityService identityService;
 	private FaceNetConfig faceNetConfig;
 
-	private KNN<double[]> classifier;
+	private SVM<double[]> classifier;
 	// private BiMap<Integer, Integer> faceIdentityBiMap = HashBiMap.create();
 	private BiMap<Integer, Integer> identityClassLabelsMap = Maps.synchronizedBiMap(HashBiMap.create());
 
@@ -278,7 +277,7 @@ public class FaceNetService implements IFaceNetService {
 				Multimap<Integer, double[]> embeddingsByIdentity = faceService.findAllEmbeddingsForIdentity();
 
 				if (embeddingsByIdentity.isEmpty()) {
-					log.info("No embeddings found in the database");
+					log.info("No embeddings found in the database for training");
 					return;
 				}
 
@@ -315,22 +314,23 @@ public class FaceNetService implements IFaceNetService {
 
 				log.info("Labels: {}", Arrays.toString(labels));
 
-				classifier = KNN.learn(features, labels, 3);
+				/*classifier = KNN.learn(features, labels, 3);*/
 
-				/*classifier = makeSVMClassifier(labelsCountAtomic.get());
+				classifier = makeSVMClassifier(labelsCountAtomic.get());
 				classifier.learn(features, labels);
 				classifier.finish();
-				classifier.trainPlattScaling(features, labels);*/
+				classifier.trainPlattScaling(features, labels);
 
 				/*classifier = makeNeuralNetwork(faceNetConfig.getFeatureVectorSize(), labelsIndex);
-				classifier.learn(features, labels);*/
-				/*for (int i = 0; i < 16; i++) {
+				classifier.setLearningRate(0.01);
+				classifier.learn(features, labels);
+				for (int i = 0; i < 100; i++) {
 					if (i % 5 == 0)
 						log.info("-----> Epoch {} running", i);
 					classifier.learn(features, labels);
 				}*/
 
-				// svmsgdClassifier = svmsgd(features, labels);
+				//svmsgdClassifier = svmsgd(features, labels);
 
 				log.info("-----> Ending Classifier training...");
 			} catch (Exception e) {
@@ -348,8 +348,8 @@ public class FaceNetService implements IFaceNetService {
 	}
 
 	private NeuralNetwork makeNeuralNetwork(int featureCount, int labelsCount) {
-		return 	new NeuralNetwork(NeuralNetwork.ErrorFunction.CROSS_ENTROPY,
-			NeuralNetwork.ActivationFunction.SOFTMAX, featureCount, 100, 1000, 100, labelsCount);
+		return 	new NeuralNetwork(NeuralNetwork.ErrorFunction.LEAST_MEAN_SQUARES,
+			NeuralNetwork.ActivationFunction.LOGISTIC_SIGMOID, featureCount, 100, labelsCount);
 	}
 
 	private SVM<double[]> makeSVMClassifier(int k) {
