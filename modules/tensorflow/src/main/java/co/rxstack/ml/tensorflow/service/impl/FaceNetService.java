@@ -415,7 +415,6 @@ public class FaceNetService implements IFaceNetService {
 		svm.setTermCriteria(criteria);
 		svm.setGamma(0.5);
 		svm.setNu(0.5);
-		svm.set
 		svm.setC(1);
 		boolean success = svm.train(trainingDataMat, ROW_SAMPLE, labelsMatrix);
 
