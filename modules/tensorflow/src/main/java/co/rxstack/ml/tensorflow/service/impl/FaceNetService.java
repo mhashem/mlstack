@@ -1,6 +1,10 @@
 package co.rxstack.ml.tensorflow.service.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
+import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
+import static org.bytedeco.javacpp.opencv_core.CV_64FC1;
+import static org.bytedeco.javacpp.opencv_ml.ROW_SAMPLE;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -16,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,6 +48,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Floats;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
@@ -57,8 +64,12 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
 import smile.classification.NeuralNetwork;
+import smile.classification.RBFNetwork;
 import smile.classification.SVM;
+import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.LinearKernel;
+import smile.math.rbf.RadialBasisFunction;
+import smile.util.SmileUtils;
 
 @Component
 public class FaceNetService implements IFaceNetService {
@@ -74,6 +85,7 @@ public class FaceNetService implements IFaceNetService {
 	private FaceNetConfig faceNetConfig;
 
 	private SVM<double[]> classifier;
+	private opencv_ml.SVM svmsgd;
 	// private BiMap<Integer, Integer> faceIdentityBiMap = HashBiMap.create();
 	private BiMap<Integer, Integer> identityClassLabelsMap = Maps.synchronizedBiMap(HashBiMap.create());
 
@@ -241,6 +253,9 @@ public class FaceNetService implements IFaceNetService {
 			int classLabel = classifier.predict(vector, confidences);
 			double confidence = Arrays.stream(confidences).max().orElse(0) * 100;
 
+			float sgdPredictedValue = svmsgd.predict(new opencv_core.Mat(Floats.toArray(Doubles.asList(vector))).reshape(0, 1));
+			log.info("-------------------------------> {}", sgdPredictedValue);
+
 			log.info("Confidences {}", Arrays.toString(confidences));
 
 			TensorFlowResult tensorFlowResult= null;
@@ -249,6 +264,12 @@ public class FaceNetService implements IFaceNetService {
 				log.info("Predicted class {} in {}ms with confidence {}",
 					classLabel, stopwatch.elapsed(MILLISECONDS), confidence);
 				int matchedIdentity = identityClassLabelsMap.inverse().getOrDefault(classLabel, -1);
+				int sgdMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)sgdPredictedValue, -1);
+
+				if (sgdMatchedIdentity != -1) {
+					log.info("SGD Matched identity {}", identityService.findById(sgdMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+				}
+
 				if (matchedIdentity != -1) {
 					log.info("Matched Identity Id {}", matchedIdentity);
 					tensorFlowResult = new TensorFlowResult(
@@ -321,6 +342,8 @@ public class FaceNetService implements IFaceNetService {
 				classifier.finish();
 				classifier.trainPlattScaling(features, labels);
 
+				svmsgd = svmsgd(features, labels);
+
 				/*classifier = makeNeuralNetwork(faceNetConfig.getFeatureVectorSize(), labelsIndex);
 				classifier.setLearningRate(0.01);
 				classifier.learn(features, labels);
@@ -329,8 +352,6 @@ public class FaceNetService implements IFaceNetService {
 						log.info("-----> Epoch {} running", i);
 					classifier.learn(features, labels);
 				}*/
-
-				//svmsgdClassifier = svmsgd(features, labels);
 
 				log.info("-----> Ending Classifier training...");
 			} catch (Exception e) {
@@ -348,39 +369,60 @@ public class FaceNetService implements IFaceNetService {
 	}
 
 	private NeuralNetwork makeNeuralNetwork(int featureCount, int labelsCount) {
-		return 	new NeuralNetwork(NeuralNetwork.ErrorFunction.LEAST_MEAN_SQUARES,
-			NeuralNetwork.ActivationFunction.LOGISTIC_SIGMOID, featureCount, 100, labelsCount);
+		return new NeuralNetwork(NeuralNetwork.ErrorFunction.CROSS_ENTROPY,
+			NeuralNetwork.ActivationFunction.SOFTMAX, featureCount, 512, 1000, 512, 50, labelsCount);
 	}
 
 	private SVM<double[]> makeSVMClassifier(int k) {
 		// return new SVM<>(new GaussianKernel(1.0), 1.0, 3, SVM.Multiclass.ONE_VS_ALL);
-		return new SVM<>(new LinearKernel(), 1.0, k, SVM.Multiclass.ONE_VS_ALL);
+		return new SVM<>(new LinearKernel(), 1.0, k, SVM.Multiclass.ONE_VS_ONE);
+	}
+
+	public RBFNetwork<double[]> makeRBfNetwork(double[][] data, int[] label) {
+		double[][] centers = new double[3][];
+		RadialBasisFunction basis = SmileUtils.learnGaussianRadialBasis(data, centers);
+		return new RBFNetwork(data, label, new smile.math.distance.EuclideanDistance(), basis, centers);
 	}
 
 	private double[] toDoubleArray(Integer[] e) {
 		return Arrays.stream(e).mapToDouble(value -> e[value]).toArray();
 	}
 
-	protected opencv_ml.SVMSGD svmsgd(double[][] features, int[] labels) {
+	protected opencv_ml.SVM svmsgd(double[][] features, int[] labels) {
 
-		opencv_ml.SVMSGD svmsgd = opencv_ml.SVMSGD.create();
-		opencv_core.Mat trainingData = new opencv_core.Mat();
-		opencv_core.Mat trainingLabels = new opencv_core.Mat();
+		opencv_core.Mat trainingDataMat = new opencv_core.Mat();
 
-		for (int i = 0; i < features.length; i++) {
-			opencv_core.Mat featuresArrayMat = new opencv_core.Mat(features[i]);
-			opencv_core.Mat labelsArrayMat = new opencv_core.Mat(labels[i]);
+		opencv_core.Mat labelsMatrix = new opencv_core.Mat(features.length, 1, CV_32SC1 );
+		labelsMatrix.put(new opencv_core.Mat(labels).reshape(0, features.length));
 
-			featuresArrayMat = featuresArrayMat.reshape(faceNetConfig.getFeatureVectorSize(), 1);
+		for (int i=0; i < features.length; i++) {
+			float[] v = Floats.toArray(Doubles.asList(features[i]));
+			opencv_core.Mat vm = new opencv_core.Mat(v);
+			vm = vm.reshape(0, 1);
 
-			trainingData.push_back(featuresArrayMat);
-			trainingLabels.push_back(labelsArrayMat);
+			trainingDataMat.push_back(vm);
 		}
 
-		svmsgd.train(trainingData, opencv_ml.ROW_SAMPLE, trainingLabels);
+		// trainingDataMat = trainingDataMat.reshape(0, 128);
 
+		log.info("-------------------------------------> training data shape [{}, {}]", trainingDataMat.rows(), trainingDataMat.cols());
+		log.info("-------------------------------------> labels shape [{}, {}]", labelsMatrix.rows(), labelsMatrix.cols());
 
-		return svmsgd;
+		opencv_ml.SVM svm = opencv_ml.SVM.create();
+		svm.setKernel(opencv_ml.SVM.LINEAR);
+		svm.setType(opencv_ml.SVM.C_SVC);
+		opencv_core.TermCriteria criteria = new opencv_core.TermCriteria(opencv_core.TermCriteria.EPS + opencv_core.TermCriteria.MAX_ITER, 1000, 0);
+		svm.setTermCriteria(criteria);
+		svm.setGamma(0.5);
+		svm.setNu(0.5);
+		svm.set
+		svm.setC(1);
+		boolean success = svm.train(trainingDataMat, ROW_SAMPLE, labelsMatrix);
+
+		if (success) {
+			log.info("SVMSGD trained successfully!");
+		}
+		return svm;
 	}
 
 	protected double[] toDoubleArray(float[] e) {

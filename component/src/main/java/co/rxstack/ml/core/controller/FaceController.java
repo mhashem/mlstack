@@ -118,6 +118,14 @@ public class FaceController {
 		}
 	}
 
+	@PostMapping("/api/v0/faces/recognition")
+	public ResponseEntity experimental(
+		@RequestParam("image")
+			MultipartFile image, HttpServletRequest request) {
+		log.info("Intercepted request for image recognition from [{}]", request.getRemoteAddr());
+		return searchSimilar(image, request);
+	}
+
 	@PostMapping("/api/v2/faces/recognition")
 	public ResponseEntity recognize(
 		@RequestParam("image")

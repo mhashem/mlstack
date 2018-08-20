@@ -47,7 +47,11 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
+import org.bytedeco.javacpp.opencv_core;
+import org.bytedeco.javacpp.opencv_core.CvTermCriteria;
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_ml;
+import org.bytedeco.javacpp.opencv_ml.SVM;
 import org.tensorflow.DataType;
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
@@ -149,12 +153,9 @@ public class FaceNetLabeling {
 			labelss[ii] = trainingLabels.get(ii).intValue();
 		new Mat(labelss).copyTo(classes);
 
-/*
 		CvTermCriteria cvTermCriteria =
 			new CvTermCriteria(opencv_core.CV_TERMCRIT_ITER, 1000, 0.000001);
-*/
 
-/*
 		SVM svmClassifier = SVM.create();
 		svmClassifier.setType(SVM.C_SVC);
 		svmClassifier.setKernel(SVM.LINEAR);
@@ -167,16 +168,15 @@ public class FaceNetLabeling {
 		System.out.println("h " + classes.size().height() + " - w " + classes.size().width());
 
 		svmClassifier.train(trainingData, opencv_ml.ROW_SAMPLE, classes);
-*/
 
-		/*svmClassifier.trainAuto(trainData, 10,
+		svmClassifier.trainAuto(trainData, 10,
 			SVM.getDefaultGrid(SVM.C),
 			SVM.getDefaultGrid(SVM.GAMMA),
 			SVM.getDefaultGrid(SVM.P),
 			SVM.getDefaultGrid(SVM.NU),
 			SVM.getDefaultGrid(SVM.COEF),
 			SVM.getDefaultGrid(SVM.DEGREE),
-			true);*/
+			true);
 
 /*
 		opencv_core.CvFileStorage fsTo = opencv_core.CvFileStorage
