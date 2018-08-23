@@ -52,8 +52,19 @@ public class FaceController {
 		this.storageService = storageService;
 	}
 
+	/*@Cacheable(value = "faces.byId", key = "#identityId")*/
+	@CrossOrigin(origins = "http://localhost:9000")
 	@GetMapping("/api/v1/faces/{identityId}")
 	public ResponseEntity getFacesForIdentity(@PathVariable("identityId") int identityId) {
+		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
+		if (faceList == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(faceList);
+	}
+
+	@GetMapping("/api/v2/faces/{identityId}")
+	public ResponseEntity getFacesForIdentityV2(@PathVariable("identityId") int identityId) {
 		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
 		if (faceList == null) {
 			return ResponseEntity.notFound().build();

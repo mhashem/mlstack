@@ -56,6 +56,7 @@
 		<spring-cloud-commons.version>2.0.0.RELEASE</spring-cloud-commons.version>
 		<rx.java.version>2.1.17</rx.java.version>
 		<eclipse-collections.version>9.1.0</eclipse-collections.version>
+		<org.ehcache.version>3.4.0</org.ehcache.version>
 	</properties>
 
 	<build>

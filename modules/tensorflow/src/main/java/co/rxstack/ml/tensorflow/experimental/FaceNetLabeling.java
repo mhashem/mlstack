@@ -180,7 +180,7 @@ public class FaceNetLabeling {
 
 /*
 		opencv_core.CvFileStorage fsTo = opencv_core.CvFileStorage
-			.open("C:/etc/mlstack/output/svm.xml", opencv_core.CvMemStorage.create(), CV_STORAGE_WRITE);
+			.open("C:/etc/mlstack/output/trainSVM.xml", opencv_core.CvMemStorage.create(), CV_STORAGE_WRITE);
 		opencv_core.FileStorage fsto2=new opencv_core.FileStorage(fsTo);
 		svmClassifier.write(fsto2);
 */

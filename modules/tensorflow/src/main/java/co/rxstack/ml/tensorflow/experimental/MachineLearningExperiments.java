@@ -240,23 +240,23 @@ public class MachineLearningExperiments {
 
 	// 支持向量机
 	/*public static Mat MySvm(Mat trainingData, Mat labels, Mat testData) {
-		SVM svm = SVM.create();
-		svm.setKernel(SVM.LINEAR);
-		svm.setType(SVM.C_SVC);
+		SVM trainSVM = SVM.create();
+		trainSVM.setKernel(SVM.LINEAR);
+		trainSVM.setType(SVM.C_SVC);
 		TermCriteria criteria = new TermCriteria(TermCriteria.EPS + TermCriteria.MAX_ITER, 1000, 0);
-		svm.setTermCriteria(criteria);
-		svm.setGamma(0.5);
-		svm.setNu(0.5);
-		svm.setC(1);
+		trainSVM.setTermCriteria(criteria);
+		trainSVM.setGamma(0.5);
+		trainSVM.setNu(0.5);
+		trainSVM.setC(1);
 
 		TrainData td = TrainData.create(trainingData, Ml.ROW_SAMPLE, labels);
-		boolean success = svm.train(td.getSamples(), Ml.ROW_SAMPLE, td.getResponses());
+		boolean success = trainSVM.train(td.getSamples(), Ml.ROW_SAMPLE, td.getResponses());
 		System.out.println("Svm training result: " + success);
-		// svm.save("D:/bp.xml");//存储模型
-		// svm.load("D:/bp.xml");//读取模型
+		// trainSVM.save("D:/bp.xml");//存储模型
+		// trainSVM.load("D:/bp.xml");//读取模型
 
 		Mat responseMat = new Mat();
-		svm.predict(testData, responseMat, 0);
+		trainSVM.predict(testData, responseMat, 0);
 		System.out.println("SVM responseMat:\n" + responseMat.dump());
 		for (int i = 0; i < responseMat.height(); i++) {
 			if (responseMat.get(i, 0)[0] == 0)
@@ -277,8 +277,8 @@ public class MachineLearningExperiments {
 		Svmsgd.setMarginRegularization(0.5f);
 		boolean success = Svmsgd.train(trainingData, ROW_SAMPLE, labels);
 		System.out.println("SVMSGD training result: " + success);
-		// svm.save("D:/bp.xml");//存储模型
-		// svm.load("D:/bp.xml");//读取模型
+		// trainSVM.save("D:/bp.xml");//存储模型
+		// trainSVM.load("D:/bp.xml");//读取模型
 
 		Mat responseMat = new Mat();
 		Svmsgd.predict(testData, responseMat, 0);

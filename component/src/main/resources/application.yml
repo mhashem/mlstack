@@ -17,6 +17,8 @@ spring:
     hikari:
       connection-timeout: 60000
 
+
+
 #  jpa:
 #    database-platform: io.github.jhipster.domain.util.FixedPostgreSQL82Dialect
 #    database: POSTGRESQL
@@ -35,9 +37,11 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-
   jackson:
     serialization: {INDENT_OUTPUT: true, WRITE_DATES_AS_TIMESTAMPS: false}
+  cache:
+    jcache:
+      config: ehcache.xml
 
 eureka:
   instance:

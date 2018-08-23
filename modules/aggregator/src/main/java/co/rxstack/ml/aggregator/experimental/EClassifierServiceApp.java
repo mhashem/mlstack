@@ -17,8 +17,8 @@ public class EClassifierServiceApp {
 	public static void main(String[] args) {
 
 		ClassifierConfig config = new ClassifierConfig();
-		config.setClassifierNamePrefix("svm");
-		config.setClassifierPath("C:/etc/mlstack/model/svm");
+		config.setClassifierNamePrefix("trainSVM");
+		config.setClassifierPath("C:/etc/mlstack/model/trainSVM");
 
 		EClassifierService service = new EClassifierService(config);
 

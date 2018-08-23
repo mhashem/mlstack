@@ -1,9 +1,7 @@
 package co.rxstack.ml.tensorflow.service.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
 import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
-import static org.bytedeco.javacpp.opencv_core.CV_64FC1;
 import static org.bytedeco.javacpp.opencv_ml.ROW_SAMPLE;
 
 import java.awt.*;
@@ -20,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -54,7 +51,12 @@ import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.bytedeco.javacpp.opencv_core;
+import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_ml;
+import org.bytedeco.javacpp.opencv_ml.Boost;
+import org.bytedeco.javacpp.opencv_ml.TrainData;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +68,6 @@ import org.tensorflow.Tensors;
 import smile.classification.NeuralNetwork;
 import smile.classification.RBFNetwork;
 import smile.classification.SVM;
-import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.LinearKernel;
 import smile.math.rbf.RadialBasisFunction;
 import smile.util.SmileUtils;
@@ -85,7 +86,11 @@ public class FaceNetService implements IFaceNetService {
 	private FaceNetConfig faceNetConfig;
 
 	private SVM<double[]> classifier;
-	private opencv_ml.SVM svmsgd;
+	private opencv_ml.SVM svm;
+	private opencv_ml.RTrees rTrees;
+	private opencv_ml.SVMSGD svmsgd;
+	private opencv_ml.KNearest kNearest;
+	private Boost adaBoost;
 	// private BiMap<Integer, Integer> faceIdentityBiMap = HashBiMap.create();
 	private BiMap<Integer, Integer> identityClassLabelsMap = Maps.synchronizedBiMap(HashBiMap.create());
 
@@ -253,8 +258,20 @@ public class FaceNetService implements IFaceNetService {
 			int classLabel = classifier.predict(vector, confidences);
 			double confidence = Arrays.stream(confidences).max().orElse(0) * 100;
 
-			float sgdPredictedValue = svmsgd.predict(new opencv_core.Mat(Floats.toArray(Doubles.asList(vector))).reshape(0, 1));
-			log.info("-------------------------------> {}", sgdPredictedValue);
+			Mat conf = new Mat();
+
+			Mat vectorMat = new Mat(Floats.toArray(Doubles.asList(vector))).reshape(0, 1);
+
+			float svmPredictedValue = svm.predict(vectorMat, conf, 2);
+			float rtreePredictedValue = rTrees.predict(vectorMat);
+			float svmSgdPredictedValue = svmsgd.predict(vectorMat);
+			float knnPredictedValue = kNearest.predict(vectorMat);
+			float adaBootPredictedValue = adaBoost.predict(vectorMat);
+			log.info("-------------------------------> SVM {}, shape [{}, {}], {}", svmPredictedValue, conf.rows(), conf.cols(), conf.reshape(0, 1).row(0));
+			log.info("-------------------------------> RTrees {}", rtreePredictedValue);
+			log.info("-------------------------------> SGD {}", svmSgdPredictedValue);
+			log.info("-------------------------------> KNN {}", knnPredictedValue);
+			log.info("-------------------------------> AdaBoost {}", adaBootPredictedValue);
 
 			log.info("Confidences {}", Arrays.toString(confidences));
 
@@ -264,10 +281,18 @@ public class FaceNetService implements IFaceNetService {
 				log.info("Predicted class {} in {}ms with confidence {}",
 					classLabel, stopwatch.elapsed(MILLISECONDS), confidence);
 				int matchedIdentity = identityClassLabelsMap.inverse().getOrDefault(classLabel, -1);
-				int sgdMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)sgdPredictedValue, -1);
+				int svmMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)svmPredictedValue, -1);
+				int rtreesMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)rtreePredictedValue, -1);
+				int svmSgdMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)svmSgdPredictedValue, -1);
+				int knnMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)knnPredictedValue, -1);
+				int adaBoostMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)adaBootPredictedValue, -1);
 
-				if (sgdMatchedIdentity != -1) {
-					log.info("SGD Matched identity {}", identityService.findById(sgdMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+				if (svmMatchedIdentity != -1) {
+					log.info("SVM Matched identity {}", identityService.findById(svmMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("Rtrees Matched identity {}", identityService.findById(rtreesMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("SVM SGD Matched identity {}", identityService.findById(svmSgdMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("KNN Matched identity {}", identityService.findById(knnMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("AdaBoost Matched identity {}", identityService.findById(adaBoostMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
 				}
 
 				if (matchedIdentity != -1) {
@@ -335,15 +360,20 @@ public class FaceNetService implements IFaceNetService {
 
 				log.info("Labels: {}", Arrays.toString(labels));
 
-				/*classifier = KNN.learn(features, labels, 3);*/
-
 				classifier = makeSVMClassifier(labelsCountAtomic.get());
 				classifier.learn(features, labels);
 				classifier.finish();
 				classifier.trainPlattScaling(features, labels);
 
-				svmsgd = svmsgd(features, labels);
+				Pair<Mat, Mat> matrixPair = convertData(features, labels);
 
+				svm = trainSVM(matrixPair.getOne(), matrixPair.getTwo());
+				rTrees = trainRTrees(matrixPair.getOne(), matrixPair.getTwo());
+				svmsgd = trainSVMSGD(matrixPair.getOne(), matrixPair.getTwo());
+				kNearest = trainKNearest(matrixPair.getOne(), matrixPair.getTwo());
+				adaBoost = trainAdaBoost(matrixPair.getOne(), matrixPair.getTwo());
+
+				/*classifier = KNN.learn(features, labels, 3);*/
 				/*classifier = makeNeuralNetwork(faceNetConfig.getFeatureVectorSize(), labelsIndex);
 				classifier.setLearningRate(0.01);
 				classifier.learn(features, labels);
@@ -388,8 +418,7 @@ public class FaceNetService implements IFaceNetService {
 		return Arrays.stream(e).mapToDouble(value -> e[value]).toArray();
 	}
 
-	protected opencv_ml.SVM svmsgd(double[][] features, int[] labels) {
-
+	private Pair<Mat, Mat> convertData(double[][] features, int[] labels) {
 		opencv_core.Mat trainingDataMat = new opencv_core.Mat();
 
 		opencv_core.Mat labelsMatrix = new opencv_core.Mat(features.length, 1, CV_32SC1 );
@@ -403,11 +432,10 @@ public class FaceNetService implements IFaceNetService {
 			trainingDataMat.push_back(vm);
 		}
 
-		// trainingDataMat = trainingDataMat.reshape(0, 128);
+		return Tuples.pair(trainingDataMat, labelsMatrix);
+	}
 
-		log.info("-------------------------------------> training data shape [{}, {}]", trainingDataMat.rows(), trainingDataMat.cols());
-		log.info("-------------------------------------> labels shape [{}, {}]", labelsMatrix.rows(), labelsMatrix.cols());
-
+	private opencv_ml.SVM trainSVM(opencv_core.Mat trainingDataMat, opencv_core.Mat labelsMatrix) {
 		opencv_ml.SVM svm = opencv_ml.SVM.create();
 		svm.setKernel(opencv_ml.SVM.LINEAR);
 		svm.setType(opencv_ml.SVM.C_SVC);
@@ -417,11 +445,62 @@ public class FaceNetService implements IFaceNetService {
 		svm.setNu(0.5);
 		svm.setC(1);
 		boolean success = svm.train(trainingDataMat, ROW_SAMPLE, labelsMatrix);
-
-		if (success) {
-			log.info("SVMSGD trained successfully!");
-		}
+		log.info("SVM training result: {}", success);
 		return svm;
+	}
+
+	private opencv_ml.RTrees trainRTrees(opencv_core.Mat trainingDataMat, opencv_core.Mat labelsMatrix) {
+		opencv_ml.RTrees rtrees = opencv_ml.RTrees.create();
+		rtrees.setMaxDepth(4);
+		rtrees.setMinSampleCount(2);
+		rtrees.setRegressionAccuracy(0.f);
+		rtrees.setUseSurrogates(false);
+		rtrees.setMaxCategories(16);
+		rtrees.setPriors(new Mat());
+		rtrees.setCalculateVarImportance(false);
+		rtrees.setActiveVarCount(1);
+		rtrees.setTermCriteria(new opencv_core.TermCriteria(opencv_core.TermCriteria.MAX_ITER, 5, 0));
+		TrainData tData = TrainData.create(trainingDataMat, ROW_SAMPLE, labelsMatrix);
+		boolean success = rtrees.train(tData.getSamples(), ROW_SAMPLE, tData.getResponses());
+		log.info("Rtrees training result: {}", success);
+		return rtrees;
+	}
+
+	private opencv_ml.SVMSGD trainSVMSGD(opencv_core.Mat trainingDataMat, opencv_core.Mat labelsMatrix) {
+		opencv_ml.SVMSGD Svmsgd = opencv_ml.SVMSGD.create();
+		opencv_core.TermCriteria
+			criteria = new opencv_core.TermCriteria(opencv_core.TermCriteria.EPS + opencv_core.TermCriteria.MAX_ITER, 1000, 0);
+		Svmsgd.setTermCriteria(criteria);
+		Svmsgd.setInitialStepSize(2);
+		Svmsgd.setSvmsgdType(opencv_ml.SVMSGD.SGD);
+		Svmsgd.setMarginRegularization(0.5f);
+		Svmsgd.setOptimalParameters();
+		boolean success = Svmsgd.train(trainingDataMat, ROW_SAMPLE, labelsMatrix);
+		log.info("SVMSGD training result: {}", success);
+		return Svmsgd;
+	}
+
+	private opencv_ml.KNearest trainKNearest(opencv_core.Mat trainingDataMat, opencv_core.Mat labelsMatrix) {
+		TrainData td = TrainData.create(trainingDataMat, ROW_SAMPLE, labelsMatrix);
+		opencv_ml.KNearest knn = opencv_ml.KNearest.create();
+		boolean success = knn.train(td, ROW_SAMPLE);
+		log.info("Knn training result: {}", success);
+		return knn;
+	}
+
+	private Boost trainAdaBoost(opencv_core.Mat trainingDataMat, opencv_core.Mat labelsMatrix) {
+		Boost boost = Boost.create();
+		boost.setBoostType(Boost.DISCRETE);
+		// boost.setBoostType(Boost.GENTLE);
+		boost.setWeakCount(2);
+		boost.setWeightTrimRate(0.95);
+		boost.setMaxDepth(2);
+		boost.setUseSurrogates(false);
+		boost.setPriors(new Mat());
+		TrainData td = TrainData.create(trainingDataMat, ROW_SAMPLE, labelsMatrix);
+		boolean success = boost.train(td.getSamples(), ROW_SAMPLE, td.getResponses());
+		log.info("AdaBoost training result: {}", success);
+		return boost;
 	}
 
 	protected double[] toDoubleArray(float[] e) {

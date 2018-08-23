@@ -97,10 +97,16 @@
 			<version>${project.version}</version>
 		</dependency>
 
-		<dependency>
+		<!--<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-properties-migrator</artifactId>
 			<scope>runtime</scope>
+		</dependency>-->
+
+		<dependency>
+			<groupId>org.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+			<version>${org.ehcache.version}</version>
 		</dependency>
 
 		<!-- -->
