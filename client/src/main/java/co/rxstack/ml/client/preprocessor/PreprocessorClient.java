@@ -11,6 +11,7 @@ import co.rxstack.ml.common.model.FaceBox;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -20,17 +21,26 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class PreprocessorClient implements IPreprocessorClient {
 
 	private static final Logger log = LoggerFactory.getLogger(PreprocessorClient.class);
 
-	private final String serviceUri;
+	private final String preprocessorServiceName;
+	private final DiscoveryClient discoveryClient;
 
 	private ObjectMapper objectMapper;
 
-	public PreprocessorClient(String serviceUri) {
-		this.serviceUri = serviceUri;
+	public PreprocessorClient(String preprocessorServiceName, DiscoveryClient discoveryClient) {
+
+		Preconditions.checkNotNull(preprocessorServiceName);
+		Preconditions.checkNotNull(discoveryClient);
+
+		this.discoveryClient = discoveryClient;
+		this.preprocessorServiceName = preprocessorServiceName;
 		objectMapper = new ObjectMapper();
 	}
 
@@ -48,7 +58,18 @@ public class PreprocessorClient implements IPreprocessorClient {
 			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");
 			tempFile.deleteOnExit();
 			FileUtils.writeByteArrayToFile(tempFile, imageBytes);
-			HttpResponse<InputStream> response = Unirest.post(serviceUri + "/api/v1/faces/alignment")
+
+			Optional<ServiceInstance> serviceInstanceOptional =
+				discoveryClient.getInstances(preprocessorServiceName).stream().findFirst();
+
+			if (!serviceInstanceOptional.isPresent()) {
+				log.warn("No instance of service [{}] was found", preprocessorServiceName);
+				throw new IllegalStateException("No instance of service [" + preprocessorServiceName + "] was found");
+			}
+
+			HttpResponse<InputStream> response = Unirest.post(
+				UriComponentsBuilder.fromUri(serviceInstanceOptional.get().getUri()).path("/api/v1/faces/alignment")
+					.toUriString())
 				.header("accept", "application/json")
 				.queryString("cropDim", 160)
 				.field("image", tempFile)
@@ -81,7 +102,18 @@ public class PreprocessorClient implements IPreprocessorClient {
 			tempFile = File.createTempFile(UUID.randomUUID().toString(), ".jpg");
 			tempFile.deleteOnExit();
 			FileUtils.writeByteArrayToFile(tempFile, imageBytes);
-			HttpResponse<JsonNode> jsonResponse = Unirest.post(serviceUri + "/api/v1/faces/detection")
+
+			Optional<ServiceInstance> serviceInstanceOptional =
+				discoveryClient.getInstances(preprocessorServiceName).stream().findFirst();
+
+			if (!serviceInstanceOptional.isPresent()) {
+				log.warn("No instance of service [{}] was found", preprocessorServiceName);
+				throw new IllegalStateException("No instance of service [" + preprocessorServiceName + "] was found");
+			}
+
+			HttpResponse<JsonNode> jsonResponse = Unirest.post(
+				UriComponentsBuilder.fromUri(serviceInstanceOptional.get().getUri()).path("/api/v1/faces/detection")
+					.toUriString())
 				.header("accept", "application/json")
 				.field("image", tempFile)
 				.asJson();

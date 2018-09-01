@@ -13,6 +13,7 @@ import co.rxstack.ml.faces.model.Face;
 import co.rxstack.ml.faces.model.Identity;
 import co.rxstack.ml.faces.service.IIdentityService;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -80,7 +81,7 @@ public class IdentityService implements IIdentityService {
 
 	@Override
 	public List<Face> findFaceListByIdentityId(int identityId) {
-		return identityFaceListMap.get(identityId);
+		return Optional.ofNullable(identityFaceListMap.get(identityId)).orElse(ImmutableList.of());
 	}
 
 	@Override
@@ -120,6 +121,14 @@ public class IdentityService implements IIdentityService {
 			log.info("Identities refresh lock removed");
 		}
 
+	}
+
+	@Override
+	public int delete(int id) {
+		log.info("Deleting Faces associated with Identity {}", id);
+		faceDao.deleteFaceByIdentityId(id);
+		log.info("Deleting Identity associated with id {}", id);
+		return identityDao.deleteById(id);
 	}
 
 	/*private Map<String, Face> getFacesMap() {

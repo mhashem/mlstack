@@ -1,7 +1,6 @@
 package co.rxstack.ml.core.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,7 +10,6 @@ import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aggregator.service.impl.AggregatorService;
 import co.rxstack.ml.common.model.Ticket;
 import co.rxstack.ml.core.jobs.IndexingQueue;
-import co.rxstack.ml.faces.model.Face;
 import co.rxstack.ml.faces.service.IIdentityService;
 
 import com.google.common.base.Preconditions;
@@ -56,20 +54,12 @@ public class FaceController {
 	@CrossOrigin(origins = "http://localhost:9000")
 	@GetMapping("/api/v1/faces/{identityId}")
 	public ResponseEntity getFacesForIdentity(@PathVariable("identityId") int identityId) {
-		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
-		if (faceList == null) {
-			return ResponseEntity.notFound().build();
-		}
-		return ResponseEntity.ok(faceList);
+		return ResponseEntity.ok(identityService.findFaceListByIdentityId(identityId));
 	}
 
 	@GetMapping("/api/v2/faces/{identityId}")
 	public ResponseEntity getFacesForIdentityV2(@PathVariable("identityId") int identityId) {
-		List<Face> faceList = identityService.findFaceListByIdentityId(identityId);
-		if (faceList == null) {
-			return ResponseEntity.notFound().build();
-		}
-		return ResponseEntity.ok(faceList);
+		return ResponseEntity.ok(identityService.findFaceListByIdentityId(identityId));
 	}
 
 	@CrossOrigin(origins = "http://localhost:9000")

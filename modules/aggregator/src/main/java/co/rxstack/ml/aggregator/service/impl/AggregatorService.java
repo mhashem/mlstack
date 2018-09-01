@@ -294,9 +294,6 @@ public class AggregatorService {
 	}
 
 	public void identify(byte[] imageBytes) throws IOException {
-
-		// todo add metrics for time consumed by each operation!
-
 		BufferedImage originalImage = bytesToBufferedImage(imageBytes);
 		originalImage = resizeImageWithHint(originalImage, (int) (originalImage.getWidth() * 0.75),
 			(int) (originalImage.getHeight() * 0.75));

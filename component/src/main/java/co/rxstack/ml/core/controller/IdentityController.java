@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,5 +53,13 @@ public class IdentityController {
 		log.info("intercepted getAllIdentities(...) from {}", request.getRemoteAddr());
 		return ResponseEntity.ok(identityService.findAll());
 	}
+
+	@CrossOrigin(origins = "http://localhost:9000")
+	@DeleteMapping("/api/v1/identity/{id}")
+	public ResponseEntity delete(@PathVariable("id") int id, HttpServletRequest request) {
+		log.info("intercepted Identity delete({}) from {}", id, request.getRemoteAddr());
+		return ResponseEntity.ok(identityService.delete(id));
+	}
+
 
 }

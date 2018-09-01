@@ -59,6 +59,7 @@ import org.opencv.objdetect.CascadeClassifier;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -112,8 +113,8 @@ public class AppContext {
 	@Value("${tensorflow.graph.facenet.featureVectorSize}")
 	private int featureVectorSize;
 
-	@Value("${preprocesser.host}")
-	private String preprocessorHost;
+	@Value("${preprocesser.service.name}")
+	private String preprocessorServiceName;
 
 	@Qualifier("dataClientRestTemplate")
 	@Bean
@@ -312,8 +313,8 @@ public class AppContext {
 	}
 
 	@Bean
-	public PreprocessorClient preprocessorClient() {
-		return new PreprocessorClient(preprocessorHost);
+	public PreprocessorClient preprocessorClient(DiscoveryClient discoveryClient) {
+		return new PreprocessorClient(preprocessorServiceName, discoveryClient);
 	}
 
 }

@@ -15,6 +15,8 @@ import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,6 +67,7 @@ import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
+import smile.classification.AdaBoost;
 import smile.classification.NeuralNetwork;
 import smile.classification.RBFNetwork;
 import smile.classification.SVM;
@@ -86,6 +89,8 @@ public class FaceNetService implements IFaceNetService {
 	private FaceNetConfig faceNetConfig;
 
 	private SVM<double[]> classifier;
+	private AdaBoost adaBoostClassifier;
+
 	private opencv_ml.SVM svm;
 	private opencv_ml.RTrees rTrees;
 	private opencv_ml.SVMSGD svmsgd;
@@ -98,6 +103,7 @@ public class FaceNetService implements IFaceNetService {
 
 	private ConcurrentHashMap<Integer, double[]> embeddings = new ConcurrentHashMap<>();
 
+	private Map<Integer, Integer> votingMap = new HashMap<>();
 
 	@Autowired
 	public FaceNetService(IFaceService faceService, IIdentityService identityService, FaceNetConfig faceNetConfig) throws GraphLoadingException {
@@ -258,6 +264,11 @@ public class FaceNetService implements IFaceNetService {
 			int classLabel = classifier.predict(vector, confidences);
 			double confidence = Arrays.stream(confidences).max().orElse(0) * 100;
 
+			double[] posteriori = new double[labelsCountAtomic.get()];
+
+			int smileAdaBoostPredictedValue = adaBoostClassifier.predict(vector, posteriori);
+			double confidence2 = Arrays.stream(posteriori).max().orElse(0) * 100;
+
 			Mat conf = new Mat();
 
 			Mat vectorMat = new Mat(Floats.toArray(Doubles.asList(vector))).reshape(0, 1);
@@ -272,8 +283,10 @@ public class FaceNetService implements IFaceNetService {
 			log.info("-------------------------------> SGD {}", svmSgdPredictedValue);
 			log.info("-------------------------------> KNN {}", knnPredictedValue);
 			log.info("-------------------------------> AdaBoost {}", adaBootPredictedValue);
+			log.info("-------------------------------> Smile AdaBoost {} -> with confidence {} : {}", smileAdaBoostPredictedValue, confidence2, posteriori);
 
 			log.info("Confidences {}", Arrays.toString(confidences));
+
 
 			TensorFlowResult tensorFlowResult= null;
 
@@ -286,19 +299,31 @@ public class FaceNetService implements IFaceNetService {
 				int svmSgdMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)svmSgdPredictedValue, -1);
 				int knnMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)knnPredictedValue, -1);
 				int adaBoostMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault((int)adaBootPredictedValue, -1);
+				int smileAdaBoostMatchedIdentity = identityClassLabelsMap.inverse().getOrDefault(smileAdaBoostPredictedValue, -1);
 
 				if (svmMatchedIdentity != -1) {
 					log.info("SVM Matched identity {}", identityService.findById(svmMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
 					log.info("Rtrees Matched identity {}", identityService.findById(rtreesMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
 					log.info("SVM SGD Matched identity {}", identityService.findById(svmSgdMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
 					log.info("KNN Matched identity {}", identityService.findById(knnMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
-					log.info("AdaBoost Matched identity {}", identityService.findById(adaBoostMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("Boost Matched identity {}", identityService.findById(adaBoostMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
+					log.info("Smile AdaBoost Matched identity {}", identityService.findById(smileAdaBoostMatchedIdentity).map(Identity::getName).orElse("Unknown!"));
 				}
 
-				if (matchedIdentity != -1) {
+				votingMap.put(matchedIdentity, 1);
+				votingMap.merge(svmMatchedIdentity, 1, Integer::sum);
+				votingMap.merge(rtreesMatchedIdentity, 1, Integer::sum);
+				votingMap.merge(svmSgdMatchedIdentity, 1, Integer::sum);
+				votingMap.merge(knnMatchedIdentity, 1, Integer::sum);
+				votingMap.merge(adaBoostMatchedIdentity, 1, Integer::sum);
+				votingMap.merge(smileAdaBoostMatchedIdentity, 1, Integer::sum);
+
+				Integer maxMatchedIdentity = Collections.max(votingMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+				if (maxMatchedIdentity != -1) {
 					log.info("Matched Identity Id {}", matchedIdentity);
 					tensorFlowResult = new TensorFlowResult(
-						identityService.findById(matchedIdentity)
+						identityService.findById(maxMatchedIdentity)
 							.map(Identity::getName).orElse("Unknown"),
 						confidence);
 				}
@@ -365,6 +390,8 @@ public class FaceNetService implements IFaceNetService {
 				classifier.finish();
 				classifier.trainPlattScaling(features, labels);
 
+				adaBoostClassifier = adaBoost(features, labels);
+
 				Pair<Mat, Mat> matrixPair = convertData(features, labels);
 
 				svm = trainSVM(matrixPair.getOne(), matrixPair.getTwo());
@@ -412,6 +439,10 @@ public class FaceNetService implements IFaceNetService {
 		double[][] centers = new double[3][];
 		RadialBasisFunction basis = SmileUtils.learnGaussianRadialBasis(data, centers);
 		return new RBFNetwork(data, label, new smile.math.distance.EuclideanDistance(), basis, centers);
+	}
+
+	private AdaBoost adaBoost(double[][] features, int[] labels) {
+		return new AdaBoost(features, labels, 20);
 	}
 
 	private double[] toDoubleArray(Integer[] e) {

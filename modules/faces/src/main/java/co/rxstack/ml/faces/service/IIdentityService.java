@@ -22,4 +22,6 @@ public interface IIdentityService {
 
 	Identity save(Identity identity);
 
+	int delete(int id);
+
 }

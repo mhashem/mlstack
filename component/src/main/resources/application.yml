@@ -124,7 +124,8 @@ tensorflow:
     path: "C:/etc/mlstack/models/retrained_labels_7.txt"
 
 preprocesser:
-  host: ${preprocesser.host}
+  service:
+    name: ${preprocesser.service.name}
 
 logging:
   file: ${logging_file_path}'
