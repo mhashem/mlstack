@@ -32,7 +32,7 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
 
-@Component
+/*@Component*/
 public class InceptionService {
 
 	private static final Logger log = LoggerFactory.getLogger(InceptionService.class);
@@ -40,7 +40,7 @@ public class InceptionService {
 	private Graph graph;
 	private List<String> labels;
 
-	@Autowired
+	/*@Autowired*/
 	public InceptionService(InceptionConfig inceptionConfig) throws GraphLoadingException, FileNotFoundException {
 		Preconditions.checkNotNull(inceptionConfig);
 		Preconditions.checkNotNull(inceptionConfig.getGraphPath());
@@ -79,6 +79,13 @@ public class InceptionService {
 		}
 	}
 
+	/**
+	 * Don't use as Facenet is used currently
+	 * 
+	 * @param imageBytes byte[]
+	 * @return Optional<TensorFlowResult>
+	 */
+	@Deprecated
 	public Optional<TensorFlowResult> predictBest(byte[] imageBytes) {
 		log.info("Predicting best result for image with {} bytes", imageBytes.length);
 		try(Tensor<String> image = Tensors.create(imageBytes)) {

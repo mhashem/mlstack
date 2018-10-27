@@ -127,7 +127,7 @@ public class FaceController {
 		return searchSimilar(image, request);
 	}
 
-	@PostMapping("/api/v2/faces/recognition")
+	/*@PostMapping("/api/v2/faces/recognition")
 	public ResponseEntity recognize(
 		@RequestParam("image")
 			MultipartFile image, HttpServletRequest request) {
@@ -140,7 +140,7 @@ public class FaceController {
 			log.error(e.getMessage(), e);
 		}
 		return ResponseEntity.badRequest().build();
-	}
+	}*/
 
 	@PostMapping("/api/v3/faces/recognition")
 	public ResponseEntity recognize3(

@@ -291,7 +291,7 @@ public class AppContext {
 		return faceNetConfig;
 	}
 
-	@Bean
+	/*@Bean
 	public InceptionService inceptionService(InceptionConfig inceptionConfig) {
 		try {
 			return new InceptionService(inceptionConfig);
@@ -299,7 +299,7 @@ public class AppContext {
 			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
-	}
+	}*/
 
 	@Bean
 	public IFaceNetService faceNetService(IFaceService faceService, FaceNetConfig faceNetConfig,

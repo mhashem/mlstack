@@ -118,6 +118,7 @@ public class AggregatorService {
 		this.simpMessagingTemplate = simpMessagingTemplate;
 	}
 
+	@Deprecated
 	public List<TensorFlowResult> inceptionRecognize(byte[] imageBytes) {
 		log.info("recognizing image with {} using tensorflow Inception",
 			FileUtils.byteCountToDisplaySize(imageBytes.length));

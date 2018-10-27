@@ -1,0 +1,19 @@
+[Unit]
+Description=ML-Stack Service
+
+[Service]
+User=root
+
+WorkingDirectory=/home/deployments/mlstack
+
+
+ExecStart=/bin/bash /home/deployments/mlstack/
+
+SuccessExitStatus=143
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+
+[Install]
+WantedBy=multi-user.target
