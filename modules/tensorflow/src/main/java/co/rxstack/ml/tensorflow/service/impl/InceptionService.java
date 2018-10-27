@@ -32,7 +32,7 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
 
-/*@Component*/
+@Component
 public class InceptionService {
 
 	private static final Logger log = LoggerFactory.getLogger(InceptionService.class);
@@ -40,52 +40,46 @@ public class InceptionService {
 	private Graph graph;
 	private List<String> labels;
 
-	/*@Autowired*/
+	@Autowired
 	public InceptionService(InceptionConfig inceptionConfig) throws GraphLoadingException, FileNotFoundException {
 		Preconditions.checkNotNull(inceptionConfig);
 		Preconditions.checkNotNull(inceptionConfig.getGraphPath());
 		Preconditions.checkNotNull(inceptionConfig.getLabelsPath());
+		
+		if (inceptionConfig.isRequired()) {
+			Path graphPath = Paths.get(inceptionConfig.getGraphPath());
+			Path labelsPath = Paths.get(inceptionConfig.getLabelsPath());
 
+			if (!graphPath.toFile().exists()) {
+				log.warn("No ProtoBuffer graph found at {}", graphPath.toAbsolutePath());
+				throw new GraphLoadingException(graphPath.toAbsolutePath().toString());
+			}
 
-		Path graphPath = Paths.get(inceptionConfig.getGraphPath());
-		Path labelsPath = Paths.get(inceptionConfig.getLabelsPath());
+			if (!labelsPath.toFile().exists()) {
+				log.error("No Labels file found at {}", labelsPath.toAbsolutePath());
+				throw new FileNotFoundException("No Labels file found at " + labelsPath.toAbsolutePath());
+			}
 
-		if (!graphPath.toFile().exists()) {
-			log.warn("No ProtoBuffer graph found at {}", graphPath.toAbsolutePath());
-			throw new GraphLoadingException(graphPath.toAbsolutePath().toString());
-		}
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			byte[] graphDef = GraphUtils.readAllBytes(graphPath);
 
-		if (!labelsPath.toFile().exists()) {
-			log.error("No Labels file found at ", labelsPath.toAbsolutePath());
-			throw new FileNotFoundException("No Labels file found at " + labelsPath.toAbsolutePath());
-		}
+			if (graphDef != null) {
+				graph = new Graph();
+				graph.importGraphDef(graphDef);
+				log.info("Tensorflow graph loaded successfully in {}ms", stopwatch.elapsed(MILLISECONDS));
+			} else {
+				log.warn("Failed to load Tensorflow graph!");
+			}
 
-		Stopwatch stopwatch = Stopwatch.createStarted();
-		byte[] graphDef = GraphUtils.readAllBytes(graphPath);
+			labels = Lists.newArrayList();
+			labels.addAll(readAllLines(labelsPath));
 
-		if (graphDef != null) {
-			graph = new Graph();
-			graph.importGraphDef(graphDef);
-			log.info("Tensorflow graph loaded successfully in {}ms", stopwatch.elapsed(MILLISECONDS));
-		} else {
-			log.warn("Failed to load Tensorflow graph!");
-		}
-
-		labels = Lists.newArrayList();
-		labels.addAll(readAllLines(labelsPath));
-
-		if (labels.isEmpty()) {
-			log.error(">>>>> No Labels found! <<<<<");
+			if (labels.isEmpty()) {
+				log.error(">>>>> No Labels found! <<<<<");
+			}
 		}
 	}
 
-	/**
-	 * Don't use as Facenet is used currently
-	 * 
-	 * @param imageBytes byte[]
-	 * @return Optional<TensorFlowResult>
-	 */
-	@Deprecated
 	public Optional<TensorFlowResult> predictBest(byte[] imageBytes) {
 		log.info("Predicting best result for image with {} bytes", imageBytes.length);
 		try(Tensor<String> image = Tensors.create(imageBytes)) {

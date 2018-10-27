@@ -279,6 +279,7 @@ public class AppContext {
 		InceptionConfig inceptionConfig = new InceptionConfig();
 		inceptionConfig.setGraphPath(graphPath);
 		inceptionConfig.setLabelsPath(labelsPath);
+		inceptionConfig.setRequired(false);
 		return inceptionConfig;
 	}
 

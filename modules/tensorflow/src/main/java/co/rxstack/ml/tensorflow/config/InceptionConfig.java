@@ -4,6 +4,7 @@ public class InceptionConfig {
 
 	private String graphPath;
 	private String labelsPath;
+	private boolean required;
 
 	public String getGraphPath() {
 		return graphPath;
@@ -19,5 +20,13 @@ public class InceptionConfig {
 
 	public void setLabelsPath(String labelsPath) {
 		this.labelsPath = labelsPath;
+	}
+
+	public boolean isRequired() {
+		return required;
+	}
+
+	public void setRequired(boolean required) {
+		this.required = required;
 	}
 }
