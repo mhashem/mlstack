@@ -7,7 +7,7 @@ User=root
 WorkingDirectory=/home/deployments/mlstack
 
 
-ExecStart=/bin/bash /home/deployments/mlstack/
+ExecStart=/home/deployments/mlstack/start.sh
 
 SuccessExitStatus=143
 TimeoutStopSec=10

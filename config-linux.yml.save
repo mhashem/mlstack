@@ -1,0 +1,141 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /mlstack
+
+version: @project.version@
+
+spring:
+  application:
+    name: mlstack
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mlstack
+    username: mahmoud"
+    password: mahmoud007"    driver-class-name: org.postgresql.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      connection-timeout: 60000
+
+
+
+#  jpa:
+#    database-platform: io.github.jhipster.domain.util.FixedPostgreSQL82Dialect
+#    database: POSTGRESQL
+#    show-sql: true
+#    properties:
+#      hibernate.id.new_generator_mappings: true
+#      hibernate.cache.use_second_level_cache: false
+#      hibernate.cache.use_query_cache: false
+#      hibernate.generate_statistics: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  jackson:
+    serialization: {INDENT_OUTPUT: true, WRITE_DATES_AS_TIMESTAMPS: false}
+  cache:
+    jcache:
+      config: ehcache.xml
+
+eureka:
+  instance:
+    preferIpAddress: true
+    hostname: localhost
+  client:
+    serviceUrl:
+      defaultZone: "http://localhost:8761/eureka"
+    fetch-registry: true
+    register-with-eureka: true
+    enabled: true
+
+#
+# Microsoft Cognitive Services
+#
+cognitive:
+  service-url: "https://northeurope.api.cognitive.microsoft.com/face/v1.0"
+  subscription-key: "8407dfc043ae486a8f36bff5034da21f"
+  person-group-id: "cognitive_3500"
+  person-group-name: "employee_collection"
+  threshold: 0.5
+  max-candidates: 5
+
+#
+# AWS Rekognition Services
+#
+aws:
+  region: "eu-west-1"
+  access-key: "AKIAJGSF7P2RGBJPJ76A"
+  secret-key: "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"
+  s3:
+    bucket: "mlstack"
+    bucket-folder: "index"
+  rekognition:
+    collection-id: "employee_collection"
+    max-faces: 1
+
+#
+# threshold point where confidence below is rejected
+#
+threshold-acceptance: 85
+
+#
+# Job config, every 15 seconds
+#
+syncjob:
+  frequency: 15000
+
+client:
+  service:
+    name: client-service
+  endpoint: http://localhost:8080
+  user:
+    username: admin
+    password: admin
+
+face:
+  standard:
+    width: 160
+    height: 160
+  directory:
+    name:
+      delimiter: "-"
+  db:
+    path: "/etc/mlstack/facedb"
+
+model:
+  storage:
+    path: "/etc/mlstack/models"
+
+tensorflow:
+  graph:
+    inception:
+      path: ""
+    facenet:
+      path: "/etc/mlstack/models/20170511-185253.pb"
+      embeddings: "/etc/mlstack/models/embeddings.csv"
+      featureVectorSize: 128
+  labels:
+    path: ""
+
+preprocesser:
+  service:
+    name: "PREPROCESSOR-SERVICE"
+
+logging:
+  file: "/etc/mlstack/logs/mllogs"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: heapdump,liquibase,loggers,prometheus,threaddump,info,metrics,health
+  server:
+    port: 8082
+    servlet:
+      context-path: /mlstack
+
