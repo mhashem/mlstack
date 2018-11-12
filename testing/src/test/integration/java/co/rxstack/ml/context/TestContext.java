@@ -16,7 +16,9 @@ import co.rxstack.ml.aggregator.config.FaceDBConfig;
 import co.rxstack.ml.aggregator.service.impl.FaceExtractorService;
 import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
+import co.rxstack.ml.client.aws.IMachineLearningClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.impl.MachineLearningClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
@@ -71,6 +73,11 @@ public class TestContext {
 	@Bean
 	public IRekognitionClient rekognitionClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
 		return new RekognitionClient(AWS_REGION, awsStaticCredentialsProvider);
+	}
+	
+	@Bean
+	public IMachineLearningClient machineLearningClient(AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+		return new MachineLearningClient(AWS_REGION, awsStaticCredentialsProvider);
 	}
 
 	@Bean

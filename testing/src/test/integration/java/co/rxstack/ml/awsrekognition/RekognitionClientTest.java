@@ -1,6 +1,7 @@
 package co.rxstack.ml.awsrekognition;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,11 @@ import co.rxstack.ml.utils.ResourceHelper;
 
 import com.amazonaws.services.rekognition.model.FaceRecord;
 import com.amazonaws.services.rekognition.model.IndexFacesResult;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +95,14 @@ public class RekognitionClientTest {
 		IndexFacesResult indexFacesResult = indexFacesResultOptional.get();
 		FaceRecord faceRecord = indexFacesResult.getFaceRecords().get(0);
 		Assert.assertNotNull(faceRecord.getFace().getFaceId());
+	}
+
+	@Test
+	public void testRefresh() {
+		int deleteStatus = 200; // rekognitionClient.deleteCollection(COLLECTION_ID);
+		int createStatus = 200; // rekognitionClient.createCollection(COLLECTION_ID);
+		Assert.assertEquals(200, deleteStatus);
+		Assert.assertEquals(200, createStatus);
 	}
 
 	@After

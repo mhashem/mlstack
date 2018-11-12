@@ -1,5 +1,7 @@
 package co.rxstack.ml.common.model;
 
+import com.google.common.base.MoreObjects;
+
 public class FaceRecognitionResult {
 
 	private int index;
@@ -47,7 +49,7 @@ public class FaceRecognitionResult {
 	}
 
 	public void setConfidence(double confidence) {
-		this.confidence = confidence;
+		this.confidence = Math.round(confidence * 100) / 100D;
 	}
 
 	public FaceRectangle getFaceRectangle() {
@@ -68,8 +70,15 @@ public class FaceRecognitionResult {
 
 	@Override
 	public String toString() {
-		return "FaceRecognitionResult{" + "label='" + label + '\'' + ", confidence=" + confidence + ", faceRectangle="
-			+ faceRectangle + '}';
+		return MoreObjects.toStringHelper(FaceRecognitionResult.class)
+			.add("index", index)
+			.add("faceId", faceId)
+			.add("identityId", identityId)
+			.add("label", label)
+			.add("confidence", confidence)
+			.add("faceRectangle", faceRectangle)
+			.add("recognizer", recognizer)
+			.toString();
 	}
 
 	public static FaceRecognitionResult.Builder builder() {

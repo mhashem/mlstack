@@ -14,6 +14,8 @@ public interface IFaceNetService {
 
 	double DEFAULT_THRESHOLD = 50d;
 
+	void saveEmbeddings() throws FileNotFoundException;
+
 	void saveEmbeddings(ConcurrentMap<Integer, double[]> embeddings) throws FileNotFoundException;
 
 	void saveFaces(List<Face> faceList) throws FileNotFoundException;

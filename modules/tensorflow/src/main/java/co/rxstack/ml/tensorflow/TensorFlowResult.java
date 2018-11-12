@@ -3,11 +3,9 @@ package co.rxstack.ml.tensorflow;
 import java.io.Serializable;
 
 import co.rxstack.ml.common.model.FaceBox;
-import co.rxstack.ml.common.model.FaceRectangle;
-
 import com.google.common.base.MoreObjects;
 
-public class TensorFlowResult implements Serializable {
+public class TensorFlowResult implements Serializable, Comparable<TensorFlowResult> {
 
 	private int faceId;
 	private String label;
@@ -61,6 +59,16 @@ public class TensorFlowResult implements Serializable {
 		this.faceBox = faceBox;
 	}
 
+	@Override
+	public int compareTo(TensorFlowResult o) {
+		if (this.confidence > o.confidence) {
+			return -1;
+		} else if (this.confidence < o.confidence) {
+			return 1;
+		}
+		return 0;
+	}
+	
 	@Override
 	public String toString() {
 		return MoreObjects.toStringHelper(TensorFlowResult.class.getSimpleName()).add("faceId", faceId).add("label", label)

@@ -47,13 +47,13 @@ public class TrainingStatus {
 	/**
 	 * Creation date time.
 	 */
-	@JsonFormat(pattern = "MM/dd/yyyy HH:mm:ss a")
+	///@JsonFormat(pattern = "MM/dd/yyyy HH:mm:ss a")
 	private Date createdDateTime;
 
 	/**
 	 * Last action date time.
 	 */
-	@JsonFormat(pattern = "MM/dd/yyyy HH:mm:ss a")
+	///@JsonFormat(pattern = "MM/dd/yyyy HH:mm:ss a")
 	private Date lastActionDateTime;
 
 	/**

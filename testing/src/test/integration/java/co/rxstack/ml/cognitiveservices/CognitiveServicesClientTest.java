@@ -256,6 +256,17 @@ public class CognitiveServicesClientTest {
 			}
 		}
 	}
+	
+	@Test
+	public void testRefresh() {
+		// System.out.println(cognitiveServicesClient.deletePersonGroup("cognitive_3500"));
+		// System.out.println(cognitiveServicesClient.deletePersonGroup("cognitive_3600"));
+		// System.out.println(cognitiveServicesClient.deletePersonGroup("cognitive_3501"));
+		cognitiveServicesClient.getPersonGroups().forEach(System.out::println);
+		// cognitiveServicesClient.createPersonGroup("cognitive_3500", "employee_collection");
+		// cognitiveServicesClient.getPersonGroup("cognitive_3600").ifPresent(personGroup -> System.out.print(personGroup));
+		
+	}
 
 	@After
 	public void cleanup() {
