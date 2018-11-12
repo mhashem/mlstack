@@ -78,7 +78,7 @@ public class TrainingJob extends UntypedActor {
 
 	private void handle() {
 		log.info("-----> fired training actor");
-		try {
+		/*try {
 			checkIn(5); // started
 			faceRecognitionService.trainModel();
 			checkIn(50); // finished first training
@@ -90,7 +90,7 @@ public class TrainingJob extends UntypedActor {
 				.format(DateTimeFormatter.ISO_DATE_TIME) + "]";
 			checkInErrorMessage(message);
 			currentStatus = JobStatus.PARTIAL_FAILURE;
-		}
+		}*/
 		log.info("-----> finished local face recognizer training -> will issue Cognitive Service training");
 		try {
 			cognitiveService.trainPersonGroup();

@@ -23,7 +23,9 @@ import co.rxstack.ml.aws.rekognition.service.ICloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
 import co.rxstack.ml.aws.rekognition.service.impl.CloudStorageService;
 import co.rxstack.ml.aws.rekognition.service.impl.RekognitionService;
+import co.rxstack.ml.client.aws.IMachineLearningClient;
 import co.rxstack.ml.client.aws.IRekognitionClient;
+import co.rxstack.ml.client.aws.impl.MachineLearningClient;
 import co.rxstack.ml.client.aws.impl.RekognitionClient;
 import co.rxstack.ml.client.cognitiveservices.ICognitiveServicesClient;
 import co.rxstack.ml.client.cognitiveservices.impl.CognitiveServicesClient;
@@ -170,6 +172,12 @@ public class AppContext {
 	}
 
 	@Bean
+	public IMachineLearningClient machineLearningClient(AwsProperties awsProperties,
+		AWSStaticCredentialsProvider awsStaticCredentialsProvider) {
+		return new MachineLearningClient(awsProperties.getRegion(), awsStaticCredentialsProvider);
+	}
+
+	@Bean
 	public ICloudStorageService cloudStorageService(AWSStaticCredentialsProvider awsStaticCredentialsProvider,
 		AwsProperties awsProperties) {
 		return new CloudStorageService(awsProperties.getRegion(), awsProperties.getS3().getBucket(),
@@ -186,10 +194,11 @@ public class AppContext {
 		ICognitiveService cognitiveService, IFaceExtractorService openCVService,
 		IFaceRecognitionService faceRecognitionService, IIdentityService identityService,
 		InceptionService inceptionService, PreprocessorClient preprocessorClient, IFaceNetService faceNetService,
-		IStorageService storageService, SimpMessagingTemplate simpMessagingTemplate) {
+		IStorageService storageService, SimpMessagingTemplate simpMessagingTemplate,
+		IMachineLearningClient machineLearningClient) {
 		return new AggregatorService(identityService, openCVService, faceRecognitionService, rekognitionService,
 			cognitiveService, inceptionService, preprocessorClient, faceNetService, storageService,
-			simpMessagingTemplate);
+			simpMessagingTemplate, machineLearningClient);
 	}
 
 	@Qualifier("haarCascadeFile")

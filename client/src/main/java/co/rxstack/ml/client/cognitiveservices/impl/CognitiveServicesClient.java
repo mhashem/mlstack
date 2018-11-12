@@ -92,8 +92,8 @@ public class CognitiveServicesClient implements ICognitiveServicesClient {
 
 	@Override
 	public boolean deletePersonGroup(String personGroupId) {
-		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups")
-			.pathSegment(personGroupId).build().toUri();
+		URI uri = UriComponentsBuilder.fromUri(serviceUri).path("/persongroups/{personGroupId}")
+			.buildAndExpand(personGroupId).toUri();
 		try {
 			HttpResponse<JsonNode> response =
 				Unirest.delete(uri.toString())

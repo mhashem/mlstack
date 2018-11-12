@@ -67,7 +67,7 @@ public class FaceController {
 	public ResponseEntity indexFace(
 		@PathVariable("personId")
 			String personId,
-		@RequestParam("personName")
+		@RequestParam(value = "personName", required = false)
 			String personName,
 		@RequestParam("faceImage") MultipartFile faceImage, HttpServletRequest request) {
 		log.info("Intercepted: index face request");

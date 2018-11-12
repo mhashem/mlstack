@@ -14,6 +14,8 @@ import co.rxstack.ml.common.model.FaceDetectionResult;
  */
 public interface IRekognitionService extends FaceIndexer<FaceIndexingResult> {
 
+	List<String> deleteFaces();
+
 	Optional<ComparisonResult> compareFaces(byte[] faceOneImageBytes, byte[] faceTwoImageBytes);
 
 	List<FaceDetectionResult> detect(byte[] imageBytes);

@@ -7,6 +7,14 @@ public class Person {
 	private int faceId;
 	private String name;
 
+	public static Person createFromString(String identity) {
+		String[] strings =identity.split("-");
+		Person person = new Person();
+		person.setFaceId(Integer.parseInt(strings[0]));
+		person.setName(strings[1]);
+		return person;
+	}
+
 	public String getName() {
 		return name;
 	}

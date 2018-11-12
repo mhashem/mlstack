@@ -148,6 +148,8 @@ public class CognitiveService implements ICognitiveService {
 			}
 		}
 
+		log.info("------------> Cognitive indexing <------------");
+		
 		Person person = null;
 		String personId = bundleMap.get(Constants.PERSON_ID);
 		String personName = bundleMap.get(Constants.PERSON_NAME);

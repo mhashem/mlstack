@@ -43,7 +43,7 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 	private void buildCache() {
 		log.debug("Building token cache");
 		tokenLoadingCache = CacheBuilder.newBuilder()
-			.refreshAfterWrite(120, TimeUnit.MINUTES) // every 2 hours
+			.refreshAfterWrite(60, TimeUnit.MINUTES) // every 2 hours
 			.maximumSize(2)
 			.build(new CacheLoader<String, String>() {
 				@Override
@@ -53,8 +53,7 @@ public class AuthRequestInterceptor implements ClientHttpRequestInterceptor {
 						params.put("username", username);
 						params.put("password", password);
 						params.put("rememberMe", true);
-						HttpResponse<JsonNode> response = Unirest
-							.post(serviceUrl + "/api/authenticate")
+						HttpResponse<JsonNode> response = Unirest.post(serviceUrl + "/api/authenticate")
 							.header("Content-Type", "application/json")
 							.body(objectMapper.writeValueAsString(params))
 							.asJson();

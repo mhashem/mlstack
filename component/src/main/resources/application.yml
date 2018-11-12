@@ -42,6 +42,10 @@ spring:
   cache:
     jcache:
       config: ehcache.xml
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 25MB
 
 eureka:
   instance:
@@ -76,7 +80,7 @@ aws:
     bucket: "mlstack"
     bucket-folder: "index"
   rekognition:
-    collection-id: "employee_collection"
+    collection-id: ${aws_rekognition_collection:employee_collection}
     max-faces: 1
 
 #
@@ -139,4 +143,3 @@ management:
     port: ${PORT:8082}
     servlet:
       context-path: /mlstack
-

@@ -44,6 +44,11 @@ public class RekognitionService implements IRekognitionService, FaceIndexer<Face
 	}
 
 	@Override
+	public List<String> deleteFaces() {
+		return rekognitionClient.deleteFaces(awsConfig.getCollectionId());
+	}
+	
+	@Override
 	public Optional<ComparisonResult> compareFaces(byte[] faceOneImageBytes, byte[] faceTwoImageBytes) {
 		return rekognitionClient.compareFaces(faceOneImageBytes, faceTwoImageBytes);
 	}

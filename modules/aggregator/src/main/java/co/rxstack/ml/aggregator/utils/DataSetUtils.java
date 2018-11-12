@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,18 +30,33 @@ public class DataSetUtils {
 	private DataSetUtils() {
 
 	}
-	
-	public Map<Integer, List<Path>> loadFaceIdImagePathsMap(Path dir) throws IOException {
-		Map<Integer, List<Path>> faceIdImagePathsMap = Maps.newHashMap();
+
+	public static Map<String, List<Path>> loadFaceIdImagePathsMap(Path dir, int identitiesLimit, int maxFaces)
+		throws IOException {
+		Map<String, List<Path>> faceIdImagePathsMap = Maps.newHashMap();
 		try (Stream<Path> pathStream = Files.list(dir)) {
-			pathStream.filter(isDirectory).forEach(path -> {
+			pathStream.filter(isDirectory).limit(identitiesLimit).parallel().forEach(path -> {
 				String fileIdentifier = path.getFileName().toString();
-				try (Stream<Path> imagePathStream = Files.list(path)) {
-					List<Path> imagesPath =
-						imagePathStream.filter(isFile).filter(extensionPredicate).collect(Collectors.toList());
-					faceIdImagePathsMap.put(Integer.valueOf(fileIdentifier), imagesPath);
-				} catch (IOException e) {
-					logger.error(e.getMessage(), e);
+
+				Supplier<Stream<Path>> ss = null;
+				
+				ss = () -> {
+					try {
+						return Files.list(path);
+					} catch (IOException e) {
+						logger.error(e.getMessage(), e);
+						return null;
+					}
+				};
+
+				try (Stream<Path> imagePathStream = ss.get()) {
+					long count = ss.get().count();
+					if (count >= maxFaces) {
+						List<Path> imagesPath =
+							imagePathStream.filter(isFile).limit(maxFaces).filter(extensionPredicate)
+								.collect(Collectors.toList());
+						faceIdImagePathsMap.put(fileIdentifier, imagesPath);
+					}
 				}
 			});
 		}
@@ -56,9 +72,14 @@ public class DataSetUtils {
 	 * @throws IOException when Failing to open directory
 	 */
 	public static List<PersonBundle> loadPersonBundleList(Path dir, String directoryNameDelimiter) throws IOException {
+		return loadPersonBundleList(dir, directoryNameDelimiter, 25, 3);
+	}
+
+	public static List<PersonBundle> loadPersonBundleList(Path dir, String directoryNameDelimiter, int maxIdentities,
+		int maxFaces) throws IOException {
 		List<PersonBundle> personBundleList;
 		try (Stream<Path> pathStream = Files.list(dir)) {
-			personBundleList = pathStream.filter(isDirectory).map(path -> {
+			personBundleList = pathStream.filter(isDirectory).limit(maxIdentities).map(path -> {
 				String[] dirName = path.getFileName().toString().split(directoryNameDelimiter);
 				if (NumberUtils.isDigits(dirName[0])) {
 					int faceId = Integer.parseInt(dirName[0]);
@@ -69,7 +90,8 @@ public class DataSetUtils {
 					// listing image files inside directory
 					try (Stream<Path> imagePathStream = Files.list(path)) {
 						imagePaths =
-							imagePathStream.filter(isFile).filter(extensionPredicate).collect(Collectors.toList());
+							imagePathStream.filter(isFile).filter(extensionPredicate)
+								.limit(maxFaces).collect(Collectors.toList());
 					} catch (IOException e) {
 						logger.warn(e.getMessage(), e);
 					}

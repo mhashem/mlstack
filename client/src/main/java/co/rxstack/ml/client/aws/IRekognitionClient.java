@@ -8,12 +8,16 @@ import co.rxstack.ml.common.model.ComparisonResult;
 import co.rxstack.ml.common.model.FaceDetectionResult;
 import com.amazonaws.services.rekognition.model.IndexFacesResult;
 
-import com.amazonaws.services.rekognition.model.IndexFacesResult;
-
 /**
  * @author mhachem on 9/28/2017.
  */
 public interface IRekognitionClient {
+
+	List<String> deleteFaces(String collectionId);
+
+	int createCollection(String collectionId);
+
+	int deleteCollection(String collectionId);
 
 	Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes);
 

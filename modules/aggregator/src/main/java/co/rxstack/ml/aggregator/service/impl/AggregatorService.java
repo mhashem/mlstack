@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +31,7 @@ import co.rxstack.ml.aggregator.service.IStorageService;
 import co.rxstack.ml.aggregator.service.StorageStrategy;
 import co.rxstack.ml.aws.rekognition.model.FaceIndexingResult;
 import co.rxstack.ml.aws.rekognition.service.IRekognitionService;
+import co.rxstack.ml.client.aws.IMachineLearningClient;
 import co.rxstack.ml.client.preprocessor.PreprocessorClient;
 import co.rxstack.ml.cognitiveservices.model.CognitiveIndexingResult;
 import co.rxstack.ml.cognitiveservices.service.ICognitiveService;
@@ -47,6 +49,7 @@ import co.rxstack.ml.tensorflow.TensorFlowResult;
 import co.rxstack.ml.tensorflow.service.IFaceNetService;
 import co.rxstack.ml.tensorflow.service.impl.InceptionService;
 
+import com.amazonaws.services.machinelearning.model.Prediction;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -67,6 +70,7 @@ public class AggregatorService {
 	private static final Logger log = LoggerFactory.getLogger(FaceExtractorService.class);
 
 	private static final boolean DEBUG_WITH_WRITING_TO_DISK = false;
+	private static final boolean USE_LEGACY = false;
 
 	private IIdentityService identityService;
 	private ICognitiveService cognitiveService;
@@ -82,19 +86,14 @@ public class AggregatorService {
 	private IStorageService storageService;
 
 	private SimpMessagingTemplate simpMessagingTemplate;
-
+	private IMachineLearningClient machineLearningClient;
+	
 	@Autowired
-	public AggregatorService(
-		IIdentityService identityService,
-		IFaceExtractorService faceExtractorService,
-		IFaceRecognitionService faceRecognitionService,
-		IRekognitionService rekognitionService,
-		ICognitiveService cognitiveService,
-		InceptionService inceptionService,
-		PreprocessorClient preprocessorClient,
-		IFaceNetService faceNetService,
-		IStorageService storageService,
-		SimpMessagingTemplate simpMessagingTemplate) {
+	public AggregatorService(IIdentityService identityService, IFaceExtractorService faceExtractorService,
+		IFaceRecognitionService faceRecognitionService, IRekognitionService rekognitionService,
+		ICognitiveService cognitiveService, InceptionService inceptionService, PreprocessorClient preprocessorClient,
+		IFaceNetService faceNetService, IStorageService storageService, SimpMessagingTemplate simpMessagingTemplate,
+		IMachineLearningClient machineLearningClient) {
 
 		Preconditions.checkNotNull(identityService);
 		Preconditions.checkNotNull(faceExtractorService);
@@ -104,6 +103,7 @@ public class AggregatorService {
 		Preconditions.checkNotNull(inceptionService);
 		Preconditions.checkNotNull(faceNetService);
 		Preconditions.checkNotNull(storageService);
+		Preconditions.checkNotNull(machineLearningClient);
 
 		this.identityService = identityService;
 		this.cognitiveService = cognitiveService;
@@ -116,6 +116,7 @@ public class AggregatorService {
 		this.storageService = storageService;
 
 		this.simpMessagingTemplate = simpMessagingTemplate;
+		this.machineLearningClient = machineLearningClient;
 	}
 
 	public List<TensorFlowResult> inceptionRecognize(byte[] imageBytes) {
@@ -182,20 +183,41 @@ public class AggregatorService {
 							double[] featuresVector =
 								faceNetService.computeEmbeddingsFeaturesVector(bytesToBufferedImage(alignedBytes));
 
-							Optional<TensorFlowResult> tfResultOptional =
-								faceNetService.computeDistance(featuresVector);
+							if (USE_LEGACY) {
+								Optional<TensorFlowResult> tfResultOptional =
+									faceNetService.computeDistance(featuresVector);
 
-							if (tfResultOptional.isPresent()) {
-								TensorFlowResult tensorFlowResult = tfResultOptional.get();
-								tensorFlowResult.setFaceBox(faceBox);
+								if (tfResultOptional.isPresent()) {
+									TensorFlowResult tensorFlowResult = tfResultOptional.get();
+									tensorFlowResult.setFaceBox(faceBox);
 
-								log.info("Matching database Identity for the detected face");
-								Optional<Identity> identityOptional =
-									identityService.findIdentityByFaceId(tensorFlowResult.getFaceId());
-								identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
+									log.info("Matching database Identity for the detected face");
+									Optional<Identity> identityOptional =
+										identityService.findIdentityByFaceId(tensorFlowResult.getFaceId());
+									identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
 
-								tensorFlowResults.add(tensorFlowResult);
-							}
+									tensorFlowResults.add(tensorFlowResult);
+								}
+							} 
+							else {
+								List<TensorFlowResult> tfResults = Lists.newArrayList();
+								machineLearningClient.predict(featuresVector).ifPresent(predictResult -> {
+									Prediction prediction = predictResult.getPrediction();
+									for (String predictedValue : prediction.getPredictedScores().keySet()) {
+										TensorFlowResult tensorFlowResult = new TensorFlowResult(Integer.parseInt(predictedValue),
+											prediction.getPredictedScores().get(predictedValue).doubleValue() * 100);
+										tensorFlowResult.setFaceBox(faceBox);
+										log.info("Matching database Identity for id {}", tensorFlowResult.getFaceId());
+										Optional<Identity> identityOptional =
+											identityService.findById(tensorFlowResult.getFaceId());
+										identityOptional.ifPresent(identity -> tensorFlowResult.setLabel(identity.getName()));
+										tfResults.add(tensorFlowResult);
+									}
+								});
+
+								Collections.sort(tfResults);
+								tensorFlowResults.addAll(tfResults.stream().limit(3).collect(Collectors.toList()));
+							}							
 						}
 					}
 				} catch (IOException e) {
@@ -207,7 +229,7 @@ public class AggregatorService {
 			List<FaceRecognitionResult> faceRecognitionResults =
 				tensorFlowResults.stream().map(mapTfResultToFaceRecognitionResult).collect(Collectors.toList());
 
-			drawDetectedFaceRectangle(originalImage, faceRecognitionResults);
+			// drawDetectedFaceRectangle(originalImage, faceRecognitionResults);
 			writeToDisk(originalImage, "rectangles");
 
 			return faceRecognitionResults;
@@ -356,7 +378,7 @@ public class AggregatorService {
 				candidate.setLabel(identityOptional.get().getName());
 				return true;
 			} else {
-				log.warn("AWS: No face record found for aws person id {}", candidate.getPersonId());
+				log.warn("AWS: No face record found for person with id {}", candidate.getPersonId());
 				return false;
 			}
 		}).map(mapCandidateToFaceRecognitionResult).collect(Collectors.toList());
@@ -378,7 +400,7 @@ public class AggregatorService {
 						candidate.setRecognizer(Recognizer.COGNITIVE_SERVICES);
 						return true;
 					} else {
-						log.warn("Cognitive: No face record found for cognitive person id {} with ",
+						log.warn("Cognitive: No face record found for person with id {}",
 							candidate.getPersonId());
 						return false;
 					}

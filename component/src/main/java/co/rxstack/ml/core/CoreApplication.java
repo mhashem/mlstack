@@ -54,7 +54,7 @@ public class CoreApplication implements CommandLineRunner {
 
 		private final Logger logger = getLogger(ScheduledTask.class);
 		
-		@Scheduled(fixedRate = 15000, initialDelay = 10000)
+		@Scheduled(fixedDelay = 15000, initialDelay = 10000)
 		public void doTask() {
 			execute();
 		}
@@ -65,5 +65,20 @@ public class CoreApplication implements CommandLineRunner {
 			ticket.setType(Ticket.Type.INDEXING);
 			jobService.startJob(ticket);
 		}
+	}
+	
+	@Component
+	public class ScheduledTrainingTask {
+
+		private final Logger logger = getLogger(ScheduledTrainingTask.class);
+		
+		@Scheduled(fixedDelay = 60000, initialDelay = 10000)
+		public void doTask() {
+			logger.info("============== ScheduledTrainingTask  fired ==============");
+			Ticket ticket = new Ticket(UUID.randomUUID().toString());
+			ticket.setType(Ticket.Type.TRAINING);
+			jobService.startJob(ticket);
+		}
+		
 	}
 }

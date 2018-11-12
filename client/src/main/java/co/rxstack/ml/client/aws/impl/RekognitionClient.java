@@ -16,6 +16,9 @@ import co.rxstack.ml.common.model.Recognizer;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.machinelearning.model.CreateRealtimeEndpointRequest;
+import com.amazonaws.services.machinelearning.model.PredictResult;
+import com.amazonaws.services.machinelearning.model.Prediction;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
 import com.amazonaws.services.rekognition.model.Attribute;
@@ -24,6 +27,10 @@ import com.amazonaws.services.rekognition.model.CompareFacesMatch;
 import com.amazonaws.services.rekognition.model.CompareFacesRequest;
 import com.amazonaws.services.rekognition.model.CompareFacesResult;
 import com.amazonaws.services.rekognition.model.ComparedFace;
+import com.amazonaws.services.rekognition.model.CreateCollectionRequest;
+import com.amazonaws.services.rekognition.model.CreateCollectionResult;
+import com.amazonaws.services.rekognition.model.DeleteCollectionRequest;
+import com.amazonaws.services.rekognition.model.DeleteFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.Image;
@@ -57,11 +64,33 @@ public class RekognitionClient implements IRekognitionClient {
 	}
 
 	@Override
+	public List<String> deleteFaces(String collectionId) {
+		DeleteFacesRequest deleteFacesRequest = new DeleteFacesRequest();
+		deleteFacesRequest.setCollectionId(collectionId);
+		return amazonRekognition.deleteFaces(deleteFacesRequest).getDeletedFaces();
+	}
+	
+	@Override
+	public int createCollection(String collectionId) {
+		CreateCollectionRequest createCollectionRequest = new CreateCollectionRequest();
+		createCollectionRequest.setCollectionId(collectionId);
+		CreateCollectionResult createCollectionResult = amazonRekognition.createCollection(createCollectionRequest);
+		return createCollectionResult.getStatusCode();
+	}
+	
+	@Override
+	public int deleteCollection(String collectionId) {
+		DeleteCollectionRequest deleteCollectionRequest = new DeleteCollectionRequest();
+		deleteCollectionRequest.setCollectionId(collectionId);
+		return amazonRekognition.deleteCollection(deleteCollectionRequest).getStatusCode();
+	}
+	
+	@Override
 	public Optional<ComparisonResult> compareFaces(byte[] faceOneBytes, byte[] faceTwoBytes) {
 
 		Preconditions.checkArgument(faceOneBytes.length > 0);
 		Preconditions.checkArgument(faceTwoBytes.length > 0);
-
+		
 		try {
 			// todo return list instead of optional in case of multiple faces!
 			ComparisonResult comparisonResult = new ComparisonResult();
@@ -157,6 +186,14 @@ public class RekognitionClient implements IRekognitionClient {
 		indexFacesRequest.setCollectionId(collectionId);
 		indexFacesRequest.setImage(byteArrayToImage(imageBytes));
 		return Optional.ofNullable(amazonRekognition.indexFaces(indexFacesRequest));
+	}
+	
+	public void model() {
+		CreateRealtimeEndpointRequest request = new CreateRealtimeEndpointRequest();
+		request.setMLModelId("ml-2HsB78gKdwy");
+		
+		
+		
 	}
 
 	private Image byteArrayToImage(byte[] imageBytes) {
