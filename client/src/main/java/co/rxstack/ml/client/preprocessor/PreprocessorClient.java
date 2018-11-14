@@ -25,7 +25,7 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-public class PreprocessorClient implements IPreprocessorClient {
+public class PreprocessorClient implements IPreprocessorClient<byte[], Optional<byte[]>> {
 
 	private static final Logger log = LoggerFactory.getLogger(PreprocessorClient.class);
 

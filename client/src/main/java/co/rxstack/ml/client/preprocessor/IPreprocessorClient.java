@@ -5,10 +5,10 @@ import java.util.Optional;
 
 import co.rxstack.ml.common.model.FaceBox;
 
-public interface IPreprocessorClient {
+public interface IPreprocessorClient<T, R> {
 	
-	Optional<byte[]> align(byte[] imageBytes);
+	R align(T imageBytes);
 
-	List<FaceBox> detectFaces(byte[] imageBytes);
+	List<FaceBox> detectFaces(T imageBytes);
 	
 }

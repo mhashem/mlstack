@@ -51,6 +51,13 @@
 			<artifactId>commons-io</artifactId>
 			<version>${commons-io.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>net.tzolov.cv</groupId>
+			<artifactId>mtcnn</artifactId>
+			<version>0.0.4</version>
+		</dependency>
+		
 	</dependencies>
 
 	<dependencyManagement>
