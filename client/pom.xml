@@ -58,6 +58,20 @@
 			<version>0.0.4</version>
 		</dependency>
 		
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacpp</artifactId>
+			<version>1.4.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bytedeco.javacpp-presets</groupId>
+			<artifactId>tensorflow-platform</artifactId>
+			<version>${tensorflow.version}-${javacpp-presets.version}</version>
+		</dependency>
+		
+		
+		
 	</dependencies>
 
 	<dependencyManagement>
